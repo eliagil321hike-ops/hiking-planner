@@ -3,6 +3,7 @@
 // Returns a report of what was found/changed so the page can show it (runtime verification).
 
 import { addPoiIcons } from './poi-icons.js';
+import { registerDeriveProtocol, deriveStats } from './terrain-derive.js';
 
 const CLUSTERED = ['camp', 'water', 'parking'];
 
@@ -66,6 +67,12 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   map.addSource('dem-terrain', demSrc({ attribution: overlay.dem.attribution }));
   map.addSource('dem-hillshade', demSrc({}));
   map.addSource('contours', { type: 'vector', tiles: [contourTiles], maxzoom: 15 });
+  // Slope angle / aspect, computed in the browser from the same DEM tiles (D-038).
+  if (!map.__deriveRegistered && globalThis.maplibregl) { registerDeriveProtocol(globalThis.maplibregl, overlay.dem.tiles, overlay.dem.tileSize); map.__deriveRegistered = true; }
+  report.derive = deriveStats;
+  for (const kind of ['slope', 'aspect']) {
+    map.addSource(`derive-${kind}`, { type: 'raster', tiles: [`derive://${kind}/{z}/{x}/{y}`], tileSize: overlay.dem.tileSize, minzoom: 8, maxzoom: demMaxzoom });
+  }
   // Build-time OSM extract (D-032): national/regional hiking routes + campsites/taps. Start empty, fill
   // when the files arrive; a missing file (e.g. the extract failed at deploy) just leaves the layers empty.
   const empty = { type: 'FeatureCollection', features: [] };
@@ -98,7 +105,7 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   const layersNow = map.getStyle().layers;
   const firstSymbol = layersNow.find((l) => l.type === 'symbol')?.id;
   const firstStructure = layersNow.find((l) => ['transportation', 'building'].includes(l['source-layer']))?.id ?? firstSymbol;
-  const underStructure = new Set(['fill', 'hillshade']);
+  const underStructure = new Set(['fill', 'hillshade', 'color-relief', 'raster']);
   const fill = (v) => {
     if (v === '$base') return baseSource;
     if (v === '$labelFont') return labelFont;

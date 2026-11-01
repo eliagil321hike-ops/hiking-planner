@@ -303,17 +303,22 @@ export function initRoute(ctx) {
     const totalMin = Math.round(naismithSeconds(dist, st.ascent) / 60);
     const m = (v) => (v === null ? '—' : `${fmtNumber(Math.round(v))} ${t('unit.m')}`);
     const provisional = editor.segments().some((s) => s.provisional);
+    const stat = (value, unit, label, cls = '') =>
+      `<div class="stat ${cls}"><span class="v">${value}</span>${unit ? `<span class="u">${unit}</span>` : ''}<span class="l">${label}</span></div>`;
+    const n0 = (v) => (v === null ? '—' : fmtNumber(Math.round(v)));
+    const warn = [st.incomplete && t('stats.incomplete'), provisional && t('stats.provisional')].filter(Boolean);
     $('stats').innerHTML = `
-      <dt>${t('stats.distance')}</dt><dd>${fmtNumber(dist / 1000, { maximumFractionDigits: 2 })} ${t('unit.km')}</dd>
-      <dt>${t('stats.ascent')}</dt><dd>${m(st.ascent)}</dd>
-      <dt>${t('stats.descent')}</dt><dd>${m(st.descent)}</dd>
-      <dt>${t('stats.minmax')}</dt><dd>${m(st.min)} / ${m(st.max)}</dd>
-      <dt>${t('stats.duration')}</dt><dd>${Math.floor(totalMin / 60)}:${String(totalMin % 60).padStart(2, '0')} ${t('unit.hours')}</dd>
-      <dt>${t('stats.source')}</dt><dd>${t('stats.sourceValue', { z: samplingZoom })} · ${ms} ms</dd>
-      ${st.incomplete ? `<dt>${t('stats.warning')}</dt><dd>${t('stats.incomplete')}</dd>` : ''}
-      ${provisional ? `<dt>${t('stats.warning')}</dt><dd>${t('stats.provisional')}</dd>` : ''}`;
+      <div class="rp-main">
+        ${stat(fmtNumber(dist / 1000, { maximumFractionDigits: dist < 10_000 ? 2 : 1 }), t('unit.km'), t('stats.distance'), 'big')}
+        ${stat(n0(st.ascent), t('unit.m'), t('stats.ascent'), 'up')}
+        ${stat(n0(st.descent), t('unit.m'), t('stats.descent'), 'down')}
+        ${stat(`${Math.floor(totalMin / 60)}:${String(totalMin % 60).padStart(2, '0')}`, t('unit.hours'), t('stats.duration'))}
+      </div>
+      <div class="rp-sub"><span>${t('stats.minmax')} ${m(st.min)} / ${m(st.max)}</span>
+        <span class="muted">${t('stats.source')}: ${t('stats.sourceValue', { z: samplingZoom })} · ${ms} ms</span>
+        ${warn.map((w) => `<span class="warn">${t('stats.warning')}: ${w}</span>`).join('')}</div>`;
     $('profile-box').hidden = !showProfile;
-    renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max });
+    renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max, compact: true });
   }
 
   // Elevation stats + profile can be hidden (owner request); remembered in prefs.
@@ -326,6 +331,16 @@ export function initRoute(ctx) {
   }
   $('show-profile').addEventListener('change', (e) => { showProfile = e.target.checked; savePrefs({ showProfile }); applyProfileVisibility(); });
   $('profile-close').addEventListener('click', () => { showProfile = false; savePrefs({ showProfile }); applyProfileVisibility(); });
+  // Compact (figures only) ↔ expanded (figures + profile); remembered.
+  let expanded = loadPrefs().profileExpanded !== false;
+  function applyExpanded() {
+    $('profile-box').classList.toggle('collapsed', !expanded);
+    $('profile-toggle').setAttribute('aria-expanded', String(expanded));
+    if (!expanded) hoverMarker.remove();
+    else if (!$('profile-box').hidden && samples.length) requestAnimationFrame(() => updateStats());
+  }
+  $('profile-toggle').addEventListener('click', () => { expanded = !expanded; savePrefs({ profileExpanded: expanded }); applyExpanded(); });
+  applyExpanded();
   applyProfileVisibility();
 
   restoreDraft();

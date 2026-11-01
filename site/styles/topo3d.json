@@ -1,6 +1,6 @@
 {
   "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by site/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "base": "https://tiles.openfreemap.org/styles/liberty",
   "dem": {
     "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
@@ -113,6 +113,47 @@
       }
     },
     {
+      "$comment": "Elevation colouring (MapLibre color-relief on the DEM; D-038). Off by default.",
+      "id": "topo-relief",
+      "type": "color-relief",
+      "source": "dem-hillshade",
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "color-relief-opacity": 0.55,
+        "color-relief-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "elevation"
+          ],
+          -430,
+          "#4f7f74",
+          -200,
+          "#6f9a72",
+          0,
+          "#8fb377",
+          150,
+          "#b4c886",
+          400,
+          "#ddd59c",
+          700,
+          "#e2bf86",
+          1000,
+          "#cf9d6e",
+          1400,
+          "#b5805e",
+          2000,
+          "#9a6c58",
+          2800,
+          "#f1ece6"
+        ]
+      }
+    },
+    {
       "id": "topo-hillshade",
       "type": "hillshade",
       "source": "dem-hillshade",
@@ -121,6 +162,31 @@
         "hillshade-exaggeration": 0.55,
         "hillshade-shadow-color": "rgba(70,60,50,0.45)",
         "hillshade-highlight-color": "rgba(255,255,250,0.3)"
+      }
+    },
+    {
+      "$comment": "Slope angle classes computed in the browser from the DEM (site/terrain-derive.js; D-038).",
+      "id": "topo-slope",
+      "type": "raster",
+      "source": "derive-slope",
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "raster-opacity": 0.6,
+        "raster-resampling": "nearest"
+      }
+    },
+    {
+      "id": "topo-aspect",
+      "type": "raster",
+      "source": "derive-aspect",
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "raster-opacity": 0.5,
+        "raster-resampling": "nearest"
       }
     },
     {

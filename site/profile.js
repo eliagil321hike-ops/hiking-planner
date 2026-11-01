@@ -36,6 +36,8 @@ export function renderProfile(container, samples, onHover, opts = {}) {
     return;
   }
   const smoothed = opts.smoothed ?? samples.map((s) => s.elevation);
+  // Drawn height: the smoothed series (a calm line), falling back to the raw value; gaps stay gaps.
+  const ev = (i) => (samples[i].elevation === null ? null : smoothed[i] ?? samples[i].elevation);
   const W = container.clientWidth || 360, H = container.clientHeight || 120;
   // top: info + legend row (16 px); left: elevation labels; right: room for the end tick label
   const pad = { l: 40, r: 14, t: 24, b: 18 };
@@ -55,11 +57,13 @@ export function renderProfile(container, samples, onHover, opts = {}) {
   // --- top row, left: total length · highest · lowest (no labels inside the plot to collide with)
   const hiS = valid.reduce((m, s) => (s.elevation > m.elevation ? s : m));
   const loS = valid.reduce((m, s) => (s.elevation < m.elevation ? s : m));
-  const info = el('text', { x: pad.l, y: 13, class: 'profile-info' });
-  info.append(el('tspan', { class: 'profile-strong' }, fmtKm(maxD)));
-  info.append(el('tspan', { dx: 10 }, `▲ ${Math.round(hiS.elevation)} m`));
-  info.append(el('tspan', { dx: 8 }, `▼ ${Math.round(loS.elevation)} m`));
-  svg.append(info);
+  if (!opts.compact) {   // in the route panel (D-039) the figures are shown above the graph
+    const info = el('text', { x: pad.l, y: 13, class: 'profile-info' });
+    info.append(el('tspan', { class: 'profile-strong' }, fmtKm(maxD)));
+    info.append(el('tspan', { dx: 10 }, `▲ ${Math.round(hiS.elevation)} m`));
+    info.append(el('tspan', { dx: 8 }, `▼ ${Math.round(loS.elevation)} m`));
+    svg.append(info);
+  }
 
   // --- top row, right: slope legend (short coloured bars + text), right-aligned before the close button
   let lx = W - pad.r - 30;
@@ -101,7 +105,7 @@ export function renderProfile(container, samples, onHover, opts = {}) {
     }
     run = [];
   };
-  for (const s of samples) { if (s.elevation === null) flushArea(); else run.push(s); }
+  samples.forEach((s, i) => { if (s.elevation === null) flushArea(); else run.push({ distance: s.distance, elevation: ev(i) }); });
   flushArea();
 
   // --- thin slope-coloured line (grade from smoothed values over ≈100 m)
@@ -114,11 +118,16 @@ export function renderProfile(container, samples, onHover, opts = {}) {
     const dd = samples[i1].distance - samples[i0].distance;
     const grade = e0 !== null && e1 !== null && dd > 0 ? (e1 - e0) / dd : 0;
     svg.append(el('line', {
-      x1: x(a.distance).toFixed(1), y1: y(a.elevation).toFixed(1), x2: x(b.distance).toFixed(1), y2: y(b.elevation).toFixed(1),
+      x1: x(a.distance).toFixed(1), y1: y(ev(i - 1)).toFixed(1), x2: x(b.distance).toFixed(1), y2: y(ev(i)).toFixed(1),
       stroke: slopeClass(grade).color, class: 'profile-seg',
     }));
   }
-  for (const s of [hiS, loS]) svg.append(el('circle', { cx: x(s.distance), cy: y(s.elevation), r: 2.5, class: 'profile-dot' }));
+  for (const s of [hiS, loS]) svg.append(el('circle', { cx: x(s.distance), cy: y(ev(samples.indexOf(s))), r: 2.5, class: 'profile-dot' }));
+  // start / finish (D-039)
+  const iFirst = samples.findIndex((s) => s.elevation !== null);
+  const iLast = samples.length - 1 - [...samples].reverse().findIndex((s) => s.elevation !== null);
+  svg.append(el('circle', { cx: x(samples[iFirst].distance), cy: y(ev(iFirst)), r: 4, class: 'profile-start' }));
+  svg.append(el('circle', { cx: x(samples[iLast].distance), cy: y(ev(iLast)), r: 4, class: 'profile-finish' }));
 
   // --- hover / drag readout
   const cursor = el('line', { class: 'profile-cursor', y1: pad.t, y2: baseY });
@@ -140,7 +149,7 @@ export function renderProfile(container, samples, onHover, opts = {}) {
     readout.setAttribute('x', cx + (right ? -6 : 6));
     readout.setAttribute('text-anchor', right ? 'end' : 'start');
     readout.textContent = `${fmtKm(s.distance)} · ${s.elevation === null ? '—' : Math.round(s.elevation) + ' m'}`;
-    if (s.elevation !== null) { dot.setAttribute('cx', cx); dot.setAttribute('cy', y(s.elevation)); }
+    if (s.elevation !== null) { dot.setAttribute('cx', cx); dot.setAttribute('cy', y(ev(best))); }
     for (const n of [cursor, readout]) n.style.display = '';
     dot.style.display = s.elevation === null ? 'none' : '';
     onHover?.(best);

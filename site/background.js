@@ -1,14 +1,20 @@
-// Background switch: topographic / satellite (DECISIONS D-017, D-018, D-021).
-// In satellite mode the topo tint and hillshade are hidden (imagery has its own shading); contours,
-// trails, labels and the route stay on top. Switching back restores the user's checkbox choices.
+// Map style: topographic / satellite / hybrid 3D (D-017, D-018, D-021, D-038).
+//   topographic  clean topo map (hillshade, contours, vegetation tint)
+//   satellite    imagery with trails, water, peaks, POIs and labels; no topo tint, hillshade or contours
+//   hybrid 3D    imagery + 3D terrain + hillshade + contours + all features; switches the view to 3D
+// The user's layer switches are kept; a style only hides what does not suit it (ctx.styleAllows).
 
 import { setSatellite, removeSatellite, store } from './satellite.js';
 
 export function initBackground(ctx) {
-  const { map, overlay, results, $, t, log, notify, GROUPS, vis, cbChecked } = ctx;
+  const { map, overlay, results, $, t, log, notify } = ctx;
   const SAT = overlay.satellite;
   const providerById = (id) => SAT.providers.find((p) => p.id === id) ?? SAT.providers[0];
-  let baseMode = store.get('topo3d.base') === 'satellite' ? 'satellite' : 'topo';
+  const HIDE = { topo: [], satellite: ['hillshade', 'landcover', 'contours', 'relief'], hybrid: ['landcover'] };
+  const saved = store.get('topo3d.base');
+  let baseMode = HIDE[saved] ? saved : 'topo';
+  let imagery = false;
+  ctx.styleAllows = (g) => !imagery || !HIDE[baseMode].includes(g);
   let providerId = providerById(store.get('topo3d.satProvider') ?? SAT.default).id;
   const keyName = (id) => `topo3d.key.${id}`;
 
@@ -20,9 +26,8 @@ export function initBackground(ctx) {
   }
 
   function applyBackground() {
-    $('sat-opts').hidden = baseMode !== 'satellite';
     syncKeyRow();
-    const sat = baseMode === 'satellite';
+    const sat = baseMode !== 'topo';
     let shown = false;
     if (sat) {
       const p = providerById(providerId);
@@ -34,9 +39,8 @@ export function initBackground(ctx) {
       if ($('status').dataset.source === 'bg') notify(null);
       removeSatellite(map);
     }
-    const imagery = sat && shown;
-    vis(GROUPS.landcover, !imagery && cbChecked('landcover'));
-    vis(GROUPS.hillshade, !imagery && cbChecked('hillshade'));
+    imagery = sat && shown;
+    ctx.applyGroupsFromUI?.();
     results.background = { mode: baseMode, provider: sat ? providerId : null, shown };
   }
 
@@ -54,7 +58,8 @@ export function initBackground(ctx) {
     store.set('topo3d.base', baseMode);
     const t0 = performance.now();
     applyBackground();
-    map.once('idle', () => log(`background → ${baseMode}${baseMode === 'satellite' ? ` (${providerId})` : ''}: ${Math.round(performance.now() - t0)} ms to idle`));
+    if (baseMode === 'hybrid') ctx.view?.set3D(true);
+    map.once('idle', () => log(`background → ${baseMode}${baseMode !== 'topo' ? ` (${providerId})` : ''}: ${Math.round(performance.now() - t0)} ms to idle`));
   }));
   $('sat-provider').addEventListener('change', (e) => {
     providerId = e.target.value;

@@ -1,7 +1,9 @@
 // Entry point: loads the configuration, creates the map, and wires the modules together.
 // Globals from <script> tags: maplibregl, mlcontour.
 //   layers.js      layer switches, exaggeration, panel
-//   background.js  topographic / satellite
+//   background.js  map style: topographic / satellite / hybrid 3D
+//   view3d.js      2D / 3D button
+//   search.js      place search (Nominatim)
 //   route.js       drawing a line, stats, profile
 //   devtools.js    Phase 0 tests, loaded only with ?dev=1
 
@@ -15,6 +17,8 @@ import { initBackground } from './background.js';
 import { initRoute } from './route.js';
 import { initMenus } from './menus.js';
 import { createOrsRouter } from './router.js';
+import { initView3d } from './view3d.js';
+import { initSearch } from './search.js';
 
 const BUILD = '__BUILD__'; // replaced by CI (scripts/stamp_build.sh) with the commit id
 const perf = createPerf();
@@ -121,6 +125,8 @@ const ctx = {
 };
 Object.assign(ctx, layerHelpers(ctx));
 initLayers(ctx);
+const view = initView3d(ctx);
+map.addControl(view.control, 'top-right');
 const background = initBackground(ctx);
 ctx.applyBackground = background.applyBackground;
 // Routing (snap to trails): openrouteservice with the owner's embedded key (D-027).
@@ -129,6 +135,7 @@ if (overlay.routing?.embeddedKey) {
 }
 const route = initRoute(ctx);
 const menus = initMenus(ctx);
+initSearch(ctx);
 
 // Test/debug handle (used by scripts/e2e_test.py).
 globalThis.__topo3d = { map, results, ctx, editor: route.editor, menus };
@@ -142,7 +149,8 @@ map.on('load', () => {
     throw e;
   }
   route.addRouteLayers();
-  ctx.applyGroupsFromUI(); // remembered layer switches and exaggeration (prefs.js)
+  ctx.applyGroupsFromUI(); // remembered layer switches and opacities (prefs.js)
+  view.applyTerrain();     // remembered 2D/3D and exaggeration
   background.start();
   // Horizon haze like the FATMAP references (sky spec: GL JS ≥ 4.5, checked 2026-11-01).
   if (overlay.sky) map.setSky(Object.fromEntries(Object.entries(overlay.sky).filter(([k]) => !k.startsWith('$'))));

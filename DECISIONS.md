@@ -392,6 +392,34 @@ with the first real request.
   reload timeout with four), and the owner's Intel HD 4400 already runs 3D at 8–26 fps (D-014). Kept one
   light at 315° with softer warm shadows (exaggeration 0.55).
 
+## D-038 (2026-11-01) Stage 3: main interface — styles, 2D/3D, search, layer menu, terrain layers
+- Toolbar: new route · place search · map style · layers · route options; translucent (blurred) floating
+  controls. Map controls (top right): zoom/compass, location, **2D/3D button** (3D = terrain on + camera
+  eases to 60°; 2D = terrain off, straight down; remembered; exaggeration shared by all styles).
+- **Map style** picker with three cards: topographic; satellite (imagery + trails, water, peaks, POIs,
+  labels; no contours/hillshade/tint); **hybrid 3D** (imagery + 3D terrain + hillshade + contours + all
+  features; switches to 3D). The user's layer switches are kept; a style only hides what does not suit it.
+- **Layer menu** in two categories with switches: Terrain (hillshade, contours, slope angle, aspect,
+  elevation colouring — opacity sliders and legends where relevant) and Map features (trails, water, peaks,
+  parking, drinking water, campsites, springs/viewpoints/shelters, vegetation). Satellite provider and key
+  moved to a collapsed "מתקדם" section; developer tools stay behind ?dev=1.
+- **Slope angle / aspect**: computed in the browser from the same Mapterhorn DEM tiles (Horn 3×3, latitude-
+  correct pixel size, edges clamped), protocol `derive://` (site/terrain-derive.js, 7 unit tests). Slope
+  classes 15/25/30/35/45°; aspect in 8 hues, flat ground (< 5°) clear. **Elevation colouring**: MapLibre
+  `color-relief` (verified present in 5.24.0) with a hypsometric ramp −430…2800 m.
+- **Search**: public Nominatim (OSM, free, no key). Policy respected: no search-as-you-type (Enter/button
+  only), ≥ 1.1 s between requests, attribution "Nominatim · © OpenStreetMap" in the results list.
+- Phone width: toolbar wraps, search full width, menus open as a bottom sheet.
+
+## D-039 (2026-11-01) Stage 4: floating route panel
+- Centered floating card (glass, rounded, soft shadow) at the bottom: distance (largest), ascent, descent,
+  estimated time as large figures; min/max, elevation source and warnings in a small second line.
+- Elevation profile inside the panel: drawn from the smoothed series (calm line; gaps stay gaps), start
+  (green) and finish markers, slope colours, full-length end tick, hover → map marker (already existed).
+- Collapse (figures only) / expand (with profile) button, remembered; ✕ hides the panel (route menu switch
+  shows it again). The map stays draggable/zoomable around it.
+- Not yet done: route panel position relative to important map features (it is fixed at the bottom).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

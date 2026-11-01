@@ -115,6 +115,9 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+CONSOLE = []
+
+
 def main():
     ml_js, ml_css = maplibre_files()
     httpd = socketserver.TCPServer(("127.0.0.1", 0), Quiet)
@@ -139,6 +142,7 @@ def main():
         page = context.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
+        page.on("console", lambda m: CONSOLE.append(f"{m.type}: {m.text}"[:300]))
 
         def unpkg(route):
             u = route.request.url
@@ -187,6 +191,13 @@ def main():
             route.fulfill(body=json.dumps(OSM_FILES[name], ensure_ascii=False), headers={"content-type": "application/geo+json"})
 
         page.route("**/data/osm-*.geojson", osm_data)
+        def nominatim(route):
+            seen.setdefault("nominatim", []).append(route.request.url)
+            body = [{"display_name": "הר מירון, גליל עליון, ישראל", "lat": "32.9975", "lon": "35.4110", "boundingbox": ["32.99", "33.00", "35.40", "35.42"]},
+                    {"display_name": "מירון, מחוז הצפון, ישראל", "lat": "32.98", "lon": "35.44"}]
+            route.fulfill(body=json.dumps(body, ensure_ascii=False), headers={"content-type": "application/json", "access-control-allow-origin": "*"})
+
+        page.route("https://nominatim.openstreetmap.org/**", nominatim)
         page.route("https://api.openrouteservice.org/**", route_ors)
         page.route("https://unpkg.com/**", unpkg)
         page.route("https://tiles.openfreemap.org/**", openfreemap)
@@ -269,6 +280,46 @@ def main():
         r["satAfterTopo"] = page.evaluate("() => !!window.__topo3d.map.getLayer('satellite')")
         r["landcoverInTopo"] = page.evaluate("() => window.__topo3d.map.getLayoutProperty('topo-landcover','visibility')")
 
+        # ---- D-038: map styles, 2D/3D, terrain layers, opacity, search
+        lv = "(id) => window.__topo3d.map.getLayoutProperty(id, 'visibility') ?? 'visible'"
+        styles = {}
+        for st in ("satellite", "hybrid", "topo"):
+            page.evaluate(f"() => document.querySelector('input[name=base][value={st}]').click()")
+            page.wait_for_timeout(600)
+            styles[st] = page.evaluate(f"""() => {{ const v = {lv}; return {{ sat: !!window.__topo3d.map.getLayer('satellite'), contours: v('topo-contours-minor'),
+                hill: v('topo-hillshade'), land: v('topo-landcover'), trails: v('topo-trails-path'), terrain: !!window.__topo3d.map.getTerrain() }}; }}""")
+        r["styles"] = styles
+        page.evaluate("() => document.getElementById('btn-3d').click()")
+        page.wait_for_function("() => window.__topo3d.map.getPitch() < 1 && !window.__topo3d.map.isMoving()", polling=250, timeout=30_000)
+        d2 = page.evaluate("() => ({ terrain: !!window.__topo3d.map.getTerrain(), pitch: window.__topo3d.map.getPitch(), label: document.getElementById('btn-3d').textContent })")
+        page.evaluate("() => document.getElementById('btn-3d').click()")
+        page.wait_for_function("() => window.__topo3d.map.getPitch() > 50 && !window.__topo3d.map.isMoving()", polling=250, timeout=30_000)
+        d3 = page.evaluate("() => ({ terrain: !!window.__topo3d.map.getTerrain(), pitch: window.__topo3d.map.getPitch(), label: document.getElementById('btn-3d').textContent })")
+        r["view3d"] = [d2, d3]
+        for g in ("slope", "aspect", "relief"):
+            page.evaluate(f"() => document.querySelector('input[data-group={g}]').click()")
+        try:
+            page.wait_for_function("() => window.__topo3d.results.topo.derive.tiles >= 2", polling=500, timeout=180_000)
+        except Exception:
+            print("DERIVE-DEBUG", page.evaluate("""() => { const m = window.__topo3d.map; return { vis: m.getLayoutProperty('topo-slope','visibility'), src: !!m.getSource('derive-slope'),
+                loaded: m.isSourceLoaded('derive-slope'), z: m.getZoom(), stats: window.__topo3d.results.topo.derive, hasML: typeof maplibregl, reg: m.__deriveRegistered }; }"""), CONSOLE[-8:], flush=True)
+            raise
+        page.evaluate("() => { const e = document.querySelector('input[data-opacity=slope]'); e.value = '0.3'; e.dispatchEvent(new Event('input')); e.dispatchEvent(new Event('change')); }")
+        r["terrainLayers"] = page.evaluate(f"""() => {{ const v = {lv}; const m = window.__topo3d.map; return {{ slope: v('topo-slope'), aspect: v('topo-aspect'), relief: v('topo-relief'),
+            derive: {{ ...window.__topo3d.results.topo.derive }}, slopeOpacity: m.getPaintProperty('topo-slope', 'raster-opacity'),
+            legendShown: getComputedStyle(document.querySelector('[data-legend=slope]')).display !== 'none' }}; }}""")
+        for g in ("slope", "aspect", "relief"):
+            page.evaluate(f"() => document.querySelector('input[data-group={g}]').click()")
+        # search: Enter → one request → results → pick the first → map moves there, marker shown
+        page.evaluate("() => { document.getElementById('search-q').value = 'הר מירון'; document.getElementById('search').requestSubmit(); }")
+        page.wait_for_function("() => !document.getElementById('search-results').hidden", polling=250, timeout=15_000)
+        r["searchList"] = page.evaluate("() => [...document.querySelectorAll('#search-results strong')].map((e) => e.textContent)")
+        page.evaluate("() => document.querySelector('#search-results button').click()")
+        page.wait_for_timeout(1600)
+        r["searchGo"] = page.evaluate("() => ({ res: window.__topo3d.results.search, marker: !!document.querySelector('.maplibregl-marker'), hidden: document.getElementById('search-results').hidden, c: window.__topo3d.map.getCenter() })")
+        r["nominatim"] = list(seen.get("nominatim", []))
+        page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 12, pitch: 0, bearing: 0 })")
+
         # ---- Route editor (Phase 3A). No router configured yet → new segments are free (straight).
         page.on("dialog", lambda d: d.accept())          # "clear route?" confirmation
         r["snapDefault"] = page.evaluate("() => !document.querySelector('#seg-mode option[value=snap]').disabled && document.getElementById('seg-mode').value === 'snap'")
@@ -284,6 +335,11 @@ def main():
         page.wait_for_function("() => document.getElementById('stats').textContent.includes('מרחק')", polling=250, timeout=20_000)
         r["stats"] = page.inner_text("#stats")
         r["profileVisible"] = page.evaluate("() => !document.getElementById('profile-box').hidden && !!document.querySelector('#profile svg path.profile-area')")
+        r["panel"] = page.evaluate("""() => ({ big: [...document.querySelectorAll('#stats .rp-main .stat .l')].map((e) => e.textContent),
+            startFinish: !!document.querySelector('#profile .profile-start') && !!document.querySelector('#profile .profile-finish') })""")
+        page.evaluate("() => document.getElementById('profile-toggle').click()"); page.wait_for_timeout(300)
+        r["panelCollapsed"] = page.evaluate("() => [document.getElementById('profile-box').classList.contains('collapsed'), getComputedStyle(document.getElementById('profile')).display, document.getElementById('profile-toggle').getAttribute('aria-expanded'), getComputedStyle(document.getElementById('stats')).display !== 'none']")
+        page.evaluate("() => document.getElementById('profile-toggle').click()"); page.wait_for_timeout(300)
         r["routePoints"] = nverts()
         r["modes"] = page.evaluate(f"() => {ed}.state.vertices.map(v => v.mode)")
         page.wait_for_function(f"() => {ed}.segments().every(s => s.status === 'ok')", polling=250, timeout=20_000)
@@ -461,6 +517,23 @@ def main():
     expect(r["satLayer"] and "ibasemaps-api.arcgis.com" in (r["satTiles"] or "") and "token=" in r["satTiles"], "satellite: Esri layer with embedded key")
     expect(len(seen["satellite"]) > 0, "satellite tiles requested")
     expect(r["landcoverInSat"] == "none" and r["landcoverInTopo"] == "visible", "topo tint hidden on imagery, restored on topo")
+    S = r["styles"]
+    expect(S["satellite"]["sat"] and S["satellite"]["contours"] == "none" and S["satellite"]["hill"] == "none" and S["satellite"]["trails"] == "visible",
+           f"satellite style: imagery + features, no contours/hillshade {S['satellite']}")
+    expect(S["hybrid"]["sat"] and S["hybrid"]["contours"] == "visible" and S["hybrid"]["hill"] == "visible" and S["hybrid"]["land"] == "none" and S["hybrid"]["terrain"],
+           f"hybrid 3D: imagery + 3D terrain + hillshade + contours {S['hybrid']}")
+    expect(not S["topo"]["sat"] and S["topo"]["contours"] == "visible" and S["topo"]["land"] == "visible", f"topographic restores the topo layers {S['topo']}")
+    d2, d3 = r["view3d"]
+    expect(not d2["terrain"] and d2["pitch"] < 1 and d2["label"] == "3D" and d3["terrain"] and d3["pitch"] > 50 and d3["label"] == "2D",
+           f"2D/3D button flattens and tilts smoothly {r['view3d']}")
+    T = r["terrainLayers"]
+    expect(T["slope"] == "visible" and T["aspect"] == "visible" and T["relief"] == "visible" and T["derive"]["tiles"] >= 2 and T["derive"]["lastError"] in (None, "DEM 404"),
+           f"slope / aspect computed from the DEM (fixture DEM covers only some tiles → 404s there), elevation colouring shown {T}")
+    expect(abs(T["slopeOpacity"] - 0.3) < 1e-6 and T["legendShown"], f"opacity slider and legend {T['slopeOpacity']} {T['legendShown']}")
+    expect(r["searchList"][:1] == ["הר מירון"] and len(r["nominatim"]) == 1 and "q=%D7%94%D7%A8" in r["nominatim"][0],
+           f"search: one Nominatim request on Enter, results listed {r['searchList']} {len(r['nominatim'])}")
+    g = r["searchGo"]
+    expect(g["res"] and g["marker"] and g["hidden"] and abs(g["c"]["lat"] - 32.995) < 0.02, f"choosing a result moves the map and drops a marker {g['c']}")
     expect(not r["satAfterTopo"], "satellite layer removed in topo mode")
     expect(r["devHidden"], "developer tests hidden by default")
     expect(r["devShown"], "developer tests shown with ?dev=1 (devtools loaded, startup report logged)")
@@ -493,6 +566,8 @@ def main():
     expect(r["draftRestored"] and r["draftNotice"], "draft restored after reload (exact state), notice shown")
     expect(r["afterClear"] == (0, 0) and r["clearUndone"], f"clear (confirmed) empties the route, and is undoable {r['afterClear']}")
     expect("מרחק" in r["stats"] and "עלייה" in r["stats"], "stats shown")
+    expect(r["panel"]["big"] == ["מרחק", "עלייה", "ירידה", "זמן (הערכה)"] and r["panel"]["startFinish"], f"route panel: key figures first, start/finish on the profile (D-039) {r['panel']}")
+    expect(r["panelCollapsed"] == [True, "none", "false", True], f"route panel collapses to figures only {r['panelCollapsed']}")
     expect(r["profileVisible"], "elevation profile drawn")
     sys.exit(0 if ok else 1)
 

@@ -25,9 +25,15 @@
 
 <div id="fps" class="chip" aria-live="off" hidden>– fps</div>
 
-<!-- Floating toolbar (owner request D-029): "new route" always visible; layers and route menus open on click. -->
+<!-- Floating toolbar (D-029, D-038): new route, place search, map style, layers, route options. -->
 <div id="toolbar" class="toolbar">
   <button id="new-route" class="fab" type="button"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><span data-i18n="route.new">מסלול חדש</span></button>
+  <form id="search" class="search" role="search">
+    <input id="search-q" type="search" autocomplete="off" data-i18n-attr="placeholder:search.placeholder;aria-label:search.placeholder" placeholder="חיפוש מקום" aria-label="חיפוש מקום">
+    <button class="search-go" type="submit" data-i18n-attr="aria-label:search.go;title:search.go" aria-label="חפש"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15 15 5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <ul id="search-results" class="search-results" hidden></ul>
+  </form>
+  <button id="btn-style" class="tool-btn" type="button" aria-expanded="false" aria-controls="menu-style" data-i18n-attr="aria-label:menu.style;title:menu.style" aria-label="סגנון מפה"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20V6.5Z M9 4v13.5 M15 6.5V20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
   <button id="btn-layers" class="tool-btn" type="button" aria-expanded="false" aria-controls="menu-layers" data-i18n-attr="aria-label:menu.layers;title:menu.layers" aria-label="שכבות"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3 2.5 8 12 13l9.5-5L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m2.5 12 9.5 5 9.5-5M2.5 16l9.5 5 9.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
   <button id="btn-route" class="tool-btn" type="button" aria-expanded="false" aria-controls="menu-route" data-i18n-attr="aria-label:menu.route;title:menu.route" aria-label="אפשרויות מסלול"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="6" cy="18" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="6" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.2 17.2c4-1.2 1.2-5.6 4.8-6.6 2.6-.7 3.4-1.8 3.6-2.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="2.2 2.2"/></svg></button>
   <span id="plan-badge" class="plan-badge" hidden data-i18n="route.planning">עריכת מסלול</span>
@@ -35,15 +41,85 @@
 
 <p id="status" class="status toast" role="status" aria-live="polite" hidden></p>
 
+<section id="menu-style" class="popover" hidden>
+  <h2 data-i18n="menu.style">סגנון מפה</h2>
+  <div class="style-cards" role="radiogroup" data-i18n-attr="aria-label:bg.group" aria-label="רקע המפה">
+    <label class="style-card"><input type="radio" name="base" value="topo" checked><span class="thumb thumb-topo"></span><span data-i18n="bg.topo">טופוגרפי</span></label>
+    <label class="style-card"><input type="radio" name="base" value="satellite"><span class="thumb thumb-sat"></span><span data-i18n="bg.satellite">לוויין</span></label>
+    <label class="style-card"><input type="radio" name="base" value="hybrid"><span class="thumb thumb-hybrid"></span><span data-i18n="bg.hybrid">היברידי 3D</span></label>
+  </div>
+  <label class="slider"><span data-i18n="layers.exaggeration">הגבהה</span> <input id="exag" type="range" min="1" max="2" step="0.1" value="1.2"> <output id="exag-out">1.2</output></label>
+</section>
+
 <section id="menu-layers" class="popover" hidden>
   <header class="popover-head"><strong data-i18n="menu.layers">שכבות</strong> <small class="build" title="build">__BUILD__</small></header>
     <section>
-      <h2 data-i18n="bg.heading">רקע</h2>
-      <div class="seg" role="radiogroup" data-i18n-attr="aria-label:bg.group" aria-label="רקע המפה">
-        <label><input type="radio" name="base" value="topo" checked> <span data-i18n="bg.topo">טופוגרפי</span></label>
-        <label><input type="radio" name="base" value="satellite"> <span data-i18n="bg.satellite">לוויין</span></label>
+      <h2 data-i18n="layers.terrainHeading">שטח</h2>
+      <div class="layer-row">
+        <label><span class="sw sw-hillshade" aria-hidden="true"></span><span data-i18n="layers.hillshade">הצללה</span>
+          <input type="checkbox" class="switch" data-group="hillshade" checked></label>
+        <input class="opacity" type="range" min="0.1" max="1" step="0.05" data-opacity="hillshade" value="0.9" data-i18n-attr="aria-label:layers.opacity" aria-label="שקיפות">
       </div>
-      <div id="sat-opts" hidden>
+      <div class="layer-row">
+        <label><span class="sw sw-contours" aria-hidden="true"></span><span data-i18n="layers.contours">קווי גובה</span>
+          <input type="checkbox" class="switch" data-group="contours" checked></label>
+      </div>
+      <div class="layer-row">
+        <label><span class="sw sw-slope" aria-hidden="true"></span><span data-i18n="layers.slope">זווית שיפוע</span>
+          <input type="checkbox" class="switch" data-group="slope"></label>
+        <input class="opacity" type="range" min="0.1" max="1" step="0.05" data-opacity="slope" value="0.6" data-i18n-attr="aria-label:layers.opacity" aria-label="שקיפות">
+        <div class="legend" data-legend="slope"><i style="background:#f4e254"></i>15°<i style="background:#f29c38"></i>25°<i style="background:#e2462e"></i>30°<i style="background:#9e34aa"></i>35°<i style="background:#3c1c5c"></i>45°</div>
+      </div>
+      <div class="layer-row">
+        <label><span class="sw sw-aspect" aria-hidden="true"></span><span data-i18n="layers.aspect">כיוון מדרון</span>
+          <input type="checkbox" class="switch" data-group="aspect"></label>
+        <input class="opacity" type="range" min="0.1" max="1" step="0.05" data-opacity="aspect" value="0.5" data-i18n-attr="aria-label:layers.opacity" aria-label="שקיפות">
+        <div class="legend" data-legend="aspect"><i style="background:#3462d6"></i><span data-i18n="dir.N">צ</span><i style="background:#4cb246"></i><span data-i18n="dir.E">מז</span><i style="background:#e24a3a"></i><span data-i18n="dir.S">ד</span><i style="background:#aa54c4"></i><span data-i18n="dir.W">מע</span></div>
+      </div>
+      <div class="layer-row">
+        <label><span class="sw sw-relief" aria-hidden="true"></span><span data-i18n="layers.relief">צביעה לפי גובה</span>
+          <input type="checkbox" class="switch" data-group="relief"></label>
+        <input class="opacity" type="range" min="0.1" max="1" step="0.05" data-opacity="relief" value="0.55" data-i18n-attr="aria-label:layers.opacity" aria-label="שקיפות">
+      </div>
+    </section>
+    <section>
+      <h2 data-i18n="layers.featuresHeading">פרטים במפה</h2>
+      <div class="layer-row">
+        <label><span class="sw sw-trails" aria-hidden="true"></span><span data-i18n="layers.trails">שבילים</span>
+          <input type="checkbox" class="switch" data-group="trails" checked></label>
+      </div>
+      <div class="layer-row">
+        <label><span class="sw sw-water" aria-hidden="true"></span><span data-i18n="layers.water">נחלים</span>
+          <input type="checkbox" class="switch" data-group="water" checked></label>
+      </div>
+      <div class="layer-row">
+        <label><span class="sw sw-peaks" aria-hidden="true"></span><span data-i18n="layers.peaks">פסגות</span>
+          <input type="checkbox" class="switch" data-group="peaks" checked></label>
+      </div>
+      <div class="layer-row">
+        <label><span class="sw sw-parking" aria-hidden="true"></span><span data-i18n="layers.parking">חניות</span>
+          <input type="checkbox" class="switch" data-group="parking" checked></label>
+      </div>
+      <div class="layer-row">
+        <label><span class="sw sw-drinking" aria-hidden="true"></span><span data-i18n="layers.drinking">מים לשתייה</span>
+          <input type="checkbox" class="switch" data-group="drinking" checked></label>
+      </div>
+      <div class="layer-row">
+        <label><span class="sw sw-camp" aria-hidden="true"></span><span data-i18n="layers.camp">חניוני לילה</span>
+          <input type="checkbox" class="switch" data-group="camp" checked></label>
+      </div>
+      <div class="layer-row">
+        <label><span class="sw sw-poi" aria-hidden="true"></span><span data-i18n="layers.poi">מעיינות, תצפיות ומחסות</span>
+          <input type="checkbox" class="switch" data-group="poi" checked></label>
+      </div>
+      <div class="layer-row">
+        <label><span class="sw sw-landcover" aria-hidden="true"></span><span data-i18n="layers.landcover">צמחייה</span>
+          <input type="checkbox" class="switch" data-group="landcover" checked></label>
+      </div>
+    </section>
+    <details class="advanced">
+      <summary data-i18n="layers.advanced">מתקדם</summary>
+      <div id="sat-opts">
         <label class="stack"><span data-i18n="bg.provider">מקור לוויין</span>
           <select id="sat-provider"></select>
         </label>
@@ -55,19 +131,7 @@
           <button id="sat-key-save" class="btn" data-i18n="bg.keySave">שמור מפתח והצג</button>
         </div>
       </div>
-    </section>
-
-    <section>
-      <h2 data-i18n="layers.heading">שכבות</h2>
-      <label><input type="checkbox" data-group="terrain" checked> <span data-i18n="layers.terrain">תלת-ממד</span></label>
-      <label><input type="checkbox" data-group="hillshade" checked> <span data-i18n="layers.hillshade">הצללה</span></label>
-      <label><input type="checkbox" data-group="contours" checked> <span data-i18n="layers.contours">קווי גובה</span></label>
-      <label><input type="checkbox" data-group="trails" checked> <span data-i18n="layers.trails">שבילים</span></label>
-      <label><input type="checkbox" data-group="water" checked> <span data-i18n="layers.water">נחלים</span></label>
-      <label><input type="checkbox" data-group="poi" checked> <span data-i18n="layers.poi">נקודות עניין</span></label>
-      <label><input type="checkbox" data-group="landcover" checked> <span data-i18n="layers.landcover">צמחייה וכיסוי קרקע</span></label>
-      <label class="slider"><span data-i18n="layers.exaggeration">הגבהה</span> <input id="exag" type="range" min="1" max="2" step="0.1" value="1.2"> <output id="exag-out">1.2</output></label>
-    </section>
+    </details>
 
     <!-- Developer tools (Phase 0 tests). Shown only with ?dev=1; text stays in English on purpose. -->
     <section id="dev-section" hidden>
@@ -110,14 +174,21 @@
       <p class="hint" id="snap-hint" hidden data-i18n="route.snapUnavailable"></p>
       <div id="seg-errors"></div>
       <label><input type="checkbox" id="show-profile" checked> <span data-i18n="route.showProfile">הצג גובה ופרופיל</span></label>
-      <dl id="stats" class="stats"></dl>
     </section>
     <p class="safety" data-i18n="safety">מסלולים, גבהים וזמני הליכה הם הערכות ועלולים להיות שגויים. בדוק תמיד את השטח, מזג האוויר והמים לפני ובמהלך הטיול.</p>
 </section>
 
-<div id="profile-box" class="profile" hidden>
-  <button id="profile-close" class="icon-btn profile-close" type="button" data-i18n-attr="aria-label:route.hideProfile;title:route.hideProfile" aria-label="הסתר פרופיל">✕</button>
-  <div id="profile"></div>
+<!-- Floating route panel (D-039): key figures always; the elevation profile can be collapsed. -->
+<div id="profile-box" class="route-panel" hidden>
+  <div class="rp-head">
+    <div id="stats" class="rp-stats"></div>
+    <div class="rp-actions">
+      <button id="profile-toggle" class="icon-btn" type="button" aria-expanded="true" aria-controls="profile" data-i18n-attr="aria-label:route.toggleProfile;title:route.toggleProfile" aria-label="הצג או כווץ את פרופיל הגובה"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m6 15 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="profile-close" class="icon-btn" type="button" data-i18n-attr="aria-label:route.hideProfile;title:route.hideProfile" aria-label="הסתר פרופיל">✕</button>
+    </div>
+  </div>
+  <div id="profile" class="rp-profile"></div>
+</div>
 </div>
 
 <script type="module" src="app.js"></script>

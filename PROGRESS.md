@@ -13,7 +13,7 @@
 | Late responses cannot overwrite newer edits | **PASS (automated)** | editor test (stale key cached, not rendered; reused after undo) |
 | Draft survives app restart | **PASS (automated)** | e2e reload restores the exact state + notice |
 | Real snapping with openrouteservice foot-hiking on the live site | Pending | owner check |
-| Owner fixes D-028–D-037 (streams, POIs, colour, toolbar, profile, icons, national/regional/marked trails) | **PASS (automated)** | e2e 67/67 (fixtures); real OSM extract built in CI; owner check pending |
+| Owner fixes D-028–D-039 (streams, POIs, colour, toolbar, profile, icons, national/regional/marked trails) | **PASS (automated)** | e2e 77/77 (fixtures); real OSM extract built in CI; owner check pending |
 
 ## Phase 2 (closed, owner: approved)
 
@@ -50,7 +50,7 @@ stutters; to be measured on newer hardware, D-014); Mapterhorn hosted-tile terms
 ```bash
 cd packages/geo && node --test "test/**/*.test.ts"       # 31/31
 python3 scripts/browser_smoke_test.py                       # 16/16
-python3 scripts/e2e_test.py                                 # 67/67
+python3 scripts/e2e_test.py                                 # 77/77
 cd packages/editor && node --test "test/**/*.test.ts"    # 18/18
 node --test "tests/*.test.mjs"                              # 5/5 (router, fake server)
 ```
