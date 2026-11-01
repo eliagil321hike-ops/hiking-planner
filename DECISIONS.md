@@ -183,6 +183,19 @@ Decision:
 - Which high-res account to open is the owner's decision (budget gate 0.4: Mapbox bills beyond the free
   tier; Esri billing behaviour unverified; MapTiler pauses but its URL is unverified).
 
+## D-018 (2026-11-01) Owner: satellite must be free only (no possible charges)
+Checked 2026-11-01:
+- **Esri / ArcGIS Location Platform** billing help: a payment method is only needed to *enable*
+  pay-as-you-go; without it, only free-tier services are available and access is restricted when the free
+  tier is used up (restored next cycle). → No charges possible if no payment method is added.
+- **MapTiler** free plan: "service will pause until the next month" at the limit; satellite-v2 tileset:
+  zoom 0–22, ~1 m/px in the Middle East, 5–50 cm in Western Europe/USA (docs.maptiler.com). Implemented via
+  its TileJSON URL (Tiles API docs), so tile size/zoom/credits come from MapTiler itself.
+- **Mapbox** removed: beyond 750k tiles/month it is pay-as-you-go.
+Providers now: EOX S2 (no key, 10 m) · Esri World Imagery (key) · MapTiler Satellite (key).
+Recommendation to owner: Esri first (largest free quota, likely highest resolution — Israel resolution
+not verified), MapTiler as second option.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

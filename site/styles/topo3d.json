@@ -1,6 +1,6 @@
 {
   "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by site/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "base": "https://tiles.openfreemap.org/styles/liberty",
   "dem": {
     "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
@@ -482,7 +482,7 @@
         "id": "esri-world-imagery",
         "label": "Esri World Imagery (רזולוציה גבוהה, דורש מפתח)",
         "needsKey": true,
-        "keyHelp": "ArcGIS Location Platform API key with privilege: Location services → Basemaps → Static basemap tiles",
+        "keyHelp": "ArcGIS Location Platform API key, privilege: Location services → Basemaps → Static basemap tiles. Do NOT add a payment method: without pay-as-you-go, access just stops at the free limit.",
         "tiles": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token={key}",
         "tileSize": 256,
         "maxzoom": 18,
@@ -490,15 +490,13 @@
         "note": "URL + attribution from developers.arcgis.com MapLibre tutorial (2026-11-01). tileSize and maxzoom not stated there: 256/18 chosen conservatively; verify on the owner's run."
       },
       {
-        "id": "mapbox-satellite",
-        "label": "Mapbox Satellite (רזולוציה גבוהה, דורש מפתח)",
+        "id": "maptiler-satellite",
+        "label": "MapTiler Satellite (≈1 מ׳ במזה״ת, דורש מפתח)",
         "needsKey": true,
-        "keyHelp": "Mapbox public token (pk.…), restricted to the site URL",
-        "tiles": "https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.jpg90?access_token={key}",
-        "tileSize": 512,
-        "maxzoom": 20,
-        "attribution": "© Mapbox",
-        "note": "URL from docs.mapbox.com 'Use Mapbox APIs in MapLibre'; @2x = 512 px. Full imagery credit text not verified; maxzoom 20 chosen (docs example uses 22)."
+        "keyHelp": "MapTiler Cloud free plan key (no payment method → the service pauses at the monthly limit, no charge)",
+        "tilejson": "https://api.maptiler.com/tiles/satellite-v2/tiles.json?key={key}",
+        "attribution": "© MapTiler",
+        "note": "TileJSON URL pattern from docs.maptiler.com Tiles API; tileset satellite-v2 (zoom 0–22, ~1 m/px Middle East) from docs.maptiler.com schema-raster/satellite. Attribution and tile size come from the TileJSON at runtime; '© MapTiler' added as a minimum."
       }
     ]
   }

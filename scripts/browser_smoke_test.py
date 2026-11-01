@@ -172,7 +172,9 @@ def main():
               const prov = Object.fromEntries(ov.satellite.providers.map((p) => [p.id, p]));
               out.satEox = satelliteSource(prov['eox-s2-2024'], null)?.tiles[0];
               out.satEsriNoKey = satelliteSource(prov['esri-world-imagery'], '');
-              out.satMapbox = satelliteSource(prov['mapbox-satellite'], 'pk.a/b+c')?.tiles[0];
+              out.satEsriKey = satelliteSource(prov['esri-world-imagery'], 'a/b+c')?.tiles[0];
+              out.noMapbox = !prov['mapbox-satellite'];
+              out.satMaptiler = satelliteSource(prov['maptiler-satellite'], 'k1')?.url;
               out.profileAreas = div.querySelectorAll('path.profile-area').length;
               out.profileSegs = div.querySelectorAll('line.profile-seg').length;
               out.profileColors = [...new Set([...div.querySelectorAll('line.profile-seg')].map((l) => l.getAttribute('stroke')))];
@@ -200,7 +202,9 @@ def main():
     expect(result["fallbackMissing"] is None, "no tile at z13 or z12 → null")
     expect(result["satEox"] and "{z}/{y}/{x}" in result["satEox"] and "{key}" not in result["satEox"], "EOX satellite needs no key, z/y/x order kept")
     expect(result["satEsriNoKey"] is None, "Esri without a key → no source (never a broken URL)")
-    expect(result["satMapbox"] and "access_token=pk.a%2Fb%2Bc" in result["satMapbox"], "Mapbox key is URL-encoded into the tile URL")
+    expect(result["satEsriKey"] and "token=a%2Fb%2Bc" in result["satEsriKey"], "Esri key is URL-encoded into the tile URL")
+    expect(result["noMapbox"], "Mapbox removed (owner: free only, D-018)")
+    expect(result["satMaptiler"] and result["satMaptiler"].endswith("tiles.json?key=k1"), "MapTiler uses its TileJSON URL")
     expect(result["profileAreas"] == 2 and result["profileSegs"] == 2, "profile area and slope line break at missing data (2 runs, 2 segments)")
     expect(len(result["profileColors"]) >= 1, f"slope colours drawn {result['profileColors']}")
     expect(not errors, f"no page errors {errors}")

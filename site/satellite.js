@@ -8,10 +8,12 @@ export const SAT_LAYER = 'satellite';
 /** Build the raster source for a provider; returns null if a required key is missing. */
 export function satelliteSource(provider, key) {
   if (provider.needsKey && !key) return null;
-  const url = provider.tiles.replace('{key}', encodeURIComponent(key ?? ''));
+  const fill = (t) => t.replace('{key}', encodeURIComponent(key ?? ''));
+  // TileJSON providers: tile URL, size, zoom range and credits come from the provider's own metadata.
+  if (provider.tilejson) return { type: 'raster', url: fill(provider.tilejson), attribution: provider.attribution };
   return {
     type: 'raster',
-    tiles: [url],
+    tiles: [fill(provider.tiles)],
     tileSize: provider.tileSize,
     maxzoom: provider.maxzoom,
     attribution: provider.attribution,
