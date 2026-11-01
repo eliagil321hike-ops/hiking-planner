@@ -79,3 +79,5 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .seg input { accent-color: var(--accent); }
 .panel label.stack { display: grid; gap: 4px; margin-top: 8px; }
 .panel select, .panel input[type="password"] { min-height: 38px; border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; font: inherit; background: #fff; color: var(--fg); width: 100%; }
+
+.status { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: #fdecea; color: var(--bad); font-size: 13px; }

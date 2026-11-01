@@ -226,6 +226,19 @@ Owner answer "כן" to "approve Phase 0 and move to Phase 1". Phase 0 closes wit
 except FPS ≥ 30 in 3D, which stays open by owner decision D-014 (to be measured on newer hardware), and the
 Mapterhorn hosted-tile terms, which stay an open question.
 
+## D-023 (2026-11-01) Phase 1 structure
+- Site code split into modules: app.js (entry), layers.js, background.js, route.js, devtools.js (dynamic
+  import only with ?dev=1), i18n.js (all user text, Hebrew; developer tools stay English).
+- User-facing problems go to a status line in the panel (`notify`); the developer log is only visible with
+  ?dev=1 and always goes to the browser console.
+- Removed: `start-windows.bat`, `serve.ps1`, `.gitattributes` (local server for the pre-website phase),
+  `scripts/build_standalone.py` and `dist/` (file:// fallback), Android entries in `.gitignore`.
+- New: `scripts/e2e_test.py` — real MapLibre 5.24.0 (GitHub release dist.zip, cached in .cache/) in headless
+  Chromium with SwiftShader WebGL, a fixture base style with OpenMapTiles source-layers, synthetic DEM, a
+  maplibre-contour stub. CI runs unit + browser smoke + e2e before deploying. Tile URLs with keys are
+  redacted in test output because CI logs of a public repo are public.
+- Fixed while moving code: duration could show "h:60" (minutes rounded separately); now rounds total minutes.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

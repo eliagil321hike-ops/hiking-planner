@@ -147,6 +147,8 @@ def main():
               .filter((id) => !!m.getLayer(id)); }""")
         r["terrain"] = page.evaluate("() => !!window.__topo3d.map.getTerrain()")
         r["fatal"] = page.evaluate("() => document.getElementById('fatal')?.textContent ?? null")
+        r["devHidden"] = page.evaluate("() => document.getElementById('dev-section').hidden && document.getElementById('fps').hidden")
+        r["i18n"] = page.evaluate("() => [document.querySelector('[data-i18n=\\'layers.contours\\']').textContent, document.documentElement.lang, document.documentElement.dir]")
 
         # Background switch → satellite (Esri default, embedded key)
         page.click("input[name=base][value=satellite]")
@@ -168,6 +170,11 @@ def main():
         r["stats"] = page.inner_text("#stats")
         r["profileVisible"] = page.evaluate("() => !document.getElementById('profile').hidden && !!document.querySelector('#profile svg path.profile-area')")
         r["routePoints"] = page.evaluate("async () => (await window.__topo3d.map.getSource('route').getData()).features.filter(f => f.geometry.type === 'Point').length")
+        # Developer mode: test panel visible and the devtools module loaded
+        page.goto(f"http://127.0.0.1:{port}/?demz=12&dev=1#12/33.0/35.4167/0/0", wait_until="domcontentloaded", timeout=60_000)
+        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", timeout=60_000)
+        page.wait_for_function("() => document.getElementById('test-out').textContent.includes('hidden base layers')", timeout=30_000)
+        r["devShown"] = page.evaluate("() => !document.getElementById('dev-section').hidden && !document.getElementById('fps').hidden")
         try:  # best effort: software WebGL can keep the page busy
             page.screenshot(path=str(CACHE / "e2e.png"), timeout=15_000)
         except Exception as e:  # noqa: BLE001
@@ -197,6 +204,9 @@ def main():
     expect(len(seen["satellite"]) > 0, "satellite tiles requested")
     expect(r["landcoverInSat"] == "none" and r["landcoverInTopo"] == "visible", "topo tint hidden on imagery, restored on topo")
     expect(not r["satAfterTopo"], "satellite layer removed in topo mode")
+    expect(r["devHidden"], "developer tests hidden by default")
+    expect(r["devShown"], "developer tests shown with ?dev=1 (devtools loaded, startup report logged)")
+    expect(r["i18n"] == ["קווי גובה", "he", "rtl"], f"UI text from i18n, Hebrew, RTL {r['i18n']}")
     expect(r["routePoints"] == 3, "3 route points drawn")
     expect("מרחק" in r["stats"] and "עלייה" in r["stats"], "stats shown")
     expect(r["profileVisible"], "elevation profile drawn")

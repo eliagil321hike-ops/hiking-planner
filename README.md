@@ -1,45 +1,53 @@
 # Topo3D hiking route planner (website)
 
-Non-commercial hiking route planner website with a free 3D topographic map of Israel, for the owner and a
-few friends. Brief: [`SPEC.md`](SPEC.md) (v3.2) as overridden by [`SPEC-WEB.md`](SPEC-WEB.md) (v4, website).
+Non-commercial hiking route planner website with a free 3D topographic map of Israel and satellite
+imagery, for the owner and a few friends. Live: https://eliagil321hike-ops.github.io/hiking-planner/
 
-**Current phase: Phase 0 (web).** See [`PROGRESS.md`](PROGRESS.md).
+Brief: [`SPEC.md`](SPEC.md) (v3.2) as overridden by [`SPEC-WEB.md`](SPEC-WEB.md) (v4, website).
+State of work: [`PROGRESS.md`](PROGRESS.md). Decisions, sources and licences: [`DECISIONS.md`](DECISIONS.md).
 
 ## Repository layout
 ```
-SPEC.md                 Specification (source of truth)
-DECISIONS.md            Decisions, data-source register, licences, open questions
-PROGRESS.md             Current phase, tasks, test results, blockers, next task
-packages/geo            Pure TypeScript geo logic (no UI, no network), unit-tested with node:test
-site/                   The website (deployed to GitHub Pages as-is; no build step)
-site/styles/topo3d.json The Topo3D style overlay
-site/vendor/geo         packages/geo compiled to browser JS (tsc -p packages/geo/tsconfig.browser.json)
-scripts/                browser smoke test, standalone single-file build
-.github/workflows       Pages deploy (runs unit tests first)
+site/                     The website, deployed to GitHub Pages as-is (no build step)
+  index.html, style.css   Page and styles (Hebrew, right-to-left)
+  app.js                  Entry: config, map, wiring
+  i18n.js                 All user-facing text (Hebrew)
+  layers.js               Layer switches, exaggeration
+  background.js           Topographic / satellite switch
+  satellite.js            Satellite providers (EOX, Esri, MapTiler)
+  route.js, profile.js    Drawing a line, stats, elevation profile
+  topo3d.js               Applies the Topo3D overlay on the OpenFreeMap base style
+  dem-sampler.js          Elevation sampling with the shared Terrarium decoder
+  devtools.js, perf.js    Phase 0 developer tests (only with ?dev=1)
+  styles/topo3d.json      Topo3D overlay: DEM, contours, layers, sky, satellite providers
+  vendor/geo/             packages/geo compiled to browser JavaScript (committed)
+packages/geo/             Pure TypeScript geo logic (distance, DEM decoding, elevation stats, duration)
+scripts/                  Tests (browser smoke, end-to-end) and the CI cache-busting stamp
+.github/workflows/        Tests, then deploy site/ to GitHub Pages
 ```
-
-## Prerequisites
-- Node.js 22.18+ (TypeScript type stripping is on by default; the geo package needs **no** npm install).
-- A modern desktop browser (Chrome/Edge). The site loads MapLibre and tiles from the internet.
-
-## Environment variables
-See `.env.example`. No keys are needed.
 
 ## Commands
 ```bash
-# Unit tests for the geo package (zero dependencies)
+# Unit tests (zero dependencies, Node 22.18+)
 cd packages/geo && node --test "test/**/*.test.ts"
 
-# Rebuild browser copy of the geo package after changing packages/geo
-/path/to/tsc -p packages/geo/tsconfig.browser.json
+# After changing packages/geo: rebuild the browser copy (TypeScript compiler)
+tsc -p packages/geo/tsconfig.browser.json
 
-# Browser smoke test (headless Chromium, synthetic DEM tiles)
-python3 scripts/browser_smoke_test.py
+# Browser tests (Python Playwright + Chromium + Pillow)
+python3 scripts/browser_smoke_test.py   # decoder, sampler, profile, satellite config (synthetic tiles)
+python3 scripts/e2e_test.py             # real MapLibre build, fixture style + DEM; downloads MapLibre once into .cache/
 
-# Run locally: any static server with site/ as root, e.g.
-python3 -m http.server 8080 --directory site
+# Run locally
+python3 -m http.server 8080 --directory site     # then open http://localhost:8080/
 ```
-The live encoding check is the "בדיקת קידוד" button on the site. See `site/README.md`.
+Add `?dev=1` to the URL for the developer tests (encoding check, DEM zoom, FPS, layer check, report).
+
+## Deploy
+Every push to `main` runs the tests and, if they pass, publishes `site/` to GitHub Pages
+(`.github/workflows/pages.yml`). The build id shown in the panel header is the commit.
 
 ## Attribution
-© OpenMapTiles · © OpenStreetMap contributors · Mapterhorn and its per-region sources (see `DECISIONS.md`).
+© OpenMapTiles · © OpenStreetMap contributors · OpenFreeMap · Mapterhorn (Israel: isr10, ASTER GDEM courtesy of
+METI and NASA processed by 4cast LTD; global: Copernicus GLO-30) · satellite: Esri and its partners /
+EOxCloudless (CC BY-NC-SA 4.0). Credits are shown in the map's attribution control.
