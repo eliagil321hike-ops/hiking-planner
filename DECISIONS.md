@@ -196,6 +196,16 @@ Providers now: EOX S2 (no key, 10 m) · Esri World Imagery (key) · MapTiler Sat
 Recommendation to owner: Esri first (largest free quota, likely highest resolution — Israel resolution
 not verified), MapTiler as second option.
 
+## D-019 (2026-11-01) Esri World Imagery works on the live site
+Owner created an ArcGIS Location Platform API key: public application, no item access, privileges
+Location services → Basemaps only, referrer restricted to https://eliagil321hike-ops.github.io, expiry
+2027-01-30, no payment method. Key entered in the site (browser storage only; not in the repo).
+Owner screenshot (build 8ea6715, Meron, 2D): Esri imagery renders; Hebrew names (name:he) render correctly
+right-to-left (e.g. הר מירון, נחל זבד, כפר חושן); peaks with elevation, trails, contours and roads are
+drawn on top. Satellite look vs FATMAP references 1 and 3: owner verdict pending (needs a 3D view).
+Note: the owner also pasted the key in the chat; it was not stored anywhere by the agent. Embedding the key
+in the public site for friends is an open owner decision (agent recommends against).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
