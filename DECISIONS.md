@@ -126,6 +126,18 @@ Finding: references 1 and 3 get their look mainly from satellite imagery, which 
 Changes made now (independent of that answer): slope-coloured profile with fill, km grid, highest/lowest
 point, drag readout, text legend (not colour only); sky + horizon haze (MapLibre sky spec, GL JS ≥ 4.5).
 
+## D-013 (2026-11-01) Performance diagnosis, run 2 (owner computer)
+GPU: "ANGLE (Intel, Intel(R) HD Graphics 4400 … Direct3D11)" — hardware acceleration ON, WebGL2 yes; an
+integrated GPU from 2013. Pixel ratio 1.36. Orbit at Meron z13.5 after an unmeasured warm-up:
+all layers **8.0 fps** · no contours **17.2** · no 3D terrain **58.5** (2D with hillshade + contours).
+Layer test at Meron z13.5: contours minor 68 / index 17 / labels 2, trails 21 (track 7, path 14,
+footway 0), peaks 7, landcover 42 → the overlay matches real data.
+Conclusion: 3D terrain is the cost; contours rendered onto the terrain double it. Next measurements
+(added to the FPS test): pixel ratio 1, index contours only (100 m), no contour labels. `?pr=1` sets the
+pixel ratio at load. If these are not enough: MapLibre GL JS v6 (release notes list terrain rendering
+optimisations), at the cost of re-checking maplibre-contour compatibility. Note: cold-start "first idle"
+was 681 s in run 2 → the map rarely becomes fully idle with 3D + contours on this machine.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

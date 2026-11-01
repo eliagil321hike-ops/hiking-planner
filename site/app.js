@@ -71,6 +71,8 @@ const map = new maplibregl.Map({
   maxPitch: cam.maxPitch,
   hash: true, // camera in the URL: lets us match FATMAP reference views exactly
   attributionControl: { compact: true },
+  // ?pr=1 renders fewer pixels on high-DPI screens (performance experiment, D-013)
+  ...(Number(params.get('pr')) > 0 ? { pixelRatio: Number(params.get('pr')) } : {}),
 });
 map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-left');
 map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
@@ -326,33 +328,47 @@ function setGroup(g, on) {
 }
 
 // Repeatable FPS test: always at the same Meron view; a warm-up orbit first (tiles load, not measured),
-// then measured orbits with everything on, without contours, and without 3D terrain, to find the cost.
+// then one measured orbit per variant. Run 2 (owner, Intel HD 4400): all layers 8 fps, no contours 17,
+// no 3D terrain 58.5 → 3D terrain is the cost and contours drawn onto the terrain double it. These
+// variants measure the cheap savings: fewer pixels (pixel ratio 1), index contours only, no contour labels.
+const vis = (ids, on) => ids.forEach((id) => map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'));
+const canSetPR = typeof map.setPixelRatio === 'function';
+const nativePR = map.getPixelRatio();
 $('t-perf').addEventListener('click', async (ev) => {
   ev.target.disabled = true;
   const before = { center: map.getCenter(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
   const gpu = gpuInfo();
   log(`GPU: ${gpu.renderer ?? gpu.error} · WebGL2 ${gpu.webgl2} · pixelRatio ${gpu.pixelRatio?.toFixed(2)}`, gpu.software ? 'fail' : undefined);
   if (gpu.software) log('The browser is drawing WITHOUT the graphics card (software rendering). In Chrome: Settings → System → turn on "Use graphics acceleration when available", restart Chrome.', 'fail');
-  log('FPS test ≈ 50 s at Meron — do not touch the map…');
+  if (!canSetPR) log('map.setPixelRatio is not available in this MapLibre version → pixel-ratio variants skipped (use ?pr=1 to test).');
+  log('FPS test ≈ 70 s at Meron — do not touch the map…');
   map.jumpTo(MERON_VIEW);
   await idle();
   await perf.frameRun('warm-up (not counted)', 8_000, orbit(MERON_VIEW));
   await idle();
+  const minor = ['topo-contours-minor'], labels = ['topo-contour-labels'];
+  const pr = (v) => { if (canSetPR) map.setPixelRatio(v); };
+  const reset = () => { pr(nativePR); vis([...GROUPS.contours], true); setGroup('terrain', true); };
   const variants = [
-    ['all layers', () => {}],
-    ['no contours', () => setGroup('contours', false)],
-    ['no 3D terrain', () => { setGroup('contours', true); setGroup('terrain', false); }],
+    ['all layers', () => reset()],
+    [`all layers · pixelRatio 1`, () => { reset(); pr(1); }, canSetPR],
+    [`pixelRatio 1 · index contours only (100 m)`, () => { reset(); pr(1); vis(minor, false); }, canSetPR],
+    [`pixelRatio 1 · index contours, no contour labels`, () => { reset(); pr(1); vis(minor, false); vis(labels, false); }, canSetPR],
+    ['no contours', () => { reset(); setGroup('contours', false); }],
+    ['no 3D terrain (2D baseline)', () => { reset(); setGroup('terrain', false); }],
   ];
   const runs = [];
-  for (const [name, apply] of variants) {
+  for (const [name, apply, enabled = true] of variants) {
+    if (!enabled) continue;
     apply();
     map.jumpTo(MERON_VIEW);
     await idle();
-    const run = await perf.frameRun(`Meron z13.5 · ${name}`, 12_000, orbit(MERON_VIEW));
+    const run = await perf.frameRun(`Meron z13.5 · ${name}`, 10_000, orbit(MERON_VIEW));
     runs.push(run);
     log(`${run.label}: avg ${run.avgFps} fps, slowest-5% ${run.p5Fps} fps, stutters(>50 ms) ${run.longFrames}`,
       run.avgFps >= 30 ? 'pass' : 'fail');
   }
+  pr(nativePR);
   setGroup('terrain', true);
   document.querySelectorAll('input[data-group]').forEach((cb) => setGroup(cb.dataset.group, cb.checked));
   results.perfTest = { gpu, runs };
