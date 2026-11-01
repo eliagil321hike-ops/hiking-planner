@@ -64,13 +64,27 @@
     </section>
 
     <section>
-      <h2 data-i18n="route.heading">קו ופרופיל</h2>
+      <h2 data-i18n="route.heading">מסלול</h2>
       <div class="row">
-        <button id="draw" class="btn" aria-pressed="false" data-i18n="route.draw">צייר קו</button>
-        <button id="undo-pt" class="btn" data-i18n="route.undo">בטל נקודה</button>
-        <button id="clear" class="btn" data-i18n="route.clear">נקה</button>
+        <button id="plan" class="btn btn-primary" aria-pressed="false" data-i18n="route.plan">תכנן מסלול</button>
+        <label class="inline"><span data-i18n="route.mode">קטע חדש</span>
+          <select id="seg-mode">
+            <option value="snap" data-i18n="route.modeSnap">צמוד לשבילים</option>
+            <option value="free" data-i18n="route.modeFree">קו ישר</option>
+          </select>
+        </label>
       </div>
-      <p class="hint" id="draw-hint" data-i18n="route.hint">לחץ "צייר קו" ואז הקש על המפה להוספת נקודות.</p>
+      <div class="row">
+        <button id="r-undo" class="btn" data-i18n="route.undo" title="Ctrl+Z">בטל</button>
+        <button id="r-redo" class="btn" data-i18n="route.redo" title="Ctrl+Y">חזור</button>
+        <button id="r-reverse" class="btn" data-i18n="route.reverse">הפוך כיוון</button>
+        <button id="r-loop" class="btn" data-i18n="route.loop">סגור מעגל</button>
+        <button id="r-delete" class="btn" data-i18n="route.deletePoint" title="Delete">מחק נקודה</button>
+        <button id="r-clear" class="btn" data-i18n="route.clear">נקה מסלול</button>
+      </div>
+      <p class="hint" id="draw-hint" data-i18n="route.hint"></p>
+      <p class="hint" id="snap-hint" hidden data-i18n="route.snapUnavailable"></p>
+      <div id="seg-errors"></div>
       <dl id="stats" class="stats"></dl>
     </section>
 

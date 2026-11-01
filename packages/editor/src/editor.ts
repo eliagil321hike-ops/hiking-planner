@@ -153,6 +153,13 @@ export function closeLoop(mode: Mode, current: EditorState): Command | null {
 export const isClosed = (s: EditorState) =>
   s.vertices.length > 2 && pointKey([s.vertices[0].lon, s.vertices[0].lat]) === pointKey([s.vertices.at(-1)!.lon, s.vertices.at(-1)!.lat]);
 
+/** Clear the whole route (points and waypoints) as ONE undoable command. */
+export function clearRoute(current: EditorState): Command | null {
+  if (!current.vertices.length && !current.waypoints.length) return null;
+  const before = current;
+  return { label: 'clear', apply: (s) => ({ ...s, vertices: [], waypoints: [] }), invert: () => before };
+}
+
 export function addWaypoint(w: Waypoint): Command {
   checkLonLat([w.lon, w.lat], 'addWaypoint');
   return {

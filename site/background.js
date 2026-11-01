@@ -24,13 +24,14 @@ export function initBackground(ctx) {
     syncKeyRow();
     const sat = baseMode === 'satellite';
     let shown = false;
-    notify(null);
     if (sat) {
       const p = providerById(providerId);
       // A key typed by this user wins; otherwise the owner's embedded public key (D-021).
       shown = setSatellite(map, p, store.get(keyName(p.id)) || p.embeddedKey, SAT.beforeLayer);
-      if (!shown) notify(t('bg.needKey', { provider: p.label }));
+      if (!shown) { notify(t('bg.needKey', { provider: p.label })); $('status').dataset.source = 'bg'; }
+      else if ($('status').dataset.source === 'bg') notify(null);
     } else {
+      if ($('status').dataset.source === 'bg') notify(null);
       removeSatellite(map);
     }
     const imagery = sat && shown;

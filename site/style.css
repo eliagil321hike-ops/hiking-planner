@@ -81,3 +81,13 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .panel select, .panel input[type="password"] { min-height: 38px; border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; font: inherit; background: #fff; color: var(--fg); width: 100%; }
 
 .status { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: #fdecea; color: var(--bad); font-size: 13px; }
+
+.btn-primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn-primary[aria-pressed="true"] { background: #7d3218; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.panel label.inline { display: inline-flex; gap: 6px; align-items: center; min-height: 40px; }
+.panel label.inline select { width: auto; }
+.seg-error { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin: 6px 0; padding: 6px 8px; border-radius: 8px; background: #fdecea; color: var(--bad); font-size: 13px; }
+.wp-form { display: grid; gap: 6px; min-width: 200px; font: 13px var(--font); direction: rtl; }
+.wp-form input { min-height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; font: inherit; }
+.wp-form .row { margin: 0; }

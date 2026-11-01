@@ -118,6 +118,13 @@ export function closeLoop(mode, current) {
     return addPoint([v[0].lon, v[0].lat], mode);
 }
 export const isClosed = (s) => s.vertices.length > 2 && pointKey([s.vertices[0].lon, s.vertices[0].lat]) === pointKey([s.vertices.at(-1).lon, s.vertices.at(-1).lat]);
+/** Clear the whole route (points and waypoints) as ONE undoable command. */
+export function clearRoute(current) {
+    if (!current.vertices.length && !current.waypoints.length)
+        return null;
+    const before = current;
+    return { label: 'clear', apply: (s) => ({ ...s, vertices: [], waypoints: [] }), invert: () => before };
+}
 export function addWaypoint(w) {
     checkLonLat([w.lon, w.lat], 'addWaypoint');
     return {

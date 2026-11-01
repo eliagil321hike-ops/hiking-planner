@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   RouteEditor, addPoint, movePoint, insertPoint, deletePoint, setSegmentMode, reverseRoute, closeLoop,
-  addWaypoint, editWaypoint, deleteWaypoint, isClosed, segmentKey, type LonLat, type Mode,
+  addWaypoint, editWaypoint, deleteWaypoint, clearRoute, isClosed, segmentKey, type LonLat, type Mode,
 } from '../src/editor.ts';
 
 const P = (i: number): LonLat => [35.4 + i * 0.001, 33.0 + (i % 3) * 0.0005];
@@ -222,4 +222,16 @@ test('segment key separates direction, mode and profile', () => {
   assert.notEqual(segmentKey(a, b, 'snap', 'hiking'), segmentKey(b, a, 'snap', 'hiking'));
   assert.notEqual(segmentKey(a, b, 'snap', 'hiking'), segmentKey(a, b, 'free', 'hiking'));
   assert.notEqual(segmentKey(a, b, 'snap', 'hiking'), segmentKey(a, b, 'snap', 'foot'));
+});
+
+test('clear is one undoable command; clearing an empty route does nothing', () => {
+  const e = build(['snap', 'free']);
+  e.run(addWaypoint({ id: 'w', lon: 35.4, lat: 33.0, name: 'x', note: '' }));
+  const before = snapshot(e);
+  assert.ok(e.run(clearRoute(e.state)));
+  assert.equal(e.state.vertices.length + e.state.waypoints.length, 0);
+  e.undo();
+  assert.equal(snapshot(e), before, 'one undo restores everything');
+  e.redo();
+  assert.equal(e.run(clearRoute(e.state)), false);
 });

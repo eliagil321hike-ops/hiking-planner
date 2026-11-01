@@ -38,6 +38,7 @@ function log(html, cls) {
 function notify(text) {
   $('status').hidden = !text;
   $('status').textContent = text ?? '';
+  delete $('status').dataset.source;   // callers may tag their own message to clear only that one later
 }
 
 // ---------------------------------------------------------------- configuration and libraries
@@ -123,7 +124,7 @@ ctx.applyBackground = background.applyBackground;
 const route = initRoute(ctx);
 
 // Test/debug handle (used by scripts/e2e_test.py).
-globalThis.__topo3d = { map, results, ctx };
+globalThis.__topo3d = { map, results, ctx, editor: route.editor };
 
 map.on('load', () => {
   perf.mark('style-loaded');

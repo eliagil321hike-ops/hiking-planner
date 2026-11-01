@@ -177,15 +177,68 @@ def main():
         r["satAfterTopo"] = page.evaluate("() => !!window.__topo3d.map.getLayer('satellite')")
         r["landcoverInTopo"] = page.evaluate("() => window.__topo3d.map.getLayoutProperty('topo-landcover','visibility')")
 
-        # Draw a 3-point line in the map's free area (panel is on the left in RTL)
-        page.click("#draw")
+        # ---- Route editor (Phase 3A). No router configured yet → new segments are free (straight).
+        page.on("dialog", lambda d: d.accept())          # "clear route?" confirmation
+        r["snapDisabled"] = page.evaluate("() => document.querySelector('#seg-mode option[value=snap]').disabled && document.getElementById('seg-mode').value === 'free'")
+        # Panel buttons are pressed from inside the page (same handlers): with software WebGL the renderer can be
+        # too busy to acknowledge synthetic mouse input in time. Map gestures below stay real mouse input.
+        btn = lambda sel: page.evaluate(f"() => document.querySelector('{sel}').click()")
+        btn("#plan")
         for x, y in [(800, 300), (900, 380), (1000, 330)]:
             page.mouse.click(x, y)
             page.wait_for_timeout(300)
+        ed = "window.__topo3d.editor"
+        nverts = lambda: page.evaluate(f"() => {ed}.state.vertices.length")
         page.wait_for_function("() => document.getElementById('stats').textContent.includes('מרחק')", timeout=20_000)
         r["stats"] = page.inner_text("#stats")
         r["profileVisible"] = page.evaluate("() => !document.getElementById('profile').hidden && !!document.querySelector('#profile svg path.profile-area')")
-        r["routePoints"] = page.evaluate("async () => (await window.__topo3d.map.getSource('route').getData()).features.filter(f => f.geometry.type === 'Point').length")
+        r["routePoints"] = nverts()
+        r["modes"] = page.evaluate(f"() => {ed}.state.vertices.map(v => v.mode)")
+        btn("#r-undo"); r["afterUndo"] = nverts()
+        btn("#r-redo"); r["afterRedo"] = nverts()
+        first = page.evaluate(f"() => [{ed}.state.vertices[0].lon, {ed}.state.vertices[0].lat]")
+        btn("#r-reverse")
+        r["reversedLast"] = page.evaluate(f"() => [{ed}.state.vertices.at(-1).lon, {ed}.state.vertices.at(-1).lat]") == first
+        btn("#r-reverse")                          # back to the original order
+        btn("#r-loop"); r["afterLoop"] = nverts()
+        btn("#r-loop"); r["afterLoop2"] = nverts()
+        page.keyboard.press("Control+z"); r["afterCtrlZ"] = nverts()
+
+        # Drag vertex 1 with the mouse (projected to screen) → one move command
+        def screen_of(i):
+            return page.evaluate(f"() => {{ const v = {ed}.state.vertices[{i}]; const p = window.__topo3d.map.project([v.lon, v.lat]); return [p.x, p.y]; }}")
+        x1, y1 = screen_of(1)
+        before = page.evaluate(f"() => [{ed}.state.vertices[1].lon, {ed}.state.vertices[1].lat]")
+        page.mouse.move(x1, y1); page.mouse.down(); page.mouse.move(x1 + 30, y1 + 20, steps=5); page.mouse.move(x1 + 60, y1 + 40, steps=5); page.mouse.up()
+        page.wait_for_timeout(400)
+        after = page.evaluate(f"() => [{ed}.state.vertices[1].lon, {ed}.state.vertices[1].lat]")
+        r["dragMoved"] = before != after and nverts() == 3
+        # Select vertex 2 by clicking it, then Delete
+        x2, y2 = screen_of(2)
+        page.mouse.click(x2, y2); page.wait_for_timeout(200)
+        page.keyboard.press("Delete"); page.wait_for_timeout(200)
+        r["afterDelete"] = nverts()
+        page.keyboard.press("Control+z"); page.wait_for_timeout(200)
+
+        # Waypoint: right-click → form → save name
+        page.mouse.click(1050, 450, button="right"); page.wait_for_timeout(400)
+        page.fill(".wp-form input[name=name]", "מעיין"); btn(".wp-form button[type=submit]"); page.wait_for_timeout(300)
+        r["waypoints"] = page.evaluate(f"() => {ed}.state.waypoints.map(w => w.name)")
+
+        # Draft survives a reload
+        draft_before = page.evaluate(f"() => JSON.stringify({ed}.state)")
+        page.reload(wait_until="domcontentloaded", timeout=60_000)
+        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", timeout=60_000)
+        r["draftRestored"] = page.evaluate(f"() => JSON.stringify({ed}.state)") == draft_before
+        if not r["draftRestored"]:
+            print("draft before:", draft_before[:300]); print("draft after:", page.evaluate(f"() => JSON.stringify({ed}.state)")[:300])
+        r["draftNotice"] = page.inner_text("#status")
+        # Clear (confirmed) → empty; undo brings it back
+        btn("#plan"); btn("#r-clear"); page.wait_for_timeout(300)
+        r["afterClear"] = (nverts(), page.evaluate(f"() => {ed}.state.waypoints.length"))
+        page.keyboard.press("Control+z")
+        r["clearUndone"] = page.evaluate(f"() => {ed}.state.waypoints.length") == 1
+
         # "Center on me": one location request, map moves to it, no tracking
         # Clicked from inside the page (same handler as a mouse click): with software WebGL the renderer is too
         # busy to acknowledge synthetic mouse input on map controls in time. Visibility/on-top was verified.
@@ -234,7 +287,9 @@ def main():
         print(("PASS " if cond else "FAIL ") + msg)
         ok &= bool(cond)
 
-    expect(not errors and r["fatal"] is None, f"boots without page errors {errors} {r['fatal']}")
+    # The RTL text plugin is an external script not available offline; the test serves an empty file for it.
+    real_errors = [e for e in errors if "RTL Text Plugin" not in e]
+    expect(not real_errors and r["fatal"] is None, f"boots without page errors {real_errors} {r['fatal']}")
     expect(set(r["topo"]["hidden"]) == {"road_path_pedestrian", "mountain_peak"}, "base trail and peak layers hidden by schema (not road_major)")
     expect(r["topo"]["renamed"] == 2, "Hebrew-first names on name labels only (water_name, place_label; not the ref shield)")
     expect(r["topo"]["labelFont"] == ["Noto Sans Regular"], "Regular label font chosen over the first (Italic) one")
@@ -260,7 +315,16 @@ def main():
     expect(p_["exag"] == 1.7, f"exaggeration remembered {p_['exag']}")
     expect(p_["center"] == [35.3, 32.9] and p_["zoom"] == 12.5, f"last view restored when the URL has no camera {p_['center']} z{p_['zoom']}")
     expect(r["geoAfterReload"] == {"get": 0, "watch": 0}, "no location request after reload either")
-    expect(r["routePoints"] == 3, "3 route points drawn")
+    expect(r["snapDisabled"], "snap mode disabled until a router is configured (new segments free)")
+    expect(r["routePoints"] == 3 and r["modes"] == [None, "free", "free"], f"3 points added by clicks {r['modes']}")
+    expect((r["afterUndo"], r["afterRedo"]) == (2, 3), f"undo/redo buttons {r['afterUndo']},{r['afterRedo']}")
+    expect(r["reversedLast"], "reverse puts the first point last")
+    expect((r["afterLoop"], r["afterLoop2"], r["afterCtrlZ"]) == (4, 4, 3), f"close loop once, no duplicate, Ctrl+Z {r['afterLoop']},{r['afterLoop2']},{r['afterCtrlZ']}")
+    expect(r["dragMoved"], "dragging a point moves it (one command, no new point)")
+    expect(r["afterDelete"] == 2, f"click + Delete removes the selected point ({r['afterDelete']})")
+    expect(r["waypoints"] == ["מעיין"], f"right-click adds a named waypoint {r['waypoints']}")
+    expect(r["draftRestored"] and "שוחזרה" in r["draftNotice"], "draft restored after reload, with a notice")
+    expect(r["afterClear"] == (0, 0) and r["clearUndone"], f"clear (confirmed) empties the route, and is undoable {r['afterClear']}")
     expect("מרחק" in r["stats"] and "עלייה" in r["stats"], "stats shown")
     expect(r["profileVisible"], "elevation profile drawn")
     sys.exit(0 if ok else 1)
