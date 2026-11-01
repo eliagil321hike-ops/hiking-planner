@@ -78,6 +78,8 @@ const map = new maplibregl.Map({
 });
 map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-left');
 map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+// Test/debug handle (used by scripts/e2e_test.py).
+globalThis.__topo3d = { map, results };
 map.on('error', (e) => log(`map error: ${e.error?.message ?? e.error ?? e}`, 'fail'));
 
 const GROUPS = {
