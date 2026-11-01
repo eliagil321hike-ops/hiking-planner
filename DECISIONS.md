@@ -55,11 +55,12 @@ Consequences:
 
 ## D-007 (2026-11-01) Owner answers
 - First region: **Upper Galilee** (initial camera around Har Meron; encoding test peak is in this region).
-- Owner has a computer (OS not yet stated).
+- Owner computer: **Windows**. Local server = `start-windows.bat` → `serve.ps1` (built-in PowerShell
+  HttpListener, no installs). Serves the repo root on http://localhost:8080/. Not yet run on Windows
+  (agent workspace has no PowerShell) — first run by the owner is the test.
 - Hosting of the test page: **home network** — served from the owner's computer with a one-line local
   static server, reachable from the phone on the same Wi-Fi later. No GitHub Pages.
 
 ## Open questions for the owner
 1. Phone model, Android version, RAM (deferred by owner, D-006).
-2. Computer OS (Windows / macOS / Linux) — decides which start script to give first.
-3. FATMAP reference screenshots (≥ 3) with location/zoom/tilt.
+2. FATMAP reference screenshots (≥ 3) with location/zoom/tilt.
