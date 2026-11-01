@@ -239,6 +239,18 @@ Mapterhorn hosted-tile terms, which stay an open question.
   redacted in test output because CI logs of a public repo are public.
 - Fixed while moving code: duration could show "h:60" (minutes rounded separately); now rounds total minutes.
 
+## D-024 (2026-11-01) Phase 1 confirmed by owner; Phase 2 (map experience)
+- Owner: "עובד" (works) for the restructured site (build 2572217) → Phase 1 closed.
+- Phase 2 changes:
+  - "Center on me": MapLibre GeolocateControl, one fix (`trackUserLocation: false`), permission asked only on
+    press (SPEC 8.1, no background location). Error → status line in Hebrew.
+  - MapLibre control texts in Hebrew via the Map `locale` option (keys verified in the 5.24.0 dist).
+  - **Bug found by the e2e test:** map controls were at top-left, which in the RTL layout is under the panel
+    (zoom/compass were hidden for the owner). Moved navigation + location to top-right, scale to bottom-right.
+  - Remembered settings (prefs.js, browser storage): layer switches, exaggeration, collapsed panel, last
+    camera (used only when the URL has no camera hash).
+  - Attribution: verified in e2e that the control shows base-map and DEM credits, and Esri in satellite mode.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

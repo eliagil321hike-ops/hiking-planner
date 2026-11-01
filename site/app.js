@@ -5,7 +5,8 @@
 //   route.js       drawing a line, stats, profile
 //   devtools.js    Phase 0 tests, loaded only with ?dev=1
 
-import { applyI18n, t, fmtNumber } from './i18n.js';
+import { applyI18n, t, fmtNumber, mapLocale } from './i18n.js';
+import { loadPrefs, savePrefs } from './prefs.js';
 import { createPerf } from './perf.js';
 import { createDemSampler } from './dem-sampler.js';
 import { applyTopo3d } from './topo3d.js';
@@ -73,7 +74,9 @@ const contourTiles = demSource.contourProtocolUrl({
 const sampler = createDemSampler({ ...DEM, zoom: samplingZoom, fallbackMinZoom: Math.min(12, samplingZoom) });
 
 // ---------------------------------------------------------------- map
-const cam = overlay.camera;
+// Camera: the URL hash wins (shared views); otherwise the last remembered view; otherwise Meron.
+const lastCam = !location.hash && loadPrefs().camera;
+const cam = { ...overlay.camera, ...(lastCam && Array.isArray(lastCam.center) ? lastCam : {}) };
 const map = new maplibregl.Map({
   container: 'map',
   style: overlay.base,
@@ -81,14 +84,30 @@ const map = new maplibregl.Map({
   zoom: cam.zoom,
   pitch: cam.pitch,
   bearing: cam.bearing,
+  locale: mapLocale(),
   maxPitch: cam.maxPitch,
   hash: true, // camera in the URL: a view can be shared and reproduced exactly
   attributionControl: { compact: true },
   // ?pr=1 renders fewer pixels on high-DPI screens (performance experiment, D-013)
   ...(Number(params.get('pr')) > 0 ? { pixelRatio: Number(params.get('pr')) } : {}),
 });
-map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-left');
-map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
+// "Center on me": asks for location permission only when pressed, one fix, no tracking (SPEC 8.1).
+const geolocate = new maplibregl.GeolocateControl({
+  positionOptions: { enableHighAccuracy: true, timeout: 15_000 },
+  trackUserLocation: false,
+  showAccuracyCircle: true,
+  fitBoundsOptions: { maxZoom: 14 },
+});
+map.addControl(geolocate, 'top-right');
+geolocate.on('error', () => notify(t('error.location')));
+geolocate.on('geolocate', () => notify(null));
+// Remember the last view (saved after each move; a URL hash still overrides it).
+map.on('moveend', () => {
+  const c = map.getCenter();
+  savePrefs({ camera: { center: [+c.lng.toFixed(5), +c.lat.toFixed(5)], zoom: +map.getZoom().toFixed(2), pitch: +map.getPitch().toFixed(1), bearing: +map.getBearing().toFixed(1) } });
+});
 map.on('error', (e) => log(`map error: ${e.error?.message ?? e.error ?? e}`, 'fail'));
 
 // ---------------------------------------------------------------- modules
@@ -115,6 +134,7 @@ map.on('load', () => {
     throw e;
   }
   route.addRouteLayers();
+  ctx.applyGroupsFromUI(); // remembered layer switches and exaggeration (prefs.js)
   background.start();
   // Horizon haze like the FATMAP references (sky spec: GL JS ≥ 4.5, checked 2026-11-01).
   if (overlay.sky) map.setSky(Object.fromEntries(Object.entries(overlay.sky).filter(([k]) => !k.startsWith('$'))));

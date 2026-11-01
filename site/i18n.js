@@ -44,6 +44,18 @@ const STRINGS = {
     'error.elevation': 'שגיאה בקבלת נתוני גובה: {message}',
     'error.libs': 'ספריות המפה לא נטענו מ-unpkg.com: בדוק חיבור לאינטרנט או חסימה של אנטי-וירוס.',
     'error.map': 'שגיאת מפה: {message}',
+    'error.location': 'לא הצלחתי לקבל מיקום. בדוק שהדפדפן מורשה לגשת למיקום.',
+    // MapLibre's own controls (keys verified in maplibre-gl 5.24.0 dist)
+    'ml.GeolocateControl.FindMyLocation': 'מרכז עליי',
+    'ml.GeolocateControl.LocationNotAvailable': 'המיקום לא זמין',
+    'ml.NavigationControl.ZoomIn': 'התקרב',
+    'ml.NavigationControl.ZoomOut': 'התרחק',
+    'ml.NavigationControl.ResetBearing': 'אפס כיוון לצפון',
+    'ml.ScaleControl.Meters': 'מ׳',
+    'ml.ScaleControl.Kilometers': 'ק״מ',
+    'ml.AttributionControl.ToggleAttribution': 'מקורות המפה',
+    'ml.AttributionControl.MapFeedback': 'משוב על המפה',
+    'ml.Map.Title': 'מפה',
     'safety': 'מסלולים, גבהים וזמני הליכה הם הערכות ועלולים להיות שגויים. בדוק תמיד את השטח, מזג האוויר והמים לפני ובמהלך הטיול.',
   },
 };
@@ -68,6 +80,11 @@ export function applyI18n(root = document) {
       if (attr && key) el.setAttribute(attr, t(key));
     }
   });
+}
+
+/** MapLibre `locale` option: its control texts in the current language. */
+export function mapLocale() {
+  return Object.fromEntries(Object.entries(dict).filter(([k]) => k.startsWith('ml.')).map(([k, v]) => [k.slice(3), v]));
 }
 
 /** Number formatting for the current language. */

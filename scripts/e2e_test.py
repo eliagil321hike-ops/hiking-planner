@@ -53,7 +53,8 @@ window.mlcontour = { DemSource: class {
 FIXTURE_STYLE = {
     "version": 8,
     "name": "fixture-liberty-like",
-    "sources": {"openmaptiles": {"type": "vector", "tiles": ["https://tiles.openfreemap.org/fixture/{z}/{x}/{y}.pbf"], "maxzoom": 14}},
+    "sources": {"openmaptiles": {"type": "vector", "tiles": ["https://tiles.openfreemap.org/fixture/{z}/{x}/{y}.pbf"], "maxzoom": 14,
+                                 "attribution": "OpenFreeMap © OpenMapTiles Data from OpenStreetMap"}},
     "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
     "layers": [
         {"id": "background", "type": "background", "paint": {"background-color": "#f8f4f0"}},
@@ -97,7 +98,18 @@ def main():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"])
-        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        # Location permission granted, fixed position; count geolocation calls to prove nothing asks
+        # for location before the user presses the button, and that there is no continuous tracking.
+        context = browser.new_context(viewport={"width": 1280, "height": 800}, permissions=["geolocation"],
+                                      geolocation={"latitude": 32.9705, "longitude": 35.5020})
+        context.add_init_script("""
+          window.__geoCalls = { get: 0, watch: 0 };
+          const g = navigator.geolocation;
+          const get = g.getCurrentPosition.bind(g), watch = g.watchPosition.bind(g);
+          g.getCurrentPosition = (...a) => { window.__geoCalls.get++; return get(...a); };
+          g.watchPosition = (...a) => { window.__geoCalls.watch++; return watch(...a); };
+        """)
+        page = context.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
 
@@ -148,6 +160,9 @@ def main():
         r["terrain"] = page.evaluate("() => !!window.__topo3d.map.getTerrain()")
         r["fatal"] = page.evaluate("() => document.getElementById('fatal')?.textContent ?? null")
         r["devHidden"] = page.evaluate("() => document.getElementById('dev-section').hidden && document.getElementById('fps').hidden")
+        r["geoBefore"] = page.evaluate("() => ({ ...window.__geoCalls })")
+        r["attribTopo"] = page.evaluate("() => document.querySelector('.maplibregl-ctrl-attrib-inner')?.textContent ?? ''")
+        r["geoLabel"] = page.evaluate("() => document.querySelector('.maplibregl-ctrl-geolocate')?.getAttribute('title') ?? ''")
         r["i18n"] = page.evaluate("() => [document.querySelector('[data-i18n=\\'layers.contours\\']').textContent, document.documentElement.lang, document.documentElement.dir]")
 
         # Background switch → satellite (Esri default, embedded key)
@@ -156,6 +171,7 @@ def main():
         r["satLayer"] = page.evaluate("() => !!window.__topo3d.map.getLayer('satellite')")
         r["satTiles"] = page.evaluate("() => window.__topo3d.map.getStyle().sources.satellite?.tiles?.[0] ?? null")
         r["landcoverInSat"] = page.evaluate("() => window.__topo3d.map.getLayoutProperty('topo-landcover','visibility')")
+        r["attribSat"] = page.evaluate("() => document.querySelector('.maplibregl-ctrl-attrib-inner')?.textContent ?? ''")
         page.click("input[name=base][value=topo]")
         page.wait_for_timeout(500)
         r["satAfterTopo"] = page.evaluate("() => !!window.__topo3d.map.getLayer('satellite')")
@@ -170,6 +186,31 @@ def main():
         r["stats"] = page.inner_text("#stats")
         r["profileVisible"] = page.evaluate("() => !document.getElementById('profile').hidden && !!document.querySelector('#profile svg path.profile-area')")
         r["routePoints"] = page.evaluate("async () => (await window.__topo3d.map.getSource('route').getData()).features.filter(f => f.geometry.type === 'Point').length")
+        # "Center on me": one location request, map moves to it, no tracking
+        # Clicked from inside the page (same handler as a mouse click): with software WebGL the renderer is too
+        # busy to acknowledge synthetic mouse input on map controls in time. Visibility/on-top was verified.
+        r["geoButtonOnTop"] = page.evaluate("""() => { const b = document.querySelector('.maplibregl-ctrl-geolocate');
+            const q = b.getBoundingClientRect(); return b.contains(document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2)); }""")
+        page.evaluate("() => document.querySelector('.maplibregl-ctrl-geolocate').click()")
+        page.wait_for_function("() => window.__geoCalls.get > 0", timeout=10_000)
+        page.wait_for_timeout(2500)
+        r["geoAfter"] = page.evaluate("() => ({ ...window.__geoCalls })")
+        r["centerAfterGeo"] = page.evaluate("() => window.__topo3d.map.getCenter().toArray()")
+        r["userDot"] = page.evaluate("() => !!document.querySelector('.maplibregl-user-location-dot')")
+
+        # Remembered settings: switch contours off, change exaggeration, move; reload WITHOUT a hash
+        page.uncheck("input[data-group=contours]")
+        page.evaluate("() => { const e = document.getElementById('exag'); e.value = '1.7'; e.dispatchEvent(new Event('input')); e.dispatchEvent(new Event('change')); }")
+        page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.3, 32.9], zoom: 12.5, pitch: 30, bearing: 10 })")
+        page.wait_for_timeout(500)
+        page.goto(f"http://127.0.0.1:{port}/?demz=12", wait_until="domcontentloaded", timeout=60_000)
+        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", timeout=60_000)
+        r["prefsAfterReload"] = page.evaluate("""() => { const m = window.__topo3d.map; const c = m.getCenter();
+            return { contoursBox: document.querySelector('input[data-group=contours]').checked,
+                     contoursLayer: m.getLayoutProperty('topo-contours-minor', 'visibility'),
+                     exag: m.getTerrain()?.exaggeration, center: [+c.lng.toFixed(3), +c.lat.toFixed(3)], zoom: +m.getZoom().toFixed(1) }; }""")
+        r["geoAfterReload"] = page.evaluate("() => ({ ...window.__geoCalls })")
+
         # Developer mode: test panel visible and the devtools module loaded
         page.goto(f"http://127.0.0.1:{port}/?demz=12&dev=1#12/33.0/35.4167/0/0", wait_until="domcontentloaded", timeout=60_000)
         page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", timeout=60_000)
@@ -207,6 +248,18 @@ def main():
     expect(r["devHidden"], "developer tests hidden by default")
     expect(r["devShown"], "developer tests shown with ?dev=1 (devtools loaded, startup report logged)")
     expect(r["i18n"] == ["קווי גובה", "he", "rtl"], f"UI text from i18n, Hebrew, RTL {r['i18n']}")
+    expect(r["geoBefore"] == {"get": 0, "watch": 0}, "no location request at page load")
+    expect(r["geoLabel"] == "מרכז עליי", f"map control texts in Hebrew ({r['geoLabel']!r})")
+    expect(r["geoButtonOnTop"], "location button visible and not covered by the panel")
+    expect(r["geoAfter"]["get"] >= 1 and r["geoAfter"]["watch"] == 0, f"location requested only on click, no tracking {r['geoAfter']}")
+    expect(abs(r["centerAfterGeo"][0] - 35.502) < 0.01 and abs(r["centerAfterGeo"][1] - 32.9705) < 0.01 and r["userDot"], f"map centred on the user {r['centerAfterGeo']}")
+    expect("Mapterhorn" in r["attribTopo"] and "OpenStreetMap" in r["attribTopo"], "attribution: base map + DEM sources shown")
+    expect("Esri" in r["attribSat"], "attribution: Esri shown in satellite mode")
+    p_ = r["prefsAfterReload"]
+    expect(p_["contoursBox"] is False and p_["contoursLayer"] == "none", f"layer switch remembered after reload {p_}")
+    expect(p_["exag"] == 1.7, f"exaggeration remembered {p_['exag']}")
+    expect(p_["center"] == [35.3, 32.9] and p_["zoom"] == 12.5, f"last view restored when the URL has no camera {p_['center']} z{p_['zoom']}")
+    expect(r["geoAfterReload"] == {"get": 0, "watch": 0}, "no location request after reload either")
     expect(r["routePoints"] == 3, "3 route points drawn")
     expect("מרחק" in r["stats"] and "עלייה" in r["stats"], "stats shown")
     expect(r["profileVisible"], "elevation profile drawn")
