@@ -8,7 +8,7 @@ Phase 1 starts only after the owner approves Phase 0 (look vs FATMAP, encoding t
 | Criterion | Status | Evidence |
 | --- | --- | --- |
 | Site deployed on GitHub Pages and opens | **PASS** (owner opened it, screenshot 2026-11-01) | Actions run 41294695181 attempt 2: test ✓, deploy ✓; URL https://eliagil321hike-ops.github.io/hiking-planner/ |
-| 3D terrain stable; FPS recorded | **Open** — recorded on owner's Intel HD 4400: 3D 8 fps, 3D w/o contours 17, 2D 58.5. Owner relaxed the target for this machine (D-014); to be measured on newer hardware | D-013, D-014 |
+| 3D terrain stable; FPS recorded | **Open** — owner's Intel HD 4400: run 2: 3D 8 fps / 2D 58.5; run 3: 3D ~26 fps (stutters) / 2D 59 (noisy, D-015). Owner relaxed the target for this machine (D-014); to be measured on newer hardware | D-013, D-014 |
 | Hillshade + contours readable z12–16 | Not run | owner review |
 | Encoding test on real tiles + negative control | **PASS** | owner run: Meron 1202.5, coast 4.5, Dead Sea −432; negative control detected; engine Δ −1.3 m (D-011) |
 | Contour labels and trails legible when tilted | Not run | owner review |

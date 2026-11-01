@@ -148,6 +148,19 @@ machine and measure on newer hardware). Decision:
   then it stays **open**, not passed.
 - No performance work is scheduled now. Options 1 (MapLibre v6) and 2 (low-power mode) remain available.
 
+## D-015 (2026-11-01) FPS run 3: much faster, but on a cached old page; cache busting added
+Run 3 (owner, same computer, two runs, at overlay 0.3.0 but app.js from before d806d46 → only the old
+3 variants ran): all layers **27.5 / 25.3 fps** (slowest-5% 15 / 7.5, ~45 stutters), no contours 27.4 / 25.6,
+2D 59.0 / 59.3. First idle 9.7 s (run 2: 681 s).
+Reading: the same variant measured 8 fps in run 2 and ~26 fps in run 3. Run 2 was probably contaminated by
+background work (contour/tile backlog after browsing Turkey, very late first idle). FPS numbers on this
+machine are noisy → compare variants only within one run, and repeat runs before deciding. 3D is close
+to 30 fps here, with stutters.
+Cache: GitHub Pages lets browsers cache ~10 min, so owners can run stale code. Added
+`scripts/stamp_build.sh` (CI): `?v=<commit>` on every relative import, entry script, CSS and overlay;
+build id shown in the panel header and in the report (`build`). Verified on a stamped copy in headless
+Chromium: all 14 local requests carry `?v=`, page loads.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

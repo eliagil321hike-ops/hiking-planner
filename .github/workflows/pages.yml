@@ -32,6 +32,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Stamp build (cache busting, version shown in the page)
+        run: bash scripts/stamp_build.sh site "${GITHUB_SHA::7}"
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload site

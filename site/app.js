@@ -10,6 +10,7 @@ import {
   checkReferenceElevations, EncodingCheckError, ISRAEL_REFERENCE_POINTS,
 } from './vendor/geo/index.js';
 
+const BUILD = '__BUILD__'; // replaced by CI (scripts/stamp_build.sh) with the commit id
 const perf = createPerf();
 perf.mark('script-start');
 const $ = (id) => document.getElementById(id);
@@ -392,7 +393,7 @@ $('t-features').addEventListener('click', async (ev) => {
 
 // ---------------------------------------------------------------- export
 function fullReport() {
-  return { ...perf.report(), demMaxzoom, samplingZoom, overlayVersion: overlay.version, camera: location.hash, ...results, timingsText: undefined };
+  return { ...perf.report(), build: BUILD, demMaxzoom, samplingZoom, overlayVersion: overlay.version, camera: location.hash, ...results, timingsText: undefined };
 }
 $('t-copy').addEventListener('click', async () => {
   const json = JSON.stringify(fullReport(), null, 2);
