@@ -26,7 +26,7 @@ function log(html, cls) {
 // ---------------------------------------------------------------- setup
 const params = new URLSearchParams(location.search);
 // The standalone single-file build embeds the overlay (no server needed); otherwise fetch it.
-const overlay = globalThis.__TOPO3D_OVERLAY__ ?? await (await fetch('../../app/styles/topo3d.json', { cache: 'no-cache' })).json();
+const overlay = globalThis.__TOPO3D_OVERLAY__ ?? await (await fetch('./styles/topo3d.json', { cache: 'no-cache' })).json();
 const demMaxzoom = Number(params.get('demz')) || overlay.dem.maxzoomDefault;
 const DEM = { urlTemplate: overlay.dem.tiles, encoding: overlay.dem.encoding, tileSize: overlay.dem.tileSize };
 

@@ -1,43 +1,37 @@
 # PROGRESS
 
 ## Current phase
-**Phase 0 — feasibility spike and map-engine decision.** Web-first on the owner's Windows computer (D-006).
-Phase 1 must not start until the owner approves the engine.
+**Phase 0 (web) — map feasibility on the live site.** Product is a website (SPEC-WEB.md, DECISIONS D-010).
+Phase 1 starts only after the owner approves Phase 0 (look vs FATMAP, encoding test, FPS).
 
-## Status of P10.5 acceptance criteria
+## Status of Phase 0 criteria (SPEC-WEB W7)
 | Criterion | Status | Evidence |
 | --- | --- | --- |
-| 3D terrain stable on owner's phone, ≥ 30 FPS rotating/tilting | Not run | phone deferred by owner; page has the FPS test |
-| Hillshade + contours readable z12–16 in daylight | Not run | needs owner's eyes on the page |
-| Encoding test (Meron, coast, Dead Sea) fails loudly if wrong | **Implemented, not yet run on real tiles** | unit tests 31/31; browser smoke test 7/7 with synthetic tiles incl. negative control; real run = "בדיקת קידוד" on owner's computer |
-| Contour labels and trails legible when tilted | Not run | needs owner review |
-| Owner quality review vs FATMAP screenshots | Not run | needs ≥ 3 screenshots |
-| DECISIONS.md records engine, contours, hosting, attribution, open issues | Partly | contours (client-side, maplibre-contour), hosting (home network), attribution, sources done; engine pending |
+| Site deployed on GitHub Pages and opens | Waiting for owner | needs owner's GitHub account + repo; workflow ready |
+| 3D terrain stable; FPS recorded on owner's computer | Not run | "בדיקת FPS" button |
+| Hillshade + contours readable z12–16 | Not run | owner review |
+| Encoding test on real tiles + negative control | Implemented, not run on real tiles | geo 31/31; browser smoke 7/7 (synthetic tiles) |
+| Contour labels and trails legible when tilted | Not run | owner review |
+| Owner FATMAP review | Not run | needs ≥ 3 screenshots |
+| DECISIONS: engine, contours, hosting, attribution, small-group licences | Mostly done | engine = MapLibre GL JS (D-010); Mapterhorn terms open |
 
-## Completed tasks
-- Repo, SPEC.md (verbatim copy of the project doc), README, DECISIONS, PROGRESS, .env.example.
-- `packages/geo`: coords, Vincenty distance, resampling, Terrarium/Mapbox decoding, tile math, bilinear
-  sampling, peak/valley hysteresis (D-005), Naismith/Tobler, sourced reference points.
-  `cd packages/geo && node --test "test/**/*.test.ts"` → **31/31 pass**; `tsc -p tsconfig.json` clean.
-- Research recorded (D-008): MapLibre 5.24.0 + rtl-text 0.3.0 (official example), maplibre-contour 0.1.0 API,
-  Mapterhorn format/zoom/attribution (isr10, glo30), OpenFreeMap terms; MapLibre v6 deliberately not used yet.
-- `app/styles/topo3d.json` overlay + `prototypes/b-webview/` page (terrain, hillshade, contours, trails,
-  peaks, Hebrew names, draw line, profile, stats, tests, report export).
-- `start-windows.bat` + `serve.ps1` local server (untested: no PowerShell in agent workspace).
-- `python3 scripts/browser_smoke_test.py` → **7/7 pass** (synthetic tiles; MapLibre itself not loaded).
+## Completed
+- `packages/geo` (pure TS, zero deps): `cd packages/geo && node --test "test/**/*.test.ts"` → **31/31**.
+- `site/`: the website (MapLibre GL JS 5.24.0, maplibre-contour 0.1.0, Topo3D overlay, draw line + profile,
+  Phase 0 test buttons). Geo compiled into `site/vendor/geo` with `tsc -p packages/geo/tsconfig.browser.json`.
+- `python3 scripts/browser_smoke_test.py` → **7/7** (headless Chromium, synthetic DEM tiles).
+- Served from its own root over HTTP (as on Pages): overlay loads from `./styles/topo3d.json` (verified).
+- `.github/workflows/pages.yml`: unit tests, then deploy `site/` (not run yet).
+- Local fallbacks: `start-windows.bat` (untested on Windows), `dist/topo3d-standalone.html` (file:// verified
+  up to library loading).
 
-## Not verified here (agent workspace cannot reach the CDN or tile servers)
-- That the page loads and renders at all with the real libraries and tiles.
-- Which OpenFreeMap layers get hidden/renamed, whether `name:he` exists, glyphs for Hebrew.
-- Real encoding check, DEM max zoom over Israel, FPS, toggle times.
+## Not verified (agent workspace cannot reach the CDN or tile servers)
+Real rendering, OpenFreeMap layer matching / Hebrew names, real encoding check, DEM zoom over Israel, FPS.
 
-## 2026-11-01 owner report: "can't open the app"
-- Cause unknown yet (asked: SmartScreen? black window? blank page? run from inside the ZIP?).
-- Added `dist/topo3d-standalone.html` (D-009) + on-screen error banner. Smoke tests still 7/7, geo 31/31.
-
-## Blockers / waiting for owner
-- Owner run of the page on Windows; send back the "העתק תוצאות" JSON and screenshots.
-- FATMAP reference screenshots (≥ 3).
+## Owner history
+- First ZIP + start script: owner could not open it (cause unknown). Standalone file sent; then owner
+  decided to restart as a website (D-010).
 
 ## Next task
-Fix whatever the owner's first run shows; then contour/hillshade tuning against FATMAP references.
+1. Owner creates GitHub account/repo and connects GitHub to Claude → agent pushes → Pages deploys.
+2. Owner opens the site, runs the test buttons, sends results + screenshots + FATMAP references.

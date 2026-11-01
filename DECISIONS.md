@@ -81,11 +81,26 @@ a visible red error banner appears when the libraries cannot load. Not verifiabl
 rendering and whether the tile servers accept requests from a file:// page (CORS with origin "null").
 The server route (start-windows.bat) is kept.
 
+## D-010 (2026-11-01) Owner: the product is a website (supersedes D-001 Android-only, D-004, D-006)
+Owner: "start over, do everything as a website, same feature guidelines". Answers to follow-up questions:
+users = **owner + a few friends**; hosting = **GitHub Pages**; **desktop only for now**; storage =
+**browser + GPX**. Recorded as `SPEC-WEB.md` (v4 web profile, overrides SPEC v3.2 where they conflict).
+Consequences:
+- Engine = MapLibre GL JS. Options A (Mapbox native) and C (MapLibre Native) dropped; no APK work.
+- Existing work is kept: geo package, Topo3D overlay and the map page were web code already. The page moved
+  from `prototypes/b-webview/` to `site/` (the deployed folder); overlay to `site/styles/topo3d.json`.
+- GitHub Free → Pages only from a public repo (docs.github.com "What is GitHub Pages", 2026-11-01).
+- Deployment: `.github/workflows/pages.yml` (checkout@v6, configure-pages@v5, upload-pages-artifact@v4,
+  deploy-pages@v4 from the GitHub Docs example; setup-node@v5 + Node 22 for the unit tests). Not run yet.
+- Licence scope widens from "personal use" to "small group": personal-use-only sources are no longer OK
+  by default (see register). Mapterhorn hosted-tile terms remain an open question.
+- `start-windows.bat` / `dist/topo3d-standalone.html` stay as local fallbacks.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | OpenFreeMap | Vector base map | ODbL data / OpenMapTiles schema; ToS not read | Spec says yes (not re-verified) | OpenFreeMap, © OpenMapTiles, © OpenStreetMap contributors | Offline ≤ 3,000 tiles / 50 MB, ≤ 4 parallel | free | 2026-11-01 quick start | openfreemap.org/quick_start |
-| Mapterhorn tiles | DEM: terrain, hillshade, contours, sampling | not found | unknown → **personal use only** | Mapterhorn + isr10 (ASTER GDEM, METI/NASA, 4cast LTD) + Copernicus GLO-30 (DLR, Airbus, EU/ESA) | fair use not found; light use | free | 2026-11-01 data-access + attribution.json | mapterhorn.com/data-access |
+| Mapterhorn tiles | DEM: terrain, hillshade, contours, sampling | not found | unknown → light use by a small group; terms to verify | Mapterhorn + isr10 (ASTER GDEM, METI/NASA, 4cast LTD) + Copernicus GLO-30 (DLR, Airbus, EU/ESA) | fair use not found; light use | free | 2026-11-01 data-access + attribution.json | mapterhorn.com/data-access |
 | isr10 (in Mapterhorn) | Israel 10 m DEM | ASTER GDEM Public Domain | yes (per attribution.json) | as above | — | free | 2026-11-01 | download.mapterhorn.com/attribution.json |
 | Copernicus GLO-30 (in Mapterhorn) | global 30 m fallback | Copernicus full, free and open | yes | as above | — | free | 2026-11-01 | attribution.json |
 | OpenStreetMap data | Trails, peaks (via OpenFreeMap) | ODbL | yes | © OpenStreetMap contributors | — | free | spec | openstreetmap.org/copyright |
@@ -101,6 +116,6 @@ The server route (start-windows.bat) is kept.
   static server, reachable from the phone on the same Wi-Fi later. No GitHub Pages.
 
 ## Open questions for the owner
-1. Phone model, Android version, RAM (deferred by owner, D-006).
+1. GitHub account + repository for the site (needed to deploy; only the owner can create it).
 2. FATMAP reference screenshots (≥ 3) with location/zoom/tilt.
 3. Mapterhorn hosted-tile licence and fair-use policy (not found on the pages that were reachable).

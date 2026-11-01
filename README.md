@@ -1,9 +1,9 @@
-# Hiking Route Planner (personal, Android only)
+# Topo3D hiking route planner (website)
 
-Personal, private, non-commercial hiking route planner with a free 3D topographic map of Israel.
-The authoritative brief is [`SPEC.md`](SPEC.md) (v3.2). Its Personal-Use Profile (P1–P10) overrides the rest.
+Non-commercial hiking route planner website with a free 3D topographic map of Israel, for the owner and a
+few friends. Brief: [`SPEC.md`](SPEC.md) (v3.2) as overridden by [`SPEC-WEB.md`](SPEC-WEB.md) (v4, website).
 
-**Current phase: Phase 0 (feasibility spike and map-engine decision).** See [`PROGRESS.md`](PROGRESS.md).
+**Current phase: Phase 0 (web).** See [`PROGRESS.md`](PROGRESS.md).
 
 ## Repository layout
 ```
@@ -11,30 +11,35 @@ SPEC.md                 Specification (source of truth)
 DECISIONS.md            Decisions, data-source register, licences, open questions
 PROGRESS.md             Current phase, tasks, test results, blockers, next task
 packages/geo            Pure TypeScript geo logic (no UI, no network), unit-tested with node:test
-app/styles/topo3d.json  The Topo3D MapLibre style (shared by all engine prototypes)
-prototypes/b-webview    Option B: MapLibre GL JS + maplibre-contour page (runs in Chrome / Android WebView)
-prototypes/c-native     Option C: MapLibre Native terrain build (scaffold, built on the owner's computer)
-prototypes/a-mapbox     Option A: @rnmapbox/maps (only if B and C fail)
-scripts/                Data tools (live DEM encoding check, contour pipeline)
+site/                   The website (deployed to GitHub Pages as-is; no build step)
+site/styles/topo3d.json The Topo3D style overlay
+site/vendor/geo         packages/geo compiled to browser JS (tsc -p packages/geo/tsconfig.browser.json)
+scripts/                browser smoke test, standalone single-file build
+.github/workflows       Pages deploy (runs unit tests first)
 ```
 
 ## Prerequisites
 - Node.js 22.18+ (TypeScript type stripping is on by default; the geo package needs **no** npm install).
-- For native prototypes (C, A) and APK builds: JDK 17, Android SDK, a USB-connected Android phone with
-  USB debugging. Exact versions are recorded in `DECISIONS.md` once verified.
+- A modern desktop browser (Chrome/Edge). The site loads MapLibre and tiles from the internet.
 
 ## Environment variables
-See `.env.example`. Phase 0 options B and C need no keys.
+See `.env.example`. No keys are needed.
 
 ## Commands
 ```bash
 # Unit tests for the geo package (zero dependencies)
 node --test packages/geo/test/
 
-# Live DEM encoding check against real Mapterhorn tiles (needs internet access to tiles.mapterhorn.com)
-node scripts/check-dem-encoding.ts
+# Rebuild browser copy of the geo package after changing packages/geo
+/path/to/tsc -p packages/geo/tsconfig.browser.json
+
+# Browser smoke test (headless Chromium, synthetic DEM tiles)
+python3 scripts/browser_smoke_test.py
+
+# Run locally: any static server with site/ as root, e.g.
+python3 -m http.server 8080 --directory site
 ```
-Prototype run instructions live in each `prototypes/*/README.md`.
+The live encoding check is the "בדיקת קידוד" button on the site. See `site/README.md`.
 
 ## Attribution
 © OpenMapTiles · © OpenStreetMap contributors · Mapterhorn and its per-region sources (see `DECISIONS.md`).

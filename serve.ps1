@@ -20,8 +20,8 @@ try { $listener.Start() } catch {
   exit 1
 }
 Write-Host "Serving $root"
-Write-Host "Open: http://localhost:$Port/prototypes/b-webview/" -ForegroundColor Green
-Start-Process "http://localhost:$Port/prototypes/b-webview/"
+Write-Host "Open: http://localhost:$Port/site/" -ForegroundColor Green
+Start-Process "http://localhost:$Port/site/"
 
 while ($listener.IsListening) {
   $ctx = $listener.GetContext()

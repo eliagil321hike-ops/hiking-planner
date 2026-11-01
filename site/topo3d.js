@@ -1,4 +1,4 @@
-// Applies the Topo3D overlay (app/styles/topo3d.json) on top of the loaded OpenFreeMap base style.
+// Applies the Topo3D overlay (site/styles/topo3d.json) on top of the loaded OpenFreeMap base style.
 // Base layers are found by schema (source-layer + filter), never by guessed layer ids.
 // Returns a report of what was found/changed so the page can show it (runtime verification).
 

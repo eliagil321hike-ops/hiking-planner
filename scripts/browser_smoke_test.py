@@ -107,7 +107,7 @@ def main():
     httpd = socketserver.TCPServer(("127.0.0.1", 0), Quiet)
     port = httpd.server_address[1]
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}/prototypes/b-webview/"
+    base = f"http://127.0.0.1:{port}/site/"
 
     with sync_playwright() as p:
         browser = p.chromium.launch()

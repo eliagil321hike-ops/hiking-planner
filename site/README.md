@@ -1,12 +1,11 @@
-# Option B — MapLibre GL JS + maplibre-contour (web, Phase 0)
+# Topo3D website (MapLibre GL JS + maplibre-contour)
 
 One static page: Topo3D style (OpenFreeMap Liberty + Mapterhorn DEM), 3D terrain, hillshade, client-side
 contours, trails, Hebrew labels, tap-to-draw line, elevation profile, and the Phase 0 measurements.
 
-## Run on Windows (no installs)
-1. Download the repository folder to the computer.
-2. Double-click `start-windows.bat` in the repository root.
-3. The browser opens `http://localhost:8080/prototypes/b-webview/`. Close the black window to stop.
+## Where it runs
+- **GitHub Pages** (main way): deployed automatically from this folder on every push to `main`.
+- Locally: `python3 -m http.server 8080 --directory site`, or `start-windows.bat` on Windows.
 
 Needs internet (map tiles, DEM tiles and the libraries load from the web). Use Chrome or Edge.
 

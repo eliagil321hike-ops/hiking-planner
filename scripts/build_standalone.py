@@ -15,7 +15,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PAGE = ROOT / "prototypes" / "b-webview"
+PAGE = ROOT / "site"
 OUT = ROOT / "dist" / "topo3d-standalone.html"
 
 SPEC_RE = re.compile(r"""((?:\bfrom|\bimport)\s*\(?\s*)(['"])(\.{1,2}/[^'"]+)\2""")
@@ -53,7 +53,7 @@ def main():
 
     html = (PAGE / "index.html").read_text(encoding="utf-8")
     css = (PAGE / "style.css").read_text(encoding="utf-8")
-    overlay = json.loads((ROOT / "app" / "styles" / "topo3d.json").read_text(encoding="utf-8"))
+    overlay = json.loads((ROOT / "site" / "styles" / "topo3d.json").read_text(encoding="utf-8"))
 
     html = html.replace('<link rel="stylesheet" href="style.css">', f"<style>\n{css}\n</style>")
     head_inject = (
