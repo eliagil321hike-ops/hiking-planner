@@ -28,7 +28,7 @@ See `.env.example`. No keys are needed.
 ## Commands
 ```bash
 # Unit tests for the geo package (zero dependencies)
-node --test packages/geo/test/
+cd packages/geo && node --test "test/**/*.test.ts"
 
 # Rebuild browser copy of the geo package after changing packages/geo
 /path/to/tsc -p packages/geo/tsconfig.browser.json
