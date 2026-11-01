@@ -10,7 +10,8 @@ data/
 android/
 ios/
 .expo/
-dist/
+dist/*
+!dist/topo3d-standalone.html
 build/
 *.apk
 *.aab

@@ -31,6 +31,10 @@ Phase 1 must not start until the owner approves the engine.
 - Which OpenFreeMap layers get hidden/renamed, whether `name:he` exists, glyphs for Hebrew.
 - Real encoding check, DEM max zoom over Israel, FPS, toggle times.
 
+## 2026-11-01 owner report: "can't open the app"
+- Cause unknown yet (asked: SmartScreen? black window? blank page? run from inside the ZIP?).
+- Added `dist/topo3d-standalone.html` (D-009) + on-screen error banner. Smoke tests still 7/7, geo 31/31.
+
 ## Blockers / waiting for owner
 - Owner run of the page on Windows; send back the "העתק תוצאות" JSON and screenshots.
 - FATMAP reference screenshots (≥ 3).

@@ -25,13 +25,15 @@ function log(html, cls) {
 
 // ---------------------------------------------------------------- setup
 const params = new URLSearchParams(location.search);
-const overlay = await (await fetch('../../app/styles/topo3d.json', { cache: 'no-cache' })).json();
+// The standalone single-file build embeds the overlay (no server needed); otherwise fetch it.
+const overlay = globalThis.__TOPO3D_OVERLAY__ ?? await (await fetch('../../app/styles/topo3d.json', { cache: 'no-cache' })).json();
 const demMaxzoom = Number(params.get('demz')) || overlay.dem.maxzoomDefault;
 const DEM = { urlTemplate: overlay.dem.tiles, encoding: overlay.dem.encoding, tileSize: overlay.dem.tileSize };
 
 if (typeof maplibregl === 'undefined' || typeof mlcontour === 'undefined') {
   log('Could not load MapLibre / maplibre-contour from unpkg.com. Check the internet connection.', 'fail');
-  throw new Error('libraries missing');
+  throw new Error('MapLibre / maplibre-contour did not load from unpkg.com (no internet, or the site is blocked by antivirus/firewall). ' +
+    'ספריות המפה לא נטענו מ-unpkg.com: בדוק חיבור לאינטרנט או חסימה של אנטי-וירוס.');
 }
 
 // Hebrew needs the RTL text plugin (official MapLibre example, checked 2026-11-01).

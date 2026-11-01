@@ -72,6 +72,15 @@ Consequences:
 - Possible risk: if Mapterhorn WebP tiles are lossy, decoded elevations get noise. The live encoding check
   and the engine-vs-decoder check on the owner's computer will show it.
 
+## D-009 (2026-11-01) Single-file build that needs no server
+Owner reported the app would not open with the start script (details pending). To remove the local
+server as a failure point, `scripts/build_standalone.py` builds `dist/topo3d-standalone.html`: all local ES
+modules as data: URLs behind an import map, CSS and the Topo3D overlay inlined. Opens by double-click
+(file://). Verified in headless Chromium from file://: module graph, import map and embedded overlay load;
+a visible red error banner appears when the libraries cannot load. Not verifiable here: real MapLibre
+rendering and whether the tile servers accept requests from a file:// page (CORS with origin "null").
+The server route (start-windows.bat) is kept.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

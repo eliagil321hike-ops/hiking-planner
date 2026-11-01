@@ -4,6 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Topo3D – אב-טיפוס B</title>
+<script>
+  // Show any startup error on screen (owner sends a screenshot instead of opening DevTools).
+  function showFatal(msg) {
+    var d = document.getElementById('fatal') || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'fatal' }));
+    d.style.cssText = 'position:fixed;inset:auto 12px 12px 12px;z-index:9;background:#c62828;color:#fff;padding:10px 14px;border-radius:8px;font:13px/1.4 Consolas,monospace;direction:ltr;white-space:pre-wrap';
+    d.textContent = (d.textContent ? d.textContent + '\n' : 'שגיאה / Error:\n') + msg;
+  }
+  addEventListener('error', function (e) { showFatal((e.message || 'script failed to load: ' + (e.target && (e.target.src || e.target.href))) ); }, true);
+  addEventListener('unhandledrejection', function (e) { showFatal(String(e.reason && e.reason.message || e.reason)); });
+</script>
 <!-- Versions pinned to the official MapLibre RTL example (checked 2026-11-01). See DECISIONS D-008. -->
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
