@@ -385,8 +385,8 @@ def main():
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")
-    expect(r["poiIcons"][:3] == [True, True, 13] and "topo-tent" in r["poiIcons"][3] and "topo-tap" in r["poiIcons"][3],
-           f"tent and tap icons registered, icon layer from z13 (D-031) {r['poiIcons'][:3]}")
+    expect(r["poiIcons"][:3] == [True, True, 12] and "topo-tent" in r["poiIcons"][3] and "topo-tap" in r["poiIcons"][3],
+           f"tent and tap icons registered, icon layer from z12 (D-032) {r['poiIcons'][:3]}")
     expect(r["poiMinzoom"] == 13 and r["waterColor"] == "#2f7fd8", f"POIs from z13, streams blue {r['poiMinzoom']} {r['waterColor']}")
     expect(r["waterToggle"] == ["none", "visible"], f"streams switch hides/shows the layer {r['waterToggle']}")
     expect(r["profileHidden"] == [True, True, True] and r["profileShownAgain"], f"profile + stats can be hidden (✕), remembered, and shown again {r['profileHidden']}")

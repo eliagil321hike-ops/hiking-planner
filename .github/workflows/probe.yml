@@ -1,4 +1,4 @@
-# One-off data probe (D-032). Runs only on probe/* branches; deleted after use.
+# One-off data build (D-032). Runs only on probe/* branches; deleted after use.
 name: probe
 on:
   push:
@@ -10,4 +10,6 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
-      - run: cd probe && npm init -y >/dev/null && npm i @mapbox/vector-tile@2 pbf@4 >/dev/null && node routes.mjs
+      - run: cd probe && node routes.mjs
+      - uses: actions/upload-artifact@v4
+        with: { name: trails, path: probe/out/trails.geojson }

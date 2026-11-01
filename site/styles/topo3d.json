@@ -746,7 +746,7 @@
       "type": "symbol",
       "source": "$base",
       "source-layer": "poi",
-      "minzoom": 13,
+      "minzoom": 12,
       "filter": [
         "any",
         [
@@ -857,8 +857,10 @@
           [
             "zoom"
           ],
-          13,
-          1,
+          12,
+          0.85,
+          14,
+          1.05,
           16,
           1.3
         ],
