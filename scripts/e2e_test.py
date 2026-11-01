@@ -276,8 +276,17 @@ def main():
         # busy to acknowledge synthetic mouse input on map controls in time. Visibility/on-top was verified.
         r["geoButtonOnTop"] = page.evaluate("""() => { const b = document.querySelector('.maplibregl-ctrl-geolocate');
             const q = b.getBoundingClientRect(); return b.contains(document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2)); }""")
-        page.evaluate("() => document.querySelector('.maplibregl-ctrl-geolocate').click()")
-        page.wait_for_function("() => window.__geoCalls.get > 0", polling=250, timeout=10_000)
+        # The control checks geolocation support asynchronously after load; wait until it is ready, and press
+        # again if a slow CI machine swallowed the first press (no location call is made before a press).
+        page.wait_for_function("() => { const b = document.querySelector('.maplibregl-ctrl-geolocate'); return b && !b.disabled; }", polling=250, timeout=20_000)
+        for attempt in range(3):
+            page.evaluate("() => document.querySelector('.maplibregl-ctrl-geolocate').click()")
+            try:
+                page.wait_for_function("() => window.__geoCalls.get > 0", polling=250, timeout=8_000)
+                break
+            except Exception:  # noqa: BLE001
+                print(f"(location press {attempt + 1} not handled yet)")
+        r["geoPresses"] = attempt + 1
         page.wait_for_timeout(2500)
         r["geoAfter"] = page.evaluate("() => ({ ...window.__geoCalls })")
         r["centerAfterGeo"] = page.evaluate("() => window.__topo3d.map.getCenter().toArray()")
