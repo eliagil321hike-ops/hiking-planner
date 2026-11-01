@@ -9,7 +9,7 @@ export const GROUPS = {
   trails: ['topo-trails-casing', 'topo-trails-track', 'topo-trails-path', 'topo-trails-footway'],
   landcover: ['topo-landcover'],
   water: ['topo-waterway', 'topo-waterway-label'],
-  poi: ['topo-poi-dot', 'topo-poi'],
+  poi: ['topo-poi-dot', 'topo-poi-icon', 'topo-poi'],
 };
 
 /** Shared helpers put on ctx (used by background and developer tools too). */

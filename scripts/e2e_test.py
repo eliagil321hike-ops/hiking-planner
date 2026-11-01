@@ -176,7 +176,7 @@ def main():
         r["topo"] = page.evaluate("() => window.__topo3d.results.topo")
         r["layers"] = page.evaluate("""() => { const m = window.__topo3d.map;
             return ['topo-landcover','topo-hillshade','topo-contours-minor','topo-trails-path','topo-peaks','route-line',
-                    'topo-waterway','topo-waterway-label','topo-poi-dot','topo-poi']
+                    'topo-waterway','topo-waterway-label','topo-poi-dot','topo-poi-icon','topo-poi']
               .filter((id) => !!m.getLayer(id)); }""")
         r["terrain"] = page.evaluate("() => !!window.__topo3d.map.getTerrain()")
         r["fatal"] = page.evaluate("() => document.getElementById('fatal')?.textContent ?? null")
@@ -193,6 +193,8 @@ def main():
             return q.width > 40 && q.height >= 44 && b.contains(document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2)); }""")
         r["routeColor"] = page.evaluate("() => window.__topo3d.map.getPaintProperty('route-line', 'line-color')")
         r["poiMinzoom"] = page.evaluate("() => window.__topo3d.map.getLayer('topo-poi')?.minzoom")
+        r["poiIcons"] = page.evaluate("""() => { const m = window.__topo3d.map; return [m.hasImage('topo-tent'), m.hasImage('topo-tap'),
+            m.getLayer('topo-poi-icon')?.minzoom, JSON.stringify(m.getLayoutProperty('topo-poi-icon', 'icon-image'))]; }""")
         r["waterColor"] = page.evaluate("() => window.__topo3d.map.getPaintProperty('topo-waterway', 'line-color')")
         page.evaluate("() => document.querySelector('input[data-group=water]').click()")
         wt = [page.evaluate("() => window.__topo3d.map.getLayoutProperty('topo-waterway', 'visibility')")]
@@ -373,7 +375,7 @@ def main():
     expect(set(r["topo"]["hidden"]) == {"road_path_pedestrian", "mountain_peak", "waterway_stream", "poi_r1"}, f"base trail/peak/waterway/poi layers hidden by schema (not road_major) {r['topo']['hidden']}")
     expect(r["topo"]["renamed"] == 2, "Hebrew-first names on name labels only (water_name, place_label; not the ref shield)")
     expect(r["topo"]["labelFont"] == ["Noto Sans Regular"], "Regular label font chosen over the first (Italic) one")
-    expect(len(r["layers"]) == 10, f"Topo3D (incl. streams, POIs) + route layers present {r['layers']}")
+    expect(len(r["layers"]) == 11, f"Topo3D (incl. streams, POIs) + route layers present {r['layers']}")
     m = r["menus"]
     expect(m[0] == {"layers": False, "route": False, "layersAria": "false"}, f"menus closed at start {m[0]}")
     expect(m[1]["layers"] and not m[1]["route"] and m[1]["layersAria"] == "true", "layers icon opens the layers menu")
@@ -383,6 +385,8 @@ def main():
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")
+    expect(r["poiIcons"][:3] == [True, True, 13] and "topo-tent" in r["poiIcons"][3] and "topo-tap" in r["poiIcons"][3],
+           f"tent and tap icons registered, icon layer from z13 (D-031) {r['poiIcons'][:3]}")
     expect(r["poiMinzoom"] == 13 and r["waterColor"] == "#2f7fd8", f"POIs from z13, streams blue {r['poiMinzoom']} {r['waterColor']}")
     expect(r["waterToggle"] == ["none", "visible"], f"streams switch hides/shows the layer {r['waterToggle']}")
     expect(r["profileHidden"] == [True, True, True] and r["profileShownAgain"], f"profile + stats can be hidden (✕), remembered, and shown again {r['profileHidden']}")

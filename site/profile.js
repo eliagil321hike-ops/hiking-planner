@@ -1,17 +1,17 @@
-// Elevation profile: x = cumulative distance, y = elevation. Filled area, line coloured by slope
-// (SPEC 8.3 "gradient colouring optional"; look follows the owner's reference screenshots), km ticks,
-// highest/lowest point. Touch/drag reports the sample index so the page can move a marker on the map.
+// Elevation profile: x = cumulative distance, y = elevation (SPEC §8.3). Light, low design (owner request
+// D-030): a top info row (total length, highest, lowest), a separate slope legend, a thin slope-coloured line
+// over a pale fill, km ticks with the FULL length marked at the right end, and a hover readout.
 // Missing elevation breaks the line and the fill; it is never drawn as 0.
 
 const NS = 'http://www.w3.org/2000/svg';
 
-// Slope classes (absolute grade, computed over ~100 m on smoothed elevations). Colour is never the only
-// carrier of meaning: the legend states the ranges in text.
+// Absolute grade classes, computed over ~100 m on smoothed elevations. Colour is not the only carrier of
+// meaning: the legend spells out the ranges.
 export const SLOPE_CLASSES = [
-  { max: 0.08, color: '#4caf50', label: '<8%' },
+  { max: 0.08, color: '#4caf50', label: '0–8%' },
   { max: 0.15, color: '#d4b106', label: '8–15%' },
   { max: 0.25, color: '#ef7d1a', label: '15–25%' },
-  { max: Infinity, color: '#c62828', label: '>25%' },
+  { max: Infinity, color: '#d32f2f', label: '25%+' },
 ];
 
 export function slopeClass(grade) {
@@ -26,6 +26,8 @@ function el(name, attrs = {}, text) {
   return n;
 }
 
+const fmtKm = (m) => `${(m / 1000).toFixed(m < 10_000 ? 2 : 1)} km`;
+
 export function renderProfile(container, samples, onHover, opts = {}) {
   container.innerHTML = '';
   const valid = samples.filter((s) => s.elevation !== null);
@@ -34,29 +36,63 @@ export function renderProfile(container, samples, onHover, opts = {}) {
     return;
   }
   const smoothed = opts.smoothed ?? samples.map((s) => s.elevation);
-  const W = container.clientWidth || 360, H = container.clientHeight || 140;
-  const pad = { l: 46, r: 10, t: 10, b: 22 };
+  const W = container.clientWidth || 360, H = container.clientHeight || 120;
+  // top: info + legend row (16 px); left: elevation labels; right: room for the end tick label
+  const pad = { l: 40, r: 14, t: 24, b: 18 };
   const maxD = samples.at(-1).distance;
   const els = valid.map((s) => s.elevation);
   let lo = Math.min(...els), hi = Math.max(...els);
   if (hi - lo < 20) { const m = (hi + lo) / 2; lo = m - 10; hi = m + 10; }
   const span = hi - lo;
-  lo -= span * 0.05; hi += span * 0.08;
+  const yLo = lo - span * 0.04, yHi = hi + span * 0.06;
   const x = (d) => pad.l + (d / maxD) * (W - pad.l - pad.r);
-  const y = (e) => pad.t + (1 - (e - lo) / (hi - lo)) * (H - pad.t - pad.b);
+  const y = (e) => pad.t + (1 - (e - yLo) / (yHi - yLo)) * (H - pad.t - pad.b);
   const baseY = H - pad.b;
 
   const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: '100%', role: 'img', 'aria-label': 'Elevation profile' });
-  container.append(svg); // in the DOM early so text widths can be measured for the legend
+  container.append(svg); // in the DOM early so text widths can be measured
 
-  // km gridlines and labels
-  const stepKm = [0.5, 1, 2, 5, 10, 20].find((s) => maxD / 1000 / s <= 8) ?? 50;
-  for (let k = stepKm; k * 1000 < maxD; k += stepKm) {
-    svg.append(el('line', { x1: x(k * 1000), x2: x(k * 1000), y1: pad.t, y2: baseY, class: 'profile-grid' }));
-    svg.append(el('text', { x: x(k * 1000), y: H - 6, 'text-anchor': 'middle', class: 'profile-axis' }, `${k} km`));
+  // --- top row, left: total length · highest · lowest (no labels inside the plot to collide with)
+  const hiS = valid.reduce((m, s) => (s.elevation > m.elevation ? s : m));
+  const loS = valid.reduce((m, s) => (s.elevation < m.elevation ? s : m));
+  const info = el('text', { x: pad.l, y: 13, class: 'profile-info' });
+  info.append(el('tspan', { class: 'profile-strong' }, fmtKm(maxD)));
+  info.append(el('tspan', { dx: 10 }, `▲ ${Math.round(hiS.elevation)} m`));
+  info.append(el('tspan', { dx: 8 }, `▼ ${Math.round(loS.elevation)} m`));
+  svg.append(info);
+
+  // --- top row, right: slope legend (short coloured bars + text), right-aligned before the close button
+  let lx = W - pad.r - 30;
+  for (const c of [...SLOPE_CLASSES].reverse()) {
+    const tx = el('text', { x: lx, y: 13, 'text-anchor': 'end', class: 'profile-legend' }, c.label);
+    svg.append(tx);
+    const w = tx.getComputedTextLength?.() || c.label.length * 6;
+    svg.append(el('line', { x1: lx - w - 16, x2: lx - w - 5, y1: 9.5, y2: 9.5, stroke: c.color, 'stroke-width': 3, 'stroke-linecap': 'round' }));
+    lx = lx - w - 24;
   }
 
-  // filled area per contiguous run of valid samples
+  // --- km grid; the right end always shows the full length (owner request)
+  const kmLen = maxD / 1000;
+  const stepKm = [0.25, 0.5, 1, 2, 5, 10, 20, 50].find((s) => kmLen / s <= 7) ?? 100;
+  const endX = x(maxD);
+  for (let k = stepKm; k * 1000 < maxD; k += stepKm) {
+    const gx = x(k * 1000);
+    if (endX - gx < 48) break;                         // keep clear of the end label
+    svg.append(el('line', { x1: gx, x2: gx, y1: pad.t, y2: baseY, class: 'profile-grid' }));
+    svg.append(el('text', { x: gx, y: H - 4, 'text-anchor': 'middle', class: 'profile-axis' }, `${+k.toFixed(2)}`));
+  }
+  svg.append(el('line', { x1: endX, x2: endX, y1: pad.t, y2: baseY + 3, class: 'profile-end' }));
+  svg.append(el('text', { x: endX, y: H - 4, 'text-anchor': 'end', class: 'profile-axis profile-strong' }, fmtKm(maxD)));
+  svg.append(el('text', { x: pad.l - 2, y: H - 4, 'text-anchor': 'end', class: 'profile-axis' }, '0'));
+
+  // --- elevation labels (left), highest and lowest only
+  for (const v of [hi, lo]) {
+    svg.append(el('text', { x: pad.l - 6, y: y(v) + 3.5, 'text-anchor': 'end', class: 'profile-axis' }, `${Math.round(v)}`));
+    svg.append(el('line', { x1: pad.l, x2: W - pad.r, y1: y(v), y2: y(v), class: 'profile-grid profile-grid-h' }));
+  }
+  svg.append(el('text', { x: pad.l - 6, y: pad.t - 6, 'text-anchor': 'end', class: 'profile-axis' }, 'm'));
+
+  // --- pale fill per contiguous run of valid samples
   let run = [];
   const flushArea = () => {
     if (run.length > 1) {
@@ -68,8 +104,8 @@ export function renderProfile(container, samples, onHover, opts = {}) {
   for (const s of samples) { if (s.elevation === null) flushArea(); else run.push(s); }
   flushArea();
 
-  // slope-coloured line: one segment per sample pair, grade from smoothed values over ≈100 m
-  const W_SAMPLES = 2; // ±2 samples × 20 m ≈ 80–100 m window
+  // --- thin slope-coloured line (grade from smoothed values over ≈100 m)
+  const W_SAMPLES = 2;
   for (let i = 1; i < samples.length; i++) {
     const a = samples[i - 1], b = samples[i];
     if (a.elevation === null || b.elevation === null) continue;
@@ -82,37 +118,14 @@ export function renderProfile(container, samples, onHover, opts = {}) {
       stroke: slopeClass(grade).color, class: 'profile-seg',
     }));
   }
+  for (const s of [hiS, loS]) svg.append(el('circle', { cx: x(s.distance), cy: y(s.elevation), r: 2.5, class: 'profile-dot' }));
 
-  // highest / lowest point
-  const hiS = valid.reduce((m, s) => (s.elevation > m.elevation ? s : m));
-  const loS = valid.reduce((m, s) => (s.elevation < m.elevation ? s : m));
-  for (const [s, label, dy] of [[hiS, `▲ ${Math.round(hiS.elevation)} m`, -6], [loS, `▼ ${Math.round(loS.elevation)} m`, 14]]) {
-    svg.append(el('circle', { cx: x(s.distance), cy: y(s.elevation), r: 3, class: 'profile-dot' }));
-    const anchor = x(s.distance) > W - 70 ? 'end' : x(s.distance) < pad.l + 40 ? 'start' : 'middle';
-    svg.append(el('text', { x: x(s.distance), y: y(s.elevation) + dy, 'text-anchor': anchor, class: 'profile-axis profile-strong' }, label));
-  }
-
-  // y axis labels
-  for (const v of [Math.round(lo + (hi - lo) * 0.1), Math.round(lo + (hi - lo) * 0.85)]) {
-    svg.append(el('text', { x: 4, y: y(v) + 4, class: 'profile-axis' }, `${v} m`));
-  }
-
-  // legend (text, not colour only)
-  let lx = W - pad.r;
-  for (const c of [...SLOPE_CLASSES].reverse()) {
-    const t = el('text', { x: lx, y: pad.t + 1, 'text-anchor': 'end', class: 'profile-axis', 'dominant-baseline': 'hanging' }, c.label);
-    svg.append(t);
-    const textW = t.getComputedTextLength?.() || c.label.length * 6.5;
-    const sx = lx - textW - 12;
-    svg.append(el('rect', { x: sx, y: pad.t + 2, width: 9, height: 9, rx: 2, fill: c.color }));
-    lx = sx - 12;
-  }
-
-  // hover cursor
+  // --- hover / drag readout
   const cursor = el('line', { class: 'profile-cursor', y1: pad.t, y2: baseY });
-  cursor.style.display = 'none';
-  const readout = el('text', { class: 'profile-axis profile-strong', y: pad.t + 24 });
-  svg.append(cursor, readout);
+  const dot = el('circle', { r: 3.5, class: 'profile-hover' });
+  const readout = el('text', { class: 'profile-readout', y: pad.t + 11 });
+  for (const n of [cursor, dot, readout]) n.style.display = 'none';
+  svg.append(cursor, dot, readout);
 
   function pick(ev) {
     const r = svg.getBoundingClientRect();
@@ -120,13 +133,16 @@ export function renderProfile(container, samples, onHover, opts = {}) {
     const dist = Math.max(0, Math.min(maxD, ((px - pad.l) / (W - pad.l - pad.r)) * maxD));
     let best = 0;
     for (let i = 1; i < samples.length; i++) if (Math.abs(samples[i].distance - dist) < Math.abs(samples[best].distance - dist)) best = i;
-    const cx = x(samples[best].distance);
+    const s = samples[best];
+    const cx = x(s.distance);
     cursor.setAttribute('x1', cx); cursor.setAttribute('x2', cx);
-    cursor.style.display = '';
-    const e = samples[best].elevation;
-    readout.setAttribute('x', cx + (cx > W - 120 ? -6 : 6));
-    readout.setAttribute('text-anchor', cx > W - 120 ? 'end' : 'start');
-    readout.textContent = `${(samples[best].distance / 1000).toFixed(2)} km · ${e === null ? '—' : Math.round(e) + ' m'}`;
+    const right = cx > W - 150;
+    readout.setAttribute('x', cx + (right ? -6 : 6));
+    readout.setAttribute('text-anchor', right ? 'end' : 'start');
+    readout.textContent = `${fmtKm(s.distance)} · ${s.elevation === null ? '—' : Math.round(s.elevation) + ' m'}`;
+    if (s.elevation !== null) { dot.setAttribute('cx', cx); dot.setAttribute('cy', y(s.elevation)); }
+    for (const n of [cursor, readout]) n.style.display = '';
+    dot.style.display = s.elevation === null ? 'none' : '';
     onHover?.(best);
   }
   svg.addEventListener('pointerdown', (e) => { svg.setPointerCapture(e.pointerId); pick(e); });

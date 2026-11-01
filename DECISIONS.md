@@ -302,6 +302,29 @@ with the first real request.
 - Route line: fluorescent green #39ff14 with a dark casing (owner: "fluorescent, more prominent, a different
   hue from the trails"); pending segments dotted light grey, errors dotted pink-red #ff2d55.
 
+## D-029 (2026-11-01) Owner: toolbar and menus behind icons
+- Always-visible prominent "מסלול חדש" button with a plus icon (confirm → clear route as one undoable command
+  → planning mode on). Layers menu and route-options menu each open from an icon button and close on a
+  second click; opening one closes the other; Escape closes; a map click closes them unless planning.
+- A small "עריכת מסלול" badge shows while planning.
+
+## D-030 (2026-11-01) Owner: lower, lighter elevation profile
+- Height 170 → 122 px, thin 2 px slope-coloured line over a pale fill, light grid.
+- Right end always shows a tick with the **full route length** (owner request); km ticks closer than 48 px to
+  the end are dropped so labels never collide.
+- Highest/lowest moved out of the plot to a top info row (length · ▲ · ▼); slope percentages moved to their
+  own legend row at the top right (coloured bars + "0–8% / 8–15% / 15–25% / 25%+"), clear of the ✕ button
+  (now top-right, smaller). Fixes the overlapping labels in the owner's screenshot.
+
+## D-031 (2026-11-01) Owner: tent icon for campsites, tap icon for drinking water
+- From z13 (the same ~500 m scale as other POIs): brown tent for OpenMapTiles `campsite` / `camp_site`
+  (חניון לילה), blue tap for `drinking_water` / `water_point` / `water_tap`. Separate symbol layer
+  `topo-poi-icon` (allow-overlap so the icon never disappears behind labels); the round dot is no longer
+  drawn for these classes; the name label sits under the icon. Part of the "נקודות עניין" switch.
+- Icons are our own drawings in code (Path2D, white outline for hillshade/satellite), modelled on the
+  owner's examples. The owner's tap picture is a watermarked VectorStock stock image, so it is not copied.
+- Coverage depends on OSM tagging in the OpenFreeMap tiles; a campsite missing from OSM shows no icon.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

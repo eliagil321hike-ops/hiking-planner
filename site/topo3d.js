@@ -2,6 +2,8 @@
 // Base layers are found by schema (source-layer + filter), never by guessed layer ids.
 // Returns a report of what was found/changed so the page can show it (runtime verification).
 
+import { addPoiIcons } from './poi-icons.js';
+
 export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   const style = map.getStyle();
   const report = { baseSource: null, labelFont: null, hidden: [], renamed: 0, added: [], warnings: [] };
@@ -77,6 +79,7 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
     if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fill(x)]));
     return v;
   };
+  report.icons = addPoiIcons(map); // tent / tap images must exist before the icon layer renders
   for (const raw of overlay.layers) {
     const layer = fill(raw);
     const onTop = overlay.symbolLayersOnTop.includes(layer.id);
