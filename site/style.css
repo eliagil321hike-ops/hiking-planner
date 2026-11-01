@@ -243,3 +243,4 @@ input.switch:focus-visible { outline: 3px solid #39ff14; outline-offset: 2px; }
 @media (max-width: 600px) {
   .popover { top: auto; bottom: 8px; inset-inline: 8px; width: auto; max-height: 68vh; border-radius: 16px; z-index: 4; }
 }
+@media (max-width: 600px) { .maplibregl-ctrl-top-right { top: 112px; } }

@@ -12,6 +12,8 @@ Exit code 0 even on network failure when --soft is given (the deploy then ships 
 """
 import json, math, os, sys, time, urllib.parse, urllib.request
 
+# Bump when the extract's content rules change: a push then re-downloads instead of reusing live files.
+EXTRACT_VERSION = 3
 BBOX = (29.45, 34.2, 33.45, 35.95)  # south, west, north, east: Israel incl. Golan and Eilat
 ENDPOINTS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"]
 # Several small queries instead of one big one (one big query timed out on both public servers, 2026-11-01).
@@ -251,6 +253,20 @@ def counts(pois):
 def main():
     out = sys.argv[1]
     soft = "--soft" in sys.argv
+    if "--reuse-same-version" in sys.argv and "--previous" in sys.argv:
+        prevdir = sys.argv[sys.argv.index("--previous") + 1]
+        try:
+            olds = {n: json.load(open(os.path.join(prevdir, n), encoding="utf-8")) for n in ("osm-trails.geojson", "osm-pois.geojson")}
+            if all(o.get("extract_version") == EXTRACT_VERSION for o in olds.values()):
+                os.makedirs(out, exist_ok=True)
+                for n, o in olds.items():
+                    with open(os.path.join(out, n), "w", encoding="utf-8") as f:
+                        json.dump(o, f, ensure_ascii=False, separators=(",", ":"))
+                print(f"reused live OSM extract v{EXTRACT_VERSION} (OSM base {olds['osm-trails.geojson'].get('osm_base')})")
+                return
+            print("live extract has another version → fresh extract")
+        except Exception as ex:  # noqa: BLE001
+            print(f"no reusable live extract ({ex}) → fresh extract")
     try:
         if "--from" in sys.argv:
             data = json.load(open(sys.argv[sys.argv.index("--from") + 1], encoding="utf-8"))
@@ -287,7 +303,7 @@ def main():
         else:
             fstamp = stamp
         with open(os.path.join(out, name), "w", encoding="utf-8") as f:
-            json.dump({"type": "FeatureCollection", "osm_base": fstamp, "features": feats}, f, ensure_ascii=False, separators=(",", ":"))
+            json.dump({"type": "FeatureCollection", "osm_base": fstamp, "extract_version": EXTRACT_VERSION, "features": feats}, f, ensure_ascii=False, separators=(",", ":"))
     sizes = {n: os.path.getsize(os.path.join(out, n)) for n in ("osm-trails.geojson", "osm-pois.geojson")}
     print(f"OSM base {stamp}; trails {len(trails)}, pois {len(pois)} "
           f"({counts(pois)}); bytes {sizes}")

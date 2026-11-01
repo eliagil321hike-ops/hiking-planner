@@ -420,6 +420,26 @@ with the first real request.
   shows it again). The map stays draggable/zoomable around it.
 - Not yet done: route panel position relative to important map features (it is fixed at the bottom).
 
+## D-040 (2026-11-01) Stage 5: 3D, and what was checked vs what needs the owner's eyes
+- Line labels (trail and stream names) face the camera in 3D (`text-pitch-alignment: viewport`; contour
+  labels already did). Points (peaks, POIs) are placed on the terrain by MapLibre and drawn upright.
+- Exaggeration: slider 1.0–2.0 with marks at 1.0 / 1.2 / 1.5 / 2.0 and a hint "1.0 = real height". Default
+  stays **1.2**: it is the value the owner saw and approved in Phase 0; the agent cannot view real terrain
+  (no access to the tile servers), so evaluating other defaults across terrain types is left to the owner.
+- Terrain mesh, LOD, seams, draping of lines: handled by MapLibre 5.24 terrain (one DEM, 512-px tiles,
+  `centerClampedToGround`); not changed. Multidirectional hillshade rejected (D-037).
+- Phone: map controls moved below the wrapped toolbar.
+- Verified automatically (fixtures + real MapLibre build, software WebGL): styles, 2D/3D, layer switches,
+  slope/aspect tiles, search, route panel, icons and line widths rendered with the real engine.
+  Not verifiable here (needs the owner on the live site): real tiles at the 500 m scale, look on satellite,
+  terrain in 3D, frame rate on his computer, phone layout on a real phone.
+
+## D-041 (2026-11-01) Efficiency: deploys reuse the live OSM extract
+- Every push used to re-run all Overpass queries (~15 min per deploy, needless load on a free service).
+  Now a push reuses the live files when their `extract_version` matches `EXTRACT_VERSION` in
+  scripts/fetch_osm_hiking.py; the weekly scheduled run and manual runs always fetch fresh data. Changing
+  the extract rules = bump EXTRACT_VERSION, and the next push re-downloads.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

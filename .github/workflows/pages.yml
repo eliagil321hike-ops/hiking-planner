@@ -52,7 +52,10 @@ jobs:
           for f in osm-trails.geojson osm-pois.geojson; do
             curl -fsS -m 60 -o "prev/$f" "https://eliagil321hike-ops.github.io/hiking-planner/data/$f" || echo "no previous $f"
           done
-          python3 scripts/fetch_osm_hiking.py site/data --soft --previous prev
+          # Fresh Overpass extract only on the weekly schedule / manual run, or when the live files are missing or
+          # from another extract version; ordinary pushes reuse them: deploy in minutes, no Overpass load (D-041).
+          REUSE=""; [ "${{ github.event_name }}" = "push" ] && REUSE="--reuse-same-version"
+          python3 scripts/fetch_osm_hiking.py site/data --soft --previous prev $REUSE
       - name: Stamp build (cache busting, version shown in the page)
         run: bash scripts/stamp_build.sh site "${GITHUB_SHA::7}"
       - name: Setup Pages

@@ -1,6 +1,6 @@
 {
   "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by site/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "base": "https://tiles.openfreemap.org/styles/liberty",
   "dem": {
     "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
@@ -1307,7 +1307,8 @@
         "text-font": "$labelFont",
         "text-size": 12,
         "text-max-angle": 30,
-        "text-letter-spacing": 0.05
+        "text-letter-spacing": 0.05,
+        "text-pitch-alignment": "viewport"
       },
       "paint": {
         "text-color": "#1f5fa8",
@@ -1358,7 +1359,8 @@
             "get",
             "rank"
           ]
-        ]
+        ],
+        "text-pitch-alignment": "viewport"
       },
       "paint": {
         "text-color": [

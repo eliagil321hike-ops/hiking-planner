@@ -45,6 +45,7 @@ const STRINGS = {
     'layers.water': 'נחלים',
     'layers.poi': 'מעיינות, תצפיות ומחסות',
     'layers.exaggeration': 'הגבהה',
+    'layers.exagHint': '1.0 = גובה אמיתי. אפשר להגביה כדי לראות הבדלי גובה קטנים.',
     'route.heading': 'מסלול',
     'route.new': 'מסלול חדש',
     'route.newConfirm': 'להתחיל מסלול חדש? המסלול הנוכחי יימחק (אפשר לבטל עם "בטל").',
