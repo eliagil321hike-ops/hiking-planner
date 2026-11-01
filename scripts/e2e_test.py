@@ -237,6 +237,8 @@ def main():
               streamFilter: JSON.stringify(m.getFilter('topo-waterway')),
               markedW14: w('topo-marked-line', 'marked', 14), pathW14: w('topo-trails-path', '', 14),
               labelMinzoom: m.getLayer('topo-hike-label').minzoom,
+              peakIcon: JSON.stringify(m.getLayoutProperty('topo-peaks', 'icon-image')), hasPeakImg: m.hasImage('topo-peak') && m.hasImage('topo-saddle'),
+              contourLabelPad: m.getLayoutProperty('topo-contour-labels', 'text-padding'),
               pathColour: m.getPaintProperty('topo-trails-path', 'line-color'), trackInner: !!m.getLayer('topo-trails-track-inner'),
               baseIconFilter: JSON.stringify(m.getFilter('topo-poi-icon')), iconMinzoom: m.getLayer('poi-parking').minzoom, iconImgs: ['topo-parking', 'topo-spring', 'topo-viewpoint', 'topo-shelter'].every((i) => m.hasImage(i)),
               natW14: w('topo-hike-line', 'national', 14), regW14: w('topo-hike-line', 'regional', 14) }; }""")
@@ -440,6 +442,8 @@ def main():
     expect(o["markedMinzoom"] < o["pathMinzoom"] and '[">=",["zoom"],13]' in o["streamFilter"].replace(" ", ""),
            f"marked trails (z{o['markedMinzoom']}) before unmarked (z{o['pathMinzoom']}), small streams only from z13 (D-033)")
     expect(o["natW14"] > o["regW14"] > o["markedW14"] > o["pathW14"], f"width order national > regional > marked > unmarked {o['natW14']} {o['regW14']} {o['markedW14']} {o['pathW14']}")
+    expect(o["hasPeakImg"] and "topo-peak" in o["peakIcon"] and "topo-saddle" in o["peakIcon"], "peaks/saddles drawn with their own icons (D-037)")
+    expect(o["contourLabelPad"] == 8, "contour labels spaced with collision padding (D-037)")
     expect(o["pathColour"] == "#5a5550" and o["trackInner"], "unmarked paths dark grey dashes, 4x4 tracks double line (owner's example, D-035)")
     expect('"within"' in o["baseIconFilter"], "base-tile campsite/water icons hidden inside Israel (no duplicates with the OSM extract)")
     expect(o["counts"]["trails"] == 3 and o["counts"]["byKind"] == {"camp": 1, "water": 2, "parking": 1}, f"OSM extract loaded; parking far from trails dropped {o['counts']}")

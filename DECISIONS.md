@@ -371,6 +371,27 @@ with the first real request.
   OSM-extract icons; deploy keeps the currently live OSM files when Overpass fails or answers partly.
 - Visual check: all line kinds rendered side by side with the real MapLibre build at z14/z15.
 
+## D-036 (2026-11-01) Owner brief "Advanced cartographic refinement" — stage 1: points of interest
+- The OSM extract adds: car parks within 400 m of a hiking route (trailheads; underground/multi-storey/
+  private dropped), `natural=spring` (seasonal ones flagged), `tourism=viewpoint`, shelters/huts (bus and
+  field shelters dropped). Marked-trail queries in 0.25° bands (a central 0.5° band timed out).
+- One icon set (poi-icons.js): 24-unit grid, same white outline, one colour per category — tent, tap,
+  parking "P", spring drop, viewpoint binoculars, shelter house, peak triangle, saddle.
+- Campsites, water and parking: separate clustered GeoJSON sources (a numbered circle per group, expands on
+  zoom), visible from **z11** — already before the 500 m scale (z12.7) the brief requires; springs from
+  z12.7, viewpoints/shelters from z14. Separate switches for each category.
+
+## D-037 (2026-11-01) Stage 2: peaks, contours, hillshade
+- Peaks: triangle icon (saddle: own symbol), elevation in smaller text, importance by elevation — higher
+  peaks win label collisions (symbol-sort-key) and show from z10; minor peaks only from z13.
+- Contours: index lines fade in from z11 (opacity 0.45 → 1 at z13), round joins; 10 m interval from z14;
+  labels from z12.5, 10.5 px, spaced 420 px, padding 8 px, kept upright, avoid tile edges (less clutter,
+  no overlapping labels).
+- Hillshade: **multidirectional hillshade evaluated and rejected**: MapLibre 5.24 supports it
+  (`hillshade-method`), but it made the page hang in the software-WebGL test (65/65 with one light, page
+  reload timeout with four), and the owner's Intel HD 4400 already runs 3D at 8–26 fps (D-014). Kept one
+  light at 315° with softer warm shadows (exaggeration 0.55).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
