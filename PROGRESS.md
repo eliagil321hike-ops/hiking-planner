@@ -7,7 +7,7 @@ Phase 1 starts only after the owner approves Phase 0 (look vs FATMAP, encoding t
 ## Status of Phase 0 criteria (SPEC-WEB W7)
 | Criterion | Status | Evidence |
 | --- | --- | --- |
-| Site deployed on GitHub Pages and opens | Waiting for owner | needs owner's GitHub account + repo; workflow ready |
+| Site deployed on GitHub Pages and opens | **Deployed**; opening not yet confirmed by owner | Actions run 41294695181 attempt 2: test ✓, deploy ✓; URL https://eliagil321hike-ops.github.io/hiking-planner/ |
 | 3D terrain stable; FPS recorded on owner's computer | Not run | "בדיקת FPS" button |
 | Hillshade + contours readable z12–16 | Not run | owner review |
 | Encoding test on real tiles + negative control | Implemented, not run on real tiles | geo 31/31; browser smoke 7/7 (synthetic tiles) |
@@ -32,6 +32,12 @@ Real rendering, OpenFreeMap layer matching / Hebrew names, real encoding check, 
 - First ZIP + start script: owner could not open it (cause unknown). Standalone file sent; then owner
   decided to restart as a website (D-010).
 
+## Deployment
+- Repo: https://github.com/eliagil321hike-ops/hiking-planner (public). Pages source: GitHub Actions
+  (set by owner 2026-11-01; agent's GitHub access cannot change repo settings).
+- First run: test ✓, deploy ✗ (Pages not enabled). Re-run after owner enabled Pages: test ✓, deploy ✓.
+- Note from the run log: actions/configure-pages@v5 targets Node 20 (deprecated, forced to Node 24);
+  ubuntu-latest moves to Ubuntu 26. Both warnings only.
+
 ## Next task
-1. Owner creates GitHub account/repo and connects GitHub to Claude → agent pushes → Pages deploys.
-2. Owner opens the site, runs the test buttons, sends results + screenshots + FATMAP references.
+Owner opens the site, runs the test buttons, sends results + screenshots + FATMAP references.
