@@ -14,8 +14,11 @@ No phone or owner computer is linked.
 Consequences:
 - APK builds, `npm install`, and live-tile tests must run on the owner's computer or phone.
 - The geo package is written to need **zero dependencies** (Node 22 built-in `node:test` and type stripping).
-- The live DEM encoding check is a standalone script (`scripts/check-dem-encoding.ts`) to run where the
-  tile host is reachable.
+- The live DEM encoding check runs inside the Option B page ("בדיקת קידוד" button) on the owner's
+  computer, where the tile host is reachable. Locally it is covered by unit tests and a headless-Chromium
+  smoke test with synthetic tiles (`scripts/browser_smoke_test.py`).
+- WebFetch/WebSearch work for documentation, but several official pages (OpenFreeMap style JSON,
+  Mapterhorn TileJSON, Mapterhorn GitHub) were not fetchable; those items are verified at runtime instead.
 
 ## D-003 (2026-11-01) Language
 Owner communication: Hebrew. Repository files: English (same as SPEC). Owner may change this.
@@ -45,13 +48,40 @@ Consequences:
   measured on the phone (Chrome on Android uses the same engine as the Android WebView).
 - Phone model / Android version / RAM: deferred by the owner.
 
+## D-008 (2026-11-01) Option B library versions and data-source facts (research)
+- **MapLibre GL JS 5.24.0** (UMD, unpkg) + **mapbox-gl-rtl-text 0.3.0** (Hebrew shaping). Both exactly as in
+  the official MapLibre "right-to-left scripts" example (maplibre.org, fetched 2026-11-01).
+- MapLibre GL JS **v6.0.0** exists (released 2026-07-22): ESM-only, WebGL2 mandatory, breaking API changes
+  (geo.malagis.com summary; MapLibre newsletter Jul 2026). **Not used in Phase 0**: maplibre-contour's
+  documented integration is the UMD/global `setupMaplibre(maplibregl)` path, and v6 compatibility of the
+  plugin is unverified. Revisit after the engine decision.
+- **maplibre-contour 0.1.0** (README on GitHub, BSD-3-Clause): `new mlcontour.DemSource({url, encoding,
+  maxzoom, worker, cacheSize, timeoutMs})`, `setupMaplibre`, `contourProtocolUrl({thresholds, elevationKey,
+  levelKey, contourLayer, extent, buffer, multiplier})`. Newer versions not checked (npm unreachable).
+- **Mapterhorn** (Data Access page): Terrarium, WebP, 512 px, `https://tiles.mapterhorn.com/{z}/{x}/{y}.webp`;
+  planet.pmtiles covers z0–12, per-area files cover z13–17. → Default DEM maxzoom **12**; the page has a
+  "max DEM zoom" probe at Meron and accepts `?demz=N`. `attribution.json`: `isr10` = "10 meter Digital
+  Elevation Model (DEM) of Israel", resolution 10, licence "ASTER GDEM Public Domain", producer "ASTER GDEM
+  courtesy of METI and NASA processed by 4cast LTD using VTbuilder"; `glo30` = COPERNICUS GLO-30, 30 m,
+  "COPERNICUS full, free and open license". Tile licence and usage/fair-use policy of the hosted tiles:
+  **not found** (open question; light personal use only, no bulk scraping).
+- **OpenFreeMap** (quick start): style URL `https://tiles.openfreemap.org/styles/liberty`; offline downloads
+  capped at 3,000 tiles / 50 MB, ≤ 4 parallel requests, unique User-Agent; custom styles must be self-hosted
+  (we do: the overlay is applied on our page). Exact layer ids / `name:he` availability: **not fetchable** →
+  the overlay targets OpenMapTiles schema layers and the page reports matched layers and feature counts.
+- Possible risk: if Mapterhorn WebP tiles are lossy, decoded elevations get noise. The live encoding check
+  and the engine-vs-decoder check on the owner's computer will show it.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OpenFreeMap | Vector base map | pending | pending | © OpenMapTiles, © OpenStreetMap contributors | pending | free | pending | openfreemap.org |
-| Mapterhorn | DEM (terrain, hillshade, contours, elevation sampling) | pending | pending | pending | pending | free | pending | mapterhorn.com |
+| OpenFreeMap | Vector base map | ODbL data / OpenMapTiles schema; ToS not read | Spec says yes (not re-verified) | OpenFreeMap, © OpenMapTiles, © OpenStreetMap contributors | Offline ≤ 3,000 tiles / 50 MB, ≤ 4 parallel | free | 2026-11-01 quick start | openfreemap.org/quick_start |
+| Mapterhorn tiles | DEM: terrain, hillshade, contours, sampling | not found | unknown → **personal use only** | Mapterhorn + isr10 (ASTER GDEM, METI/NASA, 4cast LTD) + Copernicus GLO-30 (DLR, Airbus, EU/ESA) | fair use not found; light use | free | 2026-11-01 data-access + attribution.json | mapterhorn.com/data-access |
+| isr10 (in Mapterhorn) | Israel 10 m DEM | ASTER GDEM Public Domain | yes (per attribution.json) | as above | — | free | 2026-11-01 | download.mapterhorn.com/attribution.json |
+| Copernicus GLO-30 (in Mapterhorn) | global 30 m fallback | Copernicus full, free and open | yes | as above | — | free | 2026-11-01 | attribution.json |
 | OpenStreetMap data | Trails, peaks (via OpenFreeMap) | ODbL | yes | © OpenStreetMap contributors | — | free | spec | openstreetmap.org/copyright |
-| Israel Hiking Map tiles | Optional marked-trail overlay | CC BY-NC-SA 3.0 (unverified) | No → personal use only | pending | pending | free | not verified | — |
+| MapLibre GL JS 5.24.0, maplibre-contour 0.1.0, rtl-text 0.3.0 | rendering, contours, Hebrew | BSD-3 / BSD-3 / BSD-2 (rtl-text: not re-checked) | yes | — | loaded from unpkg CDN | free | 2026-11-01 | — |
+| Israel Hiking Map tiles | Optional marked-trail overlay | CC BY-NC-SA 3.0 (unverified) | No → personal use only | pending | pending | free | not verified, not used | — |
 
 ## D-007 (2026-11-01) Owner answers
 - First region: **Upper Galilee** (initial camera around Har Meron; encoding test peak is in this region).
@@ -64,3 +94,4 @@ Consequences:
 ## Open questions for the owner
 1. Phone model, Android version, RAM (deferred by owner, D-006).
 2. FATMAP reference screenshots (≥ 3) with location/zoom/tilt.
+3. Mapterhorn hosted-tile licence and fair-use policy (not found on the pages that were reachable).
