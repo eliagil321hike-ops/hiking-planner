@@ -47,8 +47,16 @@ OSM_FIXTURE = {"osm3s": {"timestamp_osm_base": "fixture"}, "elements": [
     {"type": "node", "id": 24, "lat": 32.90, "lon": 35.30, "tags": {"amenity": "parking"}},                # far from any trail → dropped
 ]}
 _t, _p, _ = osmx.build(OSM_FIXTURE)
-OSM_FILES = {"osm-trails.geojson": {"type": "FeatureCollection", "osm_base": "fixture", "features": _t},
-             "osm-pois.geojson": {"type": "FeatureCollection", "osm_base": "fixture", "features": _p}}
+OSM_DIR = ROOT / ".cache" / "e2e-osm"
+osmx.split_cells({"type": "FeatureCollection", "osm_base": "fixture", "features": _t},
+                 {"type": "FeatureCollection", "osm_base": "fixture", "features": _p}, str(OSM_DIR))
+# Abroad (outside the Israel extract): an on-demand Overpass answer near Antalya, Turkey (D-042)
+ABROAD = (30.62, 36.88)
+OVERPASS_ABROAD = {"osm3s": {"timestamp_osm_base": "fixture"}, "elements": [
+    {"type": "relation", "id": 900, "tags": {"type": "route", "route": "hiking", "network": "lwn", "osmc:symbol": "red:white:red_bar", "name": "Lycian side trail"}, "members": [
+        {"type": "way", "ref": 901, "role": "", "geometry": [{"lat": 36.87, "lon": 30.60}, {"lat": 36.89, "lon": 30.64}]}]},
+    {"type": "node", "id": 902, "lat": 36.881, "lon": 30.615, "tags": {"tourism": "camp_site", "name": "Camp"}},
+]}
 
 CACHE = ROOT / ".cache"
 ML_VERSION = "5.24.0"
@@ -187,10 +195,17 @@ def main():
             route.fulfill(body=json.dumps(body), headers={"content-type": "application/geo+json", "access-control-allow-origin": "*"})
 
         def osm_data(route):
-            name = route.request.url.split("?")[0].rsplit("/", 1)[-1]
-            route.fulfill(body=json.dumps(OSM_FILES[name], ensure_ascii=False), headers={"content-type": "application/geo+json"})
+            f = OSM_DIR / "osm" / route.request.url.split("?")[0].rsplit("/", 1)[-1]
+            if not f.exists():
+                return route.fulfill(status=404, body=b"")
+            route.fulfill(body=f.read_bytes(), headers={"content-type": "application/json"})
 
-        page.route("**/data/osm-*.geojson", osm_data)
+        def overpass(route):
+            seen.setdefault("overpass", []).append(route.request.post_data or "")
+            route.fulfill(body=json.dumps(OVERPASS_ABROAD), headers={"content-type": "application/json", "access-control-allow-origin": "*"})
+
+        page.route("**/data/osm/*.json", osm_data)
+        page.route("https://overpass-api.de/**", overpass)
         def nominatim(route):
             seen.setdefault("nominatim", []).append(route.request.url)
             body = [{"display_name": "הר מירון, גליל עליון, ישראל", "lat": "32.9975", "lon": "35.4110", "boundingbox": ["32.99", "33.00", "35.40", "35.42"]},
@@ -231,6 +246,8 @@ def main():
         r["newRouteVisible"] = page.evaluate("""() => { const b = document.getElementById('new-route'); const q = b.getBoundingClientRect();
             return q.width > 40 && q.height >= 44 && b.contains(document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2)); }""")
         r["routeColor"] = page.evaluate("() => window.__topo3d.map.getPaintProperty('route-line', 'line-color')")
+        r["routeW14"] = page.evaluate("() => { const st = window.__topo3d.map.getPaintProperty('route-line', 'line-width').slice(3); return st[st.indexOf(14) + 1]; }")
+        r["exagDefault"] = page.evaluate("() => [window.__topo3d.map.getTerrain()?.exaggeration, document.getElementById('exag').value]")
         r["poiMinzoom"] = page.evaluate("() => window.__topo3d.map.getLayer('topo-poi')?.minzoom")
         page.wait_for_function("() => typeof window.__topo3d.results.topo.osm.pois === 'number' && typeof window.__topo3d.results.topo.osm.trails === 'number'", polling=250, timeout=30_000)
         page.wait_for_function("""() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0
@@ -253,6 +270,17 @@ def main():
               pathColour: m.getPaintProperty('topo-trails-path', 'line-color'), trackInner: !!m.getLayer('topo-trails-track-inner'),
               baseIconFilter: JSON.stringify(m.getFilter('topo-poi-icon')), iconMinzoom: m.getLayer('poi-parking').minzoom, iconImgs: ['topo-parking', 'topo-spring', 'topo-viewpoint', 'topo-shelter'].every((i) => m.hasImage(i)),
               natW14: w('topo-hike-line', 'national', 14), regW14: w('topo-hike-line', 'regional', 14) }; }""")
+        # Abroad: no Overpass request inside Israel; at Antalya (z12) one request, trail + campsite shown (D-042)
+        r["overpassInIsrael"] = len(seen.get("overpass", []))
+        page.evaluate(f"() => window.__topo3d.map.jumpTo({{ center: [{ABROAD[0]}, {ABROAD[1]}], zoom: 12 }})")
+        page.wait_for_function("() => window.__topo3d.results.topo.osmLoader.dynamicCells > 0 || window.__topo3d.results.topo.osmLoader.errors > 0", polling=250, timeout=30_000)
+        page.wait_for_function("() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-marked-line', 'poi-camp'] }).length >= 2", polling=250, timeout=30_000)
+        r["abroad"] = page.evaluate("""() => { const m = window.__topo3d.map; return { stats: { ...window.__topo3d.results.topo.osmLoader },
+            marked: [...new Set(m.queryRenderedFeatures({ layers: ['topo-marked-line'] }).map((f) => f.properties.color))],
+            camp: m.queryRenderedFeatures({ layers: ['poi-camp'] }).length }; }""")
+        r["overpassAbroad"] = list(seen.get("overpass", []))
+        page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 12 })")
+        page.wait_for_function("() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0", polling=250, timeout=30_000)
         r["poiIcons"] = page.evaluate("""() => { const m = window.__topo3d.map; return [m.hasImage('topo-tent'), m.hasImage('topo-tap'),
             m.getLayer('topo-poi-icon')?.minzoom, JSON.stringify(m.getLayoutProperty('topo-poi-icon', 'icon-image'))]; }""")
         r["waterColor"] = page.evaluate("() => JSON.stringify(window.__topo3d.map.getPaintProperty('topo-waterway', 'line-color'))")
@@ -293,7 +321,11 @@ def main():
         page.wait_for_function("() => window.__topo3d.map.getPitch() < 1 && !window.__topo3d.map.isMoving()", polling=250, timeout=30_000)
         d2 = page.evaluate("() => ({ terrain: !!window.__topo3d.map.getTerrain(), pitch: window.__topo3d.map.getPitch(), label: document.getElementById('btn-3d').textContent })")
         page.evaluate("() => document.getElementById('btn-3d').click()")
-        page.wait_for_function("() => window.__topo3d.map.getPitch() > 50 && !window.__topo3d.map.isMoving()", polling=250, timeout=30_000)
+        try:
+            page.wait_for_function("() => window.__topo3d.map.getPitch() > 50 && !window.__topo3d.map.isMoving()", polling=250, timeout=30_000)
+        except Exception:
+            print("TILT-DEBUG", page.evaluate("() => { const m = window.__topo3d.map; return { pitch: m.getPitch(), moving: m.isMoving(), terrain: !!m.getTerrain(), is3D: window.__topo3d.ctx.view.is3D(), label: document.getElementById('btn-3d').textContent, zoom: m.getZoom(), maxPitch: m.getMaxPitch() }; }"), CONSOLE[-6:], flush=True)
+            raise
         d3 = page.evaluate("() => ({ terrain: !!window.__topo3d.map.getTerrain(), pitch: window.__topo3d.map.getPitch(), label: document.getElementById('btn-3d').textContent })")
         r["view3d"] = [d2, d3]
         for g in ("slope", "aspect", "relief"):
@@ -491,12 +523,18 @@ def main():
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")
+    expect(r["exagDefault"] == [1.5, "1.5"], f"default exaggeration 1.5 (D-043) {r['exagDefault']}")
     expect(r["poiIcons"][:3] == [True, True, 13] and "topo-tent" in r["poiIcons"][3] and "topo-tap" in r["poiIcons"][3],
            f"tent and tap icons registered, icon layer from z13 (D-031) {r['poiIcons'][:3]}")
     o = r["osm"]
+    a = r["abroad"]
+    expect(r["overpassInIsrael"] == 0, "inside Israel the pre-built extract is used (no Overpass requests)")
+    expect(len(r["overpassAbroad"]) == 1 and a["stats"]["dynamicCells"] >= 1 and a["marked"] == ["#d32f2f"] and a["camp"] >= 1 and a["stats"]["errors"] == 0,
+           f"abroad: loaded on demand from Overpass (one request), marked trail + campsite shown {a} {len(r['overpassAbroad'])}")
     expect(o["marked"] == ["#1e63c4"], f"marked trail drawn in its marking colour (blue) {o['marked']}")
     expect(o["markedMinzoom"] < o["pathMinzoom"] and '[">=",["zoom"],13]' in o["streamFilter"].replace(" ", ""),
            f"marked trails (z{o['markedMinzoom']}) before unmarked (z{o['pathMinzoom']}), small streams only from z13 (D-033)")
+    expect(r["routeW14"] > o["natW14"], f"planned route wider than national trails (D-043) {r['routeW14']} > {o['natW14']}")
     expect(o["natW14"] > o["regW14"] > o["markedW14"] > o["pathW14"], f"width order national > regional > marked > unmarked {o['natW14']} {o['regW14']} {o['markedW14']} {o['pathW14']}")
     expect(o["hasPeakImg"] and "topo-peak" in o["peakIcon"] and "topo-saddle" in o["peakIcon"], "peaks/saddles drawn with their own icons (D-037)")
     expect(o["contourLabelPad"] == 8, "contour labels spaced with collision padding (D-037)")
@@ -506,7 +544,7 @@ def main():
     expect(o["lines"] == ["int", "regional"] and o["icons"] == ["poi-camp", "poi-parking", "poi-water-cluster:2"],
            f"routes, tent, parking and a water cluster (2) rendered at the 1 km scale (D-036) {o['lines']} {o['icons']}")
     expect(o["iconImgs"], "parking / spring / viewpoint / shelter icons registered")
-    expect('"int","#ff7a00"' in o["colour"].replace(" ", ""), "Israel National Trail drawn orange (D-032)")
+    expect('"int","#e3893f"' in o["colour"].replace(" ", ""), "Israel National Trail drawn orange, calmer than the fluorescent route (D-032, D-043)")
     expect(o["labelMinzoom"] == 14.4 and o["iconMinzoom"] <= 11.7, f"route names from ~200 m scale, icons from ~1 km scale {o['labelMinzoom']} {o['iconMinzoom']}")
     expect(r["poiMinzoom"] == 13 and "#2f7fd8" in r["waterColor"] and "#5a9fdc" in r["waterColor"], f"POIs from z13, perennial blue / intermittent light blue {r['poiMinzoom']} {r['waterColor']}")
     expect(r["smallStreamW14"] < o["pathW14"], f"non-perennial streams thinner than unmarked trails (D-034) {r['smallStreamW14']} < {o['pathW14']}")

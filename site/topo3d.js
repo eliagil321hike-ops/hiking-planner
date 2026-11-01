@@ -3,6 +3,7 @@
 // Returns a report of what was found/changed so the page can show it (runtime verification).
 
 import { addPoiIcons } from './poi-icons.js';
+import { createOsmLoader } from './osm-loader.js';
 import { registerDeriveProtocol, deriveStats } from './terrain-derive.js';
 
 const CLUSTERED = ['camp', 'water', 'parking'];
@@ -85,20 +86,20 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
     map.addSource(`poi-${kind}`, { type: 'geojson', data: empty, cluster: true, clusterMaxZoom: 13, clusterRadius: 36 });
   }
   map.addSource('poi-other', { type: 'geojson', data: empty });
+  // Data for what is on screen: Israel from the per-cell extract, elsewhere on demand (D-042).
   report.osm = { trails: null, pois: null };
-  const load = (url) => fetch(url).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))));
-  load(osm.trails)
-    .then((fc) => { map.getSource('osm-trails')?.setData(fc); report.osm.trails = fc.features.length; report.osmBase = fc.osm_base; })
-    .catch((e) => { report.osm.trails = `unavailable (${e.message})`; });
-  load(osm.pois)
-    .then((fc) => {
-      const by = (pred) => ({ type: 'FeatureCollection', features: fc.features.filter(pred) });
-      for (const kind of CLUSTERED) map.getSource(`poi-${kind}`)?.setData(by((f) => f.properties.kind === kind));
-      map.getSource('poi-other')?.setData(by((f) => !CLUSTERED.includes(f.properties.kind)));
-      report.osm.pois = fc.features.length;
-      report.osm.byKind = Object.fromEntries([...new Set(fc.features.map((f) => f.properties.kind))].map((k) => [k, fc.features.filter((f) => f.properties.kind === k).length]));
-    })
-    .catch((e) => { report.osm.pois = `unavailable (${e.message})`; });
+  const loader = createOsmLoader(map, osm.loader, {
+    onUpdate: ({ trails, pois }) => {
+      map.getSource('osm-trails')?.setData({ type: 'FeatureCollection', features: trails });
+      for (const kind of CLUSTERED) map.getSource(`poi-${kind}`)?.setData({ type: 'FeatureCollection', features: pois.filter((f) => f.properties.kind === kind) });
+      map.getSource('poi-other')?.setData({ type: 'FeatureCollection', features: pois.filter((f) => !CLUSTERED.includes(f.properties.kind)) });
+      report.osm.trails = trails.length;
+      report.osm.pois = pois.length;
+      report.osm.byKind = Object.fromEntries([...new Set(pois.map((f) => f.properties.kind))].map((k) => [k, pois.filter((f) => f.properties.kind === k).length]));
+    },
+  });
+  report.osmLoader = loader.stats;
+  loader.start();
 
   // 6. Layer order: landcover tint + hillshade go under roads/buildings (so roads stay crisp);
   //    contours and trails under the first base label; Topo3D labels on top of everything.

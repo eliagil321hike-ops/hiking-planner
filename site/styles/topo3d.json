@@ -1,6 +1,6 @@
 {
   "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by site/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
-  "version": "0.17.0",
+  "version": "0.19.0",
   "base": "https://tiles.openfreemap.org/styles/liberty",
   "dem": {
     "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
@@ -12,7 +12,7 @@
     "attribution": "<a href=\"https://mapterhorn.com/attribution/\">Mapterhorn</a>: 10 m DEM of Israel (isr10) — ASTER GDEM courtesy of METI and NASA processed by 4cast LTD; Copernicus GLO-30 © DLR e.V. 2010-2014, Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA"
   },
   "terrain": {
-    "exaggeration": 1.2,
+    "exaggeration": 1.5,
     "min": 1.0,
     "max": 2.0
   },
@@ -801,8 +801,31 @@
       },
       "paint": {
         "line-color": [
-          "get",
-          "color"
+          "match",
+          [
+            "get",
+            "color"
+          ],
+          "#d32f2f",
+          "#c25a4f",
+          "#1e63c4",
+          "#4672ad",
+          "#2e9b3e",
+          "#4f8c57",
+          "#2b2b2b",
+          "#3d3a36",
+          "#f57c00",
+          "#cf8a48",
+          "#7b1fa2",
+          "#85609a",
+          "#e0b000",
+          "#c4a447",
+          "#8a5a2b",
+          "#8a6a4b",
+          [
+            "get",
+            "color"
+          ]
         ],
         "line-width": [
           "interpolate",
@@ -938,10 +961,10 @@
             "kind"
           ],
           "int",
-          "#ff7a00",
+          "#e3893f",
           "national",
-          "#8e24aa",
-          "#e0287d"
+          "#8a5c9c",
+          "#c2608a"
         ],
         "line-width": [
           "interpolate",
@@ -1370,10 +1393,10 @@
             "kind"
           ],
           "int",
-          "#a84f00",
+          "#9a5520",
           "national",
-          "#5e1580",
-          "#9c1452"
+          "#5c3a6a",
+          "#8a3a5c"
         ],
         "text-halo-color": "rgba(255,255,255,0.95)",
         "text-halo-width": 1.2
@@ -2548,8 +2571,19 @@
   },
   "poiNote": "POI classes per the OpenMapTiles poi layer (class/subclass). OpenFreeMap tiles end at z14; at z13 the poi layer may be rank-limited, so not every POI shows before z14.",
   "osmExtract": {
-    "trails": "data/osm-trails.geojson",
-    "pois": "data/osm-pois.geojson",
-    "attribution": "© <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\" rel=\"noopener\">OpenStreetMap</a> contributors"
+    "attribution": "© <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\" rel=\"noopener\">OpenStreetMap</a> contributors",
+    "loader": {
+      "index": "data/osm/index.json",
+      "base": "data/osm/",
+      "minZoom": 7,
+      "maxCells": 160,
+      "dynamic": {
+        "enabled": true,
+        "endpoint": "https://overpass-api.de/api/interpreter",
+        "minZoom": 11,
+        "cell": 0.25,
+        "maxCellsPerRequest": 6
+      }
+    }
   }
 }

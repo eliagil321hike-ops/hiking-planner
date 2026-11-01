@@ -440,6 +440,29 @@ with the first real request.
   scripts/fetch_osm_hiking.py; the weekly scheduled run and manual runs always fetch fresh data. Changing
   the extract rules = bump EXTRACT_VERSION, and the next push re-downloads.
 
+## D-042 (2026-11-02) Owner: expand coverage beyond Israel; split the data (answers 5, 6)
+- Israel: the deploy writes the extract as 0.5° cells (`data/osm/{lat}_{lon}.json` + `index.json`); the
+  site loads only the cells in view (+25 % margin), from z7, keeping ≤ 160 cells in memory. Before: one
+  4.5 MB trails file + 1.3 MB points file on every visit.
+- Elsewhere (any country): trails (iwn/nwn/rwn/lwn routes) and points of interest are loaded on demand from
+  the public Overpass API from **z11** (≈ 1 km scale bar), 0.25° cells, one request at a time, at most 6
+  cells per request (zoom in further otherwise). Same rules in the browser (site/osm-build.js) as at build
+  time (scripts/fetch_osm_hiking.py); tests/osm-build.test.mjs requires identical output on one fixture.
+  Limits: abroad, national trails appear only from z11 (not z7), and loading depends on Overpass being up.
+- Build-time extract rejects Overpass answers older than 14 days when another server can answer (the backup
+  server answered with data from 2026-07-15 on 2026-11-01); out-of-date data is used only as a last resort.
+
+## D-043 (2026-11-02) Owner answers 1–4, 7, 8
+- 1: the planned route is the dominant line: width by zoom, wider than national trails at every zoom
+  (z14: 11 px + casing 15 px vs national 9 px).
+- 2: only the planned route stays fluorescent (#39ff14). Calmer colours for everything else: Israel Trail
+  #e3893f (still orange), national #8a5c9c, regional #c2608a, marked-trail colours muted in the style
+  (data unchanged, no re-download).
+- 3: default exaggeration 1.5; a value remembered under the old default is reset once.
+- 4: no multidirectional hillshade for now. 7: slope/aspect computation left as is. 8: next work = more map
+  polish (not yet saved routes / GPX).
+- Owner check of the live site: icons fine, looks good, "a bit sluggish but not disturbing", snapping great.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

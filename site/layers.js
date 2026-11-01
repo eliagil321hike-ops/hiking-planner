@@ -62,6 +62,8 @@ export function initLayers(ctx) {
   });
   const syncRow = (cb) => cb.closest('.layer-row')?.classList.toggle('on', cb.checked);
   document.querySelectorAll('input[data-group]').forEach(syncRow);
+  // Default exaggeration became 1.5 (owner, D-043): a value remembered under the old default is reset once.
+  if (prefs.exagDefault !== 1.5) { savePrefs({ exaggeration: undefined, exagDefault: 1.5 }); delete prefs.exaggeration; }
   if (prefs.exaggeration >= 1 && prefs.exaggeration <= 2) ctx.state.exaggeration = prefs.exaggeration;
   $('exag').value = String(ctx.state.exaggeration);
   $('exag-out').textContent = ctx.state.exaggeration.toFixed(1);

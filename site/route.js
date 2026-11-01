@@ -39,13 +39,14 @@ export function initRoute(ctx) {
     // Owner request: a fluorescent route colour unlike any trail (red/brown/purple) or stream (blue) colour,
     // with a dark casing so it also stands out on satellite imagery.
     map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': '#0a1f0a', 'line-width': 9, 'line-opacity': 0.75 } });
+      // Owner (D-043): the planned route is the dominant line — wider than national trails at every zoom.
+      paint: { 'line-color': '#0a1f0a', 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 6, 10, 8, 12, 11, 14, 15, 16, 21], 'line-opacity': 0.8 } });
     map.addLayer({ id: 'route-line', type: 'line', source: 'route', filter: ['==', ['get', 'status'], 'ok'],
       layout: { 'line-join': 'round' },
-      paint: { 'line-color': ROUTE_COLOR, 'line-width': 5, 'line-dasharray': ['case', ['==', ['get', 'mode'], 'free'], ['literal', [2, 1.2]], ['literal', [1, 0]]] } });
+      paint: { 'line-color': ROUTE_COLOR, 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 3.5, 10, 5, 12, 7.5, 14, 11, 16, 16], 'line-dasharray': ['case', ['==', ['get', 'mode'], 'free'], ['literal', [2, 1.2]], ['literal', [1, 0]]] } });
     map.addLayer({ id: 'route-provisional', type: 'line', source: 'route', filter: ['!=', ['get', 'status'], 'ok'],
       layout: { 'line-cap': 'round' },
-      paint: { 'line-color': ['case', ['==', ['get', 'status'], 'error'], '#ff2d55', '#e8e8e8'], 'line-width': 4, 'line-dasharray': [0.1, 1.6] } });
+      paint: { 'line-color': ['case', ['==', ['get', 'status'], 'error'], '#ff2d55', '#e8e8e8'], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 8, 16, 11], 'line-dasharray': [0.1, 1.6] } });
     map.addLayer({ id: 'route-mid', type: 'circle', source: 'route-handles', filter: ['==', ['get', 'kind'], 'mid'],
       paint: { 'circle-radius': 4.5, 'circle-color': '#ffffff', 'circle-opacity': 0.9, 'circle-stroke-color': '#0a1f0a', 'circle-stroke-width': 1.5 } });
     map.addLayer({ id: 'route-points', type: 'circle', source: 'route-handles', filter: ['==', ['get', 'kind'], 'vertex'],

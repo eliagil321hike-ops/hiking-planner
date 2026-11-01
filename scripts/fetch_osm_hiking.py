@@ -49,18 +49,40 @@ SKIP_ROLES = {"alternative", "excursion", "approach", "connection"}
 def run_query(q, bbox):
     s_, w, n, e = bbox
     body = urllib.parse.urlencode({"data": q.format(s=s_, w=w, n=n, e=e)}).encode()
-    last = None
+    last, stale = None, None
     for attempt in range(3):
         for url in ENDPOINTS:
             try:
                 req = urllib.request.Request(url, data=body, headers={"User-Agent": "Topo3D hiking planner (personal, build-time extract; github.com/eliagil321hike-ops/hiking-planner)"})
                 with urllib.request.urlopen(req, timeout=240) as r:
-                    return json.load(r)
+                    d = json.load(r)
+                age = stale_days(d)
+                if age > MAX_AGE_DAYS and url != ENDPOINTS[-1]:
+                    print(f"overpass {url}: data {age:.0f} days old, trying another server", file=sys.stderr)
+                    stale = d
+                    continue
+                return d
             except Exception as ex:  # noqa: BLE001 - report and try the next endpoint
                 last = ex
                 print(f"overpass {url} attempt {attempt + 1} failed: {ex}", file=sys.stderr)
+        if stale is not None:      # only out-of-date servers answered: better old data than none
+            print("WARNING: using out-of-date Overpass data", file=sys.stderr)
+            return stale
         time.sleep(30 * (attempt + 1))
     raise RuntimeError(f"all Overpass endpoints failed: {last}")
+
+
+MAX_AGE_DAYS = 14
+
+
+def stale_days(d):
+    """Age of an Overpass answer's OSM data in days (0 when unknown)."""
+    from datetime import datetime, timezone
+    ts = d.get("osm3s", {}).get("timestamp_osm_base", "")
+    try:
+        return (datetime.now(timezone.utc) - datetime.fromisoformat(ts.replace("Z", "+00:00"))).total_seconds() / 86400
+    except ValueError:
+        return 0
 
 
 def overpass():
@@ -245,6 +267,40 @@ def trail_index(trails, cell=0.01):
     return near
 
 
+CELL = 0.5  # degrees: the site loads only the cells in view (D-042)
+
+
+def cell_key(lon, lat):
+    return f"{math.floor(lat / CELL)}_{math.floor(lon / CELL)}"
+
+
+def split_cells(trails_fc, pois_fc, out_dir):
+    """Write data/osm/index.json + one file per 0.5° cell: trail lines by their midpoint, points by position."""
+    cells = {}
+    for f in trails_fc["features"]:
+        by = {}
+        for line in f["geometry"]["coordinates"]:
+            mid = line[len(line) // 2]
+            by.setdefault(cell_key(*mid), []).append(line)
+        for k, lines in by.items():
+            cells.setdefault(k, {"trails": [], "pois": []})["trails"].append(
+                {"type": "Feature", "properties": f["properties"], "geometry": {"type": "MultiLineString", "coordinates": lines}})
+    for f in pois_fc["features"]:
+        cells.setdefault(cell_key(*f["geometry"]["coordinates"]), {"trails": [], "pois": []})["pois"].append(f)
+    d = os.path.join(out_dir, "osm")
+    os.makedirs(d, exist_ok=True)
+    for k, c in cells.items():
+        with open(os.path.join(d, f"{k}.json"), "w", encoding="utf-8") as fh:
+            json.dump(c, fh, ensure_ascii=False, separators=(",", ":"))
+    s_, w, n, e = BBOX
+    index = {"extract_version": EXTRACT_VERSION, "osm_base": trails_fc.get("osm_base", ""), "cell": CELL,
+             "coverage": [w, s_, e, n], "cells": {k: [len(c["trails"]), len(c["pois"])] for k, c in cells.items()}}
+    with open(os.path.join(d, "index.json"), "w", encoding="utf-8") as fh:
+        json.dump(index, fh, separators=(",", ":"))
+    sizes = sorted(os.path.getsize(os.path.join(d, f"{k}.json")) for k in cells)
+    print(f"split into {len(cells)} cells of {CELL}°; largest {sizes[-1] if sizes else 0} bytes, median {sizes[len(sizes) // 2] if sizes else 0}")
+
+
 def counts(pois):
     kinds = ('camp', 'water', 'parking', 'spring', 'viewpoint', 'shelter')
     return ', '.join(f"{k} {sum(p['properties']['kind'] == k for p in pois)}" for k in kinds)
@@ -263,6 +319,7 @@ def main():
                     with open(os.path.join(out, n), "w", encoding="utf-8") as f:
                         json.dump(o, f, ensure_ascii=False, separators=(",", ":"))
                 print(f"reused live OSM extract v{EXTRACT_VERSION} (OSM base {olds['osm-trails.geojson'].get('osm_base')})")
+                split_cells(olds["osm-trails.geojson"], olds["osm-pois.geojson"], out)
                 return
             print("live extract has another version → fresh extract")
         except Exception as ex:  # noqa: BLE001
@@ -292,6 +349,8 @@ def main():
                     json.dump(old, f, ensure_ascii=False, separators=(",", ":"))
                 kept += 1
                 print(f"kept previous {name} ({len(old['features'])} features, OSM base {old.get('osm_base')})")
+        if kept == 2:
+            split_from_files(out)
         sys.exit(0 if soft or kept else 1)
     trails, pois, seen = build(data)
     stamp = data.get("osm3s", {}).get("timestamp_osm_base", "")
@@ -310,6 +369,12 @@ def main():
     for k in ("int", "national", "regional", "marked"):
         names = sorted(set(seen.get(k, [])))
         print(f"  {k}: {len(seen.get(k, []))} relations: {', '.join(names[:40])}{' …' if len(names) > 40 else ''}")
+    split_from_files(out)
+
+
+def split_from_files(out):
+    load = lambda n: json.load(open(os.path.join(out, n), encoding="utf-8"))
+    split_cells(load("osm-trails.geojson"), load("osm-pois.geojson"), out)
 
 
 if __name__ == "__main__":
