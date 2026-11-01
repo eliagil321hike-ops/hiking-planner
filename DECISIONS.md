@@ -25,6 +25,16 @@ B first (GL JS in WebView + maplibre-contour; first test in Chrome on the phone 
 a WebView APK), then C (MapLibre Native terrain build + precomputed contours), A last (Mapbox).
 Reason: contours decide the engine (P10.4) and only B has a documented client-side contour path.
 
+## D-005 (2026-11-01) Ascent/descent: peak/valley hysteresis instead of the literal §9.1 pseudocode
+Finding (test run): the literal pseudocode moves its anchor in T-sized steps and loses up to T (3 m) at
+every turning point. On a smoothed sawtooth test it gave 324 m where the smoothed series actually climbs
+354.4 m (−9%); on a simple 0→10→0 m profile it reports 8 m instead of 10 m.
+Decision: implement a peak/valley hysteresis (the algorithm SPEC v2 change #2 names): track the running
+extreme, confirm a reversal only after a ≥ T move back, credit the full leg. It keeps every required
+property (wiggles < T ignored, slow climbs counted, nulls never 0). The literal version is kept as
+`anchorSteppingHysteresis` for comparison tests. Parameters unchanged: step 20 m, window 80 m (5 samples),
+T = 3 m, max gap 3 samples. Owner may veto.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

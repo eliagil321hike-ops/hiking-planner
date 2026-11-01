@@ -1,0 +1,13 @@
+{
+  "name": "@hiking/geo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure TypeScript geo logic: coordinates, geodesic distance, DEM decoding, elevation stats, duration. No UI, no network, no dependencies.",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.json",
+    "build:browser": "tsc -p tsconfig.browser.json"
+  }
+}
