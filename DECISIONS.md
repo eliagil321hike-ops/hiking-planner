@@ -35,6 +35,16 @@ property (wiggles < T ignored, slow climbs counted, nulls never 0). The literal 
 `anchorSteppingHysteresis` for comparison tests. Parameters unchanged: step 20 m, window 80 m (5 samples),
 T = 3 m, max gap 3 samples. Owner may veto.
 
+## D-006 (2026-11-01) Owner: build Phase 0 for the web on the computer first
+Owner instruction (answer to open question 1): "for now, build it to run as a web app on the computer".
+Consequences:
+- Option B (MapLibre GL JS + maplibre-contour) is built as a desktop-browser page first. It needs no
+  build tools and runs from a static file/host. Options C and A (native Android) are paused.
+- Desktop FPS and memory numbers are recorded but **do not satisfy** the P10.5 criterion "on the owner's
+  Android phone" (same logic as SPEC §14 pitfall 9). The engine decision stays open until the page is
+  measured on the phone (Chrome on Android uses the same engine as the Android WebView).
+- Phone model / Android version / RAM: deferred by the owner.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -43,9 +53,13 @@ T = 3 m, max gap 3 samples. Owner may veto.
 | OpenStreetMap data | Trails, peaks (via OpenFreeMap) | ODbL | yes | © OpenStreetMap contributors | — | free | spec | openstreetmap.org/copyright |
 | Israel Hiking Map tiles | Optional marked-trail overlay | CC BY-NC-SA 3.0 (unverified) | No → personal use only | pending | pending | free | not verified | — |
 
+## D-007 (2026-11-01) Owner answers
+- First region: **Upper Galilee** (initial camera around Har Meron; encoding test peak is in this region).
+- Owner has a computer (OS not yet stated).
+- Hosting of the test page: **home network** — served from the owner's computer with a one-line local
+  static server, reachable from the phone on the same Wi-Fi later. No GitHub Pages.
+
 ## Open questions for the owner
-1. Phone model, Android version, RAM.
-2. First Israel region (default: Upper Galilee / Meron).
-3. Where builds run (owner computer OS, USB debugging).
-4. Hosting of the Option B test page (GitHub Pages or local Wi-Fi).
-5. FATMAP reference screenshots (≥ 3) with location/zoom/tilt.
+1. Phone model, Android version, RAM (deferred by owner, D-006).
+2. Computer OS (Windows / macOS / Linux) — decides which start script to give first.
+3. FATMAP reference screenshots (≥ 3) with location/zoom/tilt.
