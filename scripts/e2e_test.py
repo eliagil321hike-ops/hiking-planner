@@ -286,7 +286,7 @@ def main():
         r["overpassInIsrael"] = len(seen.get("overpass", []))
         page.evaluate(f"() => window.__topo3d.map.jumpTo({{ center: [{ABROAD[0]}, {ABROAD[1]}], zoom: 12 }})")
         wait_js(page, "() => window.__topo3d.results.topo.osmLoader.dynamicCells > 0 || window.__topo3d.results.topo.osmLoader.errors > 0", 60)
-        wait_js(page, "() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-marked-line', 'poi-camp'] }).length >= 2", 60)
+        wait_js(page, "() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-marked-line'] }).length > 0 && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-camp'] }).length > 0", 60)
         r["abroad"] = page.evaluate("""() => { const m = window.__topo3d.map; return { stats: { ...window.__topo3d.results.topo.osmLoader },
             marked: [...new Set(m.queryRenderedFeatures({ layers: ['topo-marked-line'] }).map((f) => f.properties.color))],
             camp: m.queryRenderedFeatures({ layers: ['poi-camp'] }).length }; }""")
