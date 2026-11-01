@@ -12,7 +12,7 @@ Phase 1 starts only after the owner approves Phase 0 (look vs FATMAP, encoding t
 | Hillshade + contours readable z12–16 | **PASS** (owner: yes) | D-016 |
 | Encoding test on real tiles + negative control | **PASS** | owner run: Meron 1202.5, coast 4.5, Dead Sea −432; negative control detected; engine Δ −1.3 m (D-011) |
 | Contour labels and trails legible when tilted | **PASS** (owner: yes) | D-016 |
-| Owner FATMAP review | **PASS for topo** (owner: "looks great" vs komoot reference); satellite: Esri imagery works (D-019), owner verdict on the 3D satellite look pending | D-016, D-019 |
+| Owner FATMAP review | **PASS** — topo (owner: "looks great" vs komoot reference); satellite 3D: **owner satisfied** (D-020) | D-016, D-019, D-020 |
 | DECISIONS: engine, contours, hosting, attribution, small-group licences | Mostly done | engine = MapLibre GL JS (D-010); Mapterhorn terms open |
 
 ## Completed

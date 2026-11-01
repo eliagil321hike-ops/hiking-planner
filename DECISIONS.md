@@ -206,6 +206,11 @@ drawn on top. Satellite look vs FATMAP references 1 and 3: owner verdict pending
 Note: the owner also pasted the key in the chat; it was not stored anywhere by the agent. Embedding the key
 in the public site for friends is an open owner decision (agent recommends against).
 
+## D-020 (2026-11-01) Owner verdict on 3D satellite: satisfied
+Owner screenshot (build 8ea6715): Esri imagery draped on 3D terrain at Meron, exaggeration 2.0, contours
+with labels (800/900/1,000), trails, Hebrew peak labels. Owner: "satisfied" (מרוצה). Recorded as the
+owner's quality verdict for the satellite look (P10.5 owner review); the agent did not judge it.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
