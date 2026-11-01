@@ -46,7 +46,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
       - name: OSM extract for Israel (national/regional/marked trails, campsites, water) via Overpass
-        run: python3 scripts/fetch_osm_hiking.py site/data --soft
+        run: |
+          # previous live files = fallback when Overpass fails or answers only partly (D-035)
+          mkdir -p prev
+          for f in osm-trails.geojson osm-pois.geojson; do
+            curl -fsS -m 60 -o "prev/$f" "https://eliagil321hike-ops.github.io/hiking-planner/data/$f" || echo "no previous $f"
+          done
+          python3 scripts/fetch_osm_hiking.py site/data --soft --previous prev
       - name: Stamp build (cache busting, version shown in the page)
         run: bash scripts/stamp_build.sh site "${GITHUB_SHA::7}"
       - name: Setup Pages

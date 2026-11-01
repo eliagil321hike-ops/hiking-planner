@@ -357,6 +357,20 @@ with the first real request.
 - Width order at z14 (owner): national 9 > regional 6 ≈ rivers 6 > marked 3.5 > unmarked 1.8 ≈ intermittent
   streams 1.8 (perennial streams 2.2, drains 1).
 
+## D-034 (2026-11-01) Owner: every non-perennial waterway is a small stream
+- Any waterway with `intermittent=1` (e.g. Nahal Zin, class river) is drawn as a small stream: tier 4, thin
+  light-blue dashes (#5a9fdc, z14 1.2 px — a bit thinner than unmarked paths, as in the owner's example
+  image), only from z13. Perennial rivers/canals/streams stay solid blue (#2f7fd8) and appear earlier.
+- Limitation: a wadi missing `intermittent=yes` in OSM is shown as perennial.
+
+## D-035 (2026-11-01) Owner: 4x4 tracks like the example; self-review of the last hour
+- 4x4 tracks: double dashed brown line (wide dashed #9b7a5a + narrow light inner line), as in the example.
+- Self-review changes: unmarked paths dark grey dashes (#5a5550) — they were red-brown, too close to red
+  marked trails; marked trails dashed in their colour (as in the example) with a white casing; base-tile
+  campsite/water icons and labels hidden inside the Israel bbox (`within`) so they do not duplicate the
+  OSM-extract icons; deploy keeps the currently live OSM files when Overpass fails or answers partly.
+- Visual check: all line kinds rendered side by side with the real MapLibre build at z14/z15.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

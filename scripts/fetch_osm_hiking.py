@@ -80,7 +80,7 @@ def overpass():
         raise RuntimeError("all parts failed")
     if failed:
         print(f"WARNING: incomplete extract, missing: {', '.join(failed)}")
-    return {"osm3s": {"timestamp_osm_base": stamp}, "elements": elements}
+    return {"osm3s": {"timestamp_osm_base": stamp}, "elements": elements, "incomplete": bool(failed)}
 
 
 def is_int(tags):
@@ -198,14 +198,37 @@ def main():
         else:
             data = overpass()
     except Exception as ex:  # noqa: BLE001
-        print(f"OSM extract skipped: {ex}", file=sys.stderr)
-        sys.exit(0 if soft else 1)
-    trails, pois, seen = build(data)
+        print(f"OSM extract failed: {ex}")
+        data = None
+    prev = sys.argv[sys.argv.index("--previous") + 1] if "--previous" in sys.argv else None
+    def previous(name):
+        try:
+            with open(os.path.join(prev, name), encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:  # noqa: BLE001
+            return None
     os.makedirs(out, exist_ok=True)
+    if data is None:  # keep the data that is live now rather than shipping nothing
+        kept = 0
+        for name in ("osm-trails.geojson", "osm-pois.geojson"):
+            old = previous(name) if prev else None
+            if old:
+                with open(os.path.join(out, name), "w", encoding="utf-8") as f:
+                    json.dump(old, f, ensure_ascii=False, separators=(",", ":"))
+                kept += 1
+                print(f"kept previous {name} ({len(old['features'])} features, OSM base {old.get('osm_base')})")
+        sys.exit(0 if soft or kept else 1)
+    trails, pois, seen = build(data)
     stamp = data.get("osm3s", {}).get("timestamp_osm_base", "")
     for name, feats in (("osm-trails.geojson", trails), ("osm-pois.geojson", pois)):
+        old = previous(name) if prev and data.get("incomplete") else None
+        if old and len(old["features"]) > len(feats):  # partial run: the previous complete file is better
+            print(f"partial extract: keeping previous {name} ({len(old['features'])} > {len(feats)} features)")
+            feats, fstamp = old["features"], old.get("osm_base", "")
+        else:
+            fstamp = stamp
         with open(os.path.join(out, name), "w", encoding="utf-8") as f:
-            json.dump({"type": "FeatureCollection", "osm_base": stamp, "features": feats}, f, ensure_ascii=False, separators=(",", ":"))
+            json.dump({"type": "FeatureCollection", "osm_base": fstamp, "features": feats}, f, ensure_ascii=False, separators=(",", ":"))
     sizes = {n: os.path.getsize(os.path.join(out, n)) for n in ("osm-trails.geojson", "osm-pois.geojson")}
     print(f"OSM base {stamp}; trails {len(trails)}, pois {len(pois)} "
           f"(camp {sum(p['properties']['kind'] == 'camp' for p in pois)}, water {sum(p['properties']['kind'] == 'water' for p in pois)}); bytes {sizes}")

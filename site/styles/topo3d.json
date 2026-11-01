@@ -1,6 +1,6 @@
 {
   "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by site/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
-  "version": "0.11.0",
+  "version": "0.13.0",
   "base": "https://tiles.openfreemap.org/styles/liberty",
   "dem": {
     "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
@@ -130,17 +130,35 @@
       "filter": [
         "any",
         [
-          "match",
+          "all",
           [
-            "get",
-            "class"
+            "!",
+            [
+              "==",
+              [
+                "to-number",
+                [
+                  "get",
+                  "intermittent"
+                ]
+              ],
+              1
+            ]
           ],
           [
-            "river",
-            "canal"
-          ],
-          true,
-          false
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "river",
+              "canal",
+              "stream"
+            ],
+            true,
+            false
+          ]
         ],
         [
           "all",
@@ -152,18 +170,31 @@
             13
           ],
           [
-            "match",
+            "any",
             [
-              "get",
-              "class"
+              "==",
+              [
+                "to-number",
+                [
+                  "get",
+                  "intermittent"
+                ]
+              ],
+              1
             ],
             [
-              "stream",
-              "drain",
-              "ditch"
-            ],
-            true,
-            false
+              "match",
+              [
+                "get",
+                "class"
+              ],
+              [
+                "drain",
+                "ditch"
+              ],
+              true,
+              false
+            ]
           ]
         ]
       ],
@@ -172,7 +203,22 @@
         "line-join": "round"
       },
       "paint": {
-        "line-color": "#2f7fd8",
+        "line-color": [
+          "case",
+          [
+            "==",
+            [
+              "to-number",
+              [
+                "get",
+                "intermittent"
+              ]
+            ],
+            1
+          ],
+          "#5a9fdc",
+          "#2f7fd8"
+        ],
         "line-width": [
           "interpolate",
           [
@@ -183,123 +229,123 @@
           ],
           8,
           [
-            "match",
+            "case",
             [
-              "get",
-              "class"
-            ],
-            "river",
-            1.5,
-            "canal",
-            1,
-            "stream",
-            [
-              "case",
+              "==",
               [
-                "==",
+                "to-number",
                 [
-                  "to-number",
-                  [
-                    "get",
-                    "intermittent"
-                  ]
-                ],
-                1
+                  "get",
+                  "intermittent"
+                ]
               ],
-              0.5,
-              0.6
+              1
             ],
-            0.4
+            0.4,
+            [
+              "match",
+              [
+                "get",
+                "class"
+              ],
+              "river",
+              1.5,
+              "canal",
+              1,
+              "stream",
+              0.8,
+              0.32000000000000006
+            ]
           ],
           12,
           [
-            "match",
+            "case",
             [
-              "get",
-              "class"
-            ],
-            "river",
-            3.5,
-            "canal",
-            1.8,
-            "stream",
-            [
-              "case",
+              "==",
               [
-                "==",
+                "to-number",
                 [
-                  "to-number",
-                  [
-                    "get",
-                    "intermittent"
-                  ]
-                ],
-                1
+                  "get",
+                  "intermittent"
+                ]
               ],
-              1,
-              1.2
+              1
             ],
-            0.6
+            0.8,
+            [
+              "match",
+              [
+                "get",
+                "class"
+              ],
+              "river",
+              3.5,
+              "canal",
+              1.8,
+              "stream",
+              1.6,
+              0.6400000000000001
+            ]
           ],
           14,
           [
-            "match",
+            "case",
             [
-              "get",
-              "class"
-            ],
-            "river",
-            6,
-            "canal",
-            2.6,
-            "stream",
-            [
-              "case",
+              "==",
               [
-                "==",
+                "to-number",
                 [
-                  "to-number",
-                  [
-                    "get",
-                    "intermittent"
-                  ]
-                ],
-                1
+                  "get",
+                  "intermittent"
+                ]
               ],
-              1.8,
-              2.2
+              1
             ],
-            1
+            1.2,
+            [
+              "match",
+              [
+                "get",
+                "class"
+              ],
+              "river",
+              6,
+              "canal",
+              2.6,
+              "stream",
+              2.4,
+              0.96
+            ]
           ],
           16,
           [
-            "match",
+            "case",
             [
-              "get",
-              "class"
-            ],
-            "river",
-            9,
-            "canal",
-            3.6,
-            "stream",
-            [
-              "case",
+              "==",
               [
-                "==",
+                "to-number",
                 [
-                  "to-number",
-                  [
-                    "get",
-                    "intermittent"
-                  ]
-                ],
-                1
+                  "get",
+                  "intermittent"
+                ]
               ],
-              2.6,
-              3
+              1
             ],
-            1.4
+            1.7,
+            [
+              "match",
+              [
+                "get",
+                "class"
+              ],
+              "river",
+              9,
+              "canal",
+              3.6,
+              "stream",
+              3.2,
+              1.36
+            ]
           ]
         ],
         "line-dasharray": [
@@ -318,8 +364,8 @@
           [
             "literal",
             [
-              3,
-              1.5
+              2.5,
+              2
             ]
           ],
           [
@@ -401,17 +447,23 @@
       "source-layer": "transportation",
       "minzoom": 11,
       "filter": [
-        "match",
+        "all",
         [
-          "get",
-          "class"
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "path"
         ],
         [
-          "path",
-          "track"
-        ],
-        true,
-        false
+          "!=",
+          [
+            "get",
+            "subclass"
+          ],
+          "footway"
+        ]
       ],
       "layout": {
         "line-cap": "round",
@@ -451,7 +503,7 @@
         "track"
       ],
       "paint": {
-        "line-color": "#7a4a1e",
+        "line-color": "#9b7a5a",
         "line-width": [
           "interpolate",
           [
@@ -461,15 +513,49 @@
             "zoom"
           ],
           11,
-          0.8,
+          1.6,
           14,
-          1.8,
+          3.6,
           16,
-          2.6
+          5.2
         ],
         "line-dasharray": [
-          4,
-          2
+          2.4,
+          1.2
+        ]
+      }
+    },
+    {
+      "$comment": "Inner light line of the 4x4 track's double line (D-035).",
+      "id": "topo-trails-track-inner",
+      "type": "line",
+      "source": "$base",
+      "source-layer": "transportation",
+      "minzoom": 12,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "track"
+      ],
+      "paint": {
+        "line-color": "#f4f0e6",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          0.6,
+          14,
+          1.6,
+          16,
+          2.6
         ]
       }
     },
@@ -499,7 +585,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#c0392b",
+        "line-color": "#5a5550",
         "line-width": [
           "interpolate",
           [
@@ -516,8 +602,8 @@
           2.6
         ],
         "line-dasharray": [
-          2,
-          1.5
+          2.2,
+          1.6
         ]
       }
     },
@@ -647,6 +733,10 @@
           3.5,
           16,
           5
+        ],
+        "line-dasharray": [
+          3,
+          1.2
         ]
       }
     },
@@ -936,17 +1026,35 @@
       "filter": [
         "any",
         [
-          "match",
+          "all",
           [
-            "get",
-            "class"
+            "!",
+            [
+              "==",
+              [
+                "to-number",
+                [
+                  "get",
+                  "intermittent"
+                ]
+              ],
+              1
+            ]
           ],
           [
-            "river",
-            "canal"
-          ],
-          true,
-          false
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "river",
+              "canal",
+              "stream"
+            ],
+            true,
+            false
+          ]
         ],
         [
           "all",
@@ -960,10 +1068,26 @@
           [
             "==",
             [
+              "to-number",
+              [
+                "get",
+                "intermittent"
+              ]
+            ],
+            1
+          ],
+          [
+            "match",
+            [
               "get",
               "class"
             ],
-            "stream"
+            [
+              "river",
+              "stream"
+            ],
+            true,
+            false
           ]
         ]
       ],
@@ -1206,38 +1330,74 @@
       "source-layer": "poi",
       "minzoom": 13,
       "filter": [
-        "any",
+        "all",
         [
-          "match",
+          "any",
           [
-            "get",
-            "class"
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "campsite",
+              "camp_site",
+              "drinking_water",
+              "water_point",
+              "water_tap"
+            ],
+            true,
+            false
           ],
           [
-            "campsite",
-            "camp_site",
-            "drinking_water",
-            "water_point",
-            "water_tap"
-          ],
-          true,
-          false
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            [
+              "campsite",
+              "camp_site",
+              "drinking_water",
+              "water_point",
+              "water_tap"
+            ],
+            true,
+            false
+          ]
         ],
         [
-          "match",
+          "!",
           [
-            "get",
-            "subclass"
-          ],
-          [
-            "campsite",
-            "camp_site",
-            "drinking_water",
-            "water_point",
-            "water_tap"
-          ],
-          true,
-          false
+            "within",
+            {
+              "type": "Polygon",
+              "coordinates": [
+                [
+                  [
+                    34.2,
+                    29.45
+                  ],
+                  [
+                    35.95,
+                    29.45
+                  ],
+                  [
+                    35.95,
+                    33.45
+                  ],
+                  [
+                    34.2,
+                    33.45
+                  ],
+                  [
+                    34.2,
+                    29.45
+                  ]
+                ]
+              ]
+            }
+          ]
         ]
       ],
       "layout": {
@@ -1332,68 +1492,142 @@
       "source-layer": "poi",
       "minzoom": 13,
       "filter": [
-        "any",
+        "all",
         [
-          "match",
+          "any",
           [
-            "get",
-            "class"
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "parking",
+              "campsite",
+              "camp_site",
+              "picnic_site",
+              "drinking_water",
+              "water_point",
+              "spring",
+              "viewpoint",
+              "shelter",
+              "alpine_hut",
+              "wilderness_hut",
+              "information",
+              "toilets",
+              "attraction",
+              "ruins",
+              "archaeological_site",
+              "place_of_worship",
+              "monument",
+              "memorial",
+              "water_tap"
+            ],
+            true,
+            false
           ],
           [
-            "parking",
-            "campsite",
-            "camp_site",
-            "picnic_site",
-            "drinking_water",
-            "water_point",
-            "spring",
-            "viewpoint",
-            "shelter",
-            "alpine_hut",
-            "wilderness_hut",
-            "information",
-            "toilets",
-            "attraction",
-            "ruins",
-            "archaeological_site",
-            "place_of_worship",
-            "monument",
-            "memorial",
-            "water_tap"
-          ],
-          true,
-          false
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            [
+              "parking",
+              "campsite",
+              "camp_site",
+              "picnic_site",
+              "drinking_water",
+              "water_point",
+              "spring",
+              "viewpoint",
+              "shelter",
+              "alpine_hut",
+              "wilderness_hut",
+              "information",
+              "toilets",
+              "attraction",
+              "ruins",
+              "archaeological_site",
+              "place_of_worship",
+              "monument",
+              "memorial",
+              "water_tap"
+            ],
+            true,
+            false
+          ]
         ],
         [
-          "match",
+          "!",
           [
-            "get",
-            "subclass"
-          ],
-          [
-            "parking",
-            "campsite",
-            "camp_site",
-            "picnic_site",
-            "drinking_water",
-            "water_point",
-            "spring",
-            "viewpoint",
-            "shelter",
-            "alpine_hut",
-            "wilderness_hut",
-            "information",
-            "toilets",
-            "attraction",
-            "ruins",
-            "archaeological_site",
-            "place_of_worship",
-            "monument",
-            "memorial",
-            "water_tap"
-          ],
-          true,
-          false
+            "all",
+            [
+              "any",
+              [
+                "match",
+                [
+                  "get",
+                  "class"
+                ],
+                [
+                  "campsite",
+                  "camp_site",
+                  "drinking_water",
+                  "water_point",
+                  "water_tap"
+                ],
+                true,
+                false
+              ],
+              [
+                "match",
+                [
+                  "get",
+                  "subclass"
+                ],
+                [
+                  "campsite",
+                  "camp_site",
+                  "drinking_water",
+                  "water_point",
+                  "water_tap"
+                ],
+                true,
+                false
+              ]
+            ],
+            [
+              "within",
+              {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      34.2,
+                      29.45
+                    ],
+                    [
+                      35.95,
+                      29.45
+                    ],
+                    [
+                      35.95,
+                      33.45
+                    ],
+                    [
+                      34.2,
+                      33.45
+                    ],
+                    [
+                      34.2,
+                      29.45
+                    ]
+                  ]
+                ]
+              }
+            ]
+          ]
         ]
       ],
       "layout": {

@@ -201,7 +201,7 @@ def main():
         r["layers"] = page.evaluate("""() => { const m = window.__topo3d.map;
             return ['topo-landcover','topo-hillshade','topo-contours-minor','topo-trails-path','topo-peaks','route-line',
                     'topo-waterway','topo-waterway-label','topo-poi-dot','topo-poi-icon','topo-poi',
-                    'topo-hike-casing','topo-hike-line','topo-hike-label','topo-osm-poi-icon','topo-marked-line']
+                    'topo-hike-casing','topo-hike-line','topo-hike-label','topo-osm-poi-icon','topo-marked-line','topo-trails-track-inner']
               .filter((id) => !!m.getLayer(id)); }""")
         r["terrain"] = page.evaluate("() => !!window.__topo3d.map.getTerrain()")
         r["fatal"] = page.evaluate("() => document.getElementById('fatal')?.textContent ?? null")
@@ -232,11 +232,14 @@ def main():
               markedMinzoom: m.getLayer('topo-marked-line').minzoom, pathMinzoom: m.getLayer('topo-trails-path').minzoom,
               streamFilter: JSON.stringify(m.getFilter('topo-waterway')),
               markedW14: w('topo-marked-line', 'marked', 14), pathW14: w('topo-trails-path', '', 14),
-              labelMinzoom: m.getLayer('topo-hike-label').minzoom, iconMinzoom: m.getLayer('topo-osm-poi-icon').minzoom,
+              labelMinzoom: m.getLayer('topo-hike-label').minzoom,
+              pathColour: m.getPaintProperty('topo-trails-path', 'line-color'), trackInner: !!m.getLayer('topo-trails-track-inner'),
+              baseIconFilter: JSON.stringify(m.getFilter('topo-poi-icon')), iconMinzoom: m.getLayer('topo-osm-poi-icon').minzoom,
               natW14: w('topo-hike-line', 'national', 14), regW14: w('topo-hike-line', 'regional', 14) }; }""")
         r["poiIcons"] = page.evaluate("""() => { const m = window.__topo3d.map; return [m.hasImage('topo-tent'), m.hasImage('topo-tap'),
             m.getLayer('topo-poi-icon')?.minzoom, JSON.stringify(m.getLayoutProperty('topo-poi-icon', 'icon-image'))]; }""")
-        r["waterColor"] = page.evaluate("() => window.__topo3d.map.getPaintProperty('topo-waterway', 'line-color')")
+        r["waterColor"] = page.evaluate("() => JSON.stringify(window.__topo3d.map.getPaintProperty('topo-waterway', 'line-color'))")
+        r["smallStreamW14"] = page.evaluate("() => { const st = window.__topo3d.map.getPaintProperty('topo-waterway', 'line-width').slice(3); return st[st.indexOf(14) + 1][2]; }")
         page.evaluate("() => document.querySelector('input[data-group=water]').click()")
         wt = [page.evaluate("() => window.__topo3d.map.getLayoutProperty('topo-waterway', 'visibility')")]
         page.evaluate("() => document.querySelector('input[data-group=water]').click()")
@@ -416,7 +419,7 @@ def main():
     expect(set(r["topo"]["hidden"]) == {"road_path_pedestrian", "mountain_peak", "waterway_stream", "poi_r1"}, f"base trail/peak/waterway/poi layers hidden by schema (not road_major) {r['topo']['hidden']}")
     expect(r["topo"]["renamed"] == 2, "Hebrew-first names on name labels only (water_name, place_label; not the ref shield)")
     expect(r["topo"]["labelFont"] == ["Noto Sans Regular"], "Regular label font chosen over the first (Italic) one")
-    expect(len(r["layers"]) == 16, f"Topo3D (incl. streams, POIs) + route layers present {r['layers']}")
+    expect(len(r["layers"]) == 17, f"Topo3D (incl. streams, POIs) + route layers present {r['layers']}")
     m = r["menus"]
     expect(m[0] == {"layers": False, "route": False, "layersAria": "false"}, f"menus closed at start {m[0]}")
     expect(m[1]["layers"] and not m[1]["route"] and m[1]["layersAria"] == "true", "layers icon opens the layers menu")
@@ -433,11 +436,14 @@ def main():
     expect(o["markedMinzoom"] < o["pathMinzoom"] and '[">=",["zoom"],13]' in o["streamFilter"].replace(" ", ""),
            f"marked trails (z{o['markedMinzoom']}) before unmarked (z{o['pathMinzoom']}), small streams only from z13 (D-033)")
     expect(o["natW14"] > o["regW14"] > o["markedW14"] > o["pathW14"], f"width order national > regional > marked > unmarked {o['natW14']} {o['regW14']} {o['markedW14']} {o['pathW14']}")
+    expect(o["pathColour"] == "#5a5550" and o["trackInner"], "unmarked paths dark grey dashes, 4x4 tracks double line (owner's example, D-035)")
+    expect('"within"' in o["baseIconFilter"], "base-tile campsite/water icons hidden inside Israel (no duplicates with the OSM extract)")
     expect(o["counts"] == {"trails": 3, "pois": 2}, f"OSM extract loaded (trails, campsite + water) {o['counts']}")
     expect(o["lines"] == ["int", "regional"] and o["icons"] == ["camp", "water"], f"national/regional routes and tent/tap icons rendered at the 1 km scale {o['lines']} {o['icons']}")
     expect('"int","#ff7a00"' in o["colour"].replace(" ", ""), "Israel National Trail drawn orange (D-032)")
     expect(o["labelMinzoom"] == 14.4 and o["iconMinzoom"] == 11.7, f"route names from ~200 m scale, icons from ~1 km scale {o['labelMinzoom']} {o['iconMinzoom']}")
-    expect(r["poiMinzoom"] == 13 and r["waterColor"] == "#2f7fd8", f"POIs from z13, streams blue {r['poiMinzoom']} {r['waterColor']}")
+    expect(r["poiMinzoom"] == 13 and "#2f7fd8" in r["waterColor"] and "#5a9fdc" in r["waterColor"], f"POIs from z13, perennial blue / intermittent light blue {r['poiMinzoom']} {r['waterColor']}")
+    expect(r["smallStreamW14"] < o["pathW14"], f"non-perennial streams thinner than unmarked trails (D-034) {r['smallStreamW14']} < {o['pathW14']}")
     expect(r["waterToggle"] == ["none", "visible"], f"streams switch hides/shows the layer {r['waterToggle']}")
     expect(r["profileHidden"] == [True, True, True] and r["profileShownAgain"], f"profile + stats can be hidden (✕), remembered, and shown again {r['profileHidden']}")
     expect(r["terrain"], "3D terrain on")
