@@ -14,17 +14,20 @@ import json, math, os, sys, time, urllib.parse, urllib.request
 
 BBOX = (29.45, 34.2, 33.45, 35.95)  # south, west, north, east: Israel incl. Golan and Eilat
 ENDPOINTS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"]
-QUERY = """[out:json][timeout:600][maxsize:1073741824];
-rel["route"="hiking"]["network"~"^(iwn|nwn|rwn|lwn)$"]({s},{w},{n},{e})->.top;
+# Several small queries instead of one big one (one big query timed out on both public servers, 2026-11-01).
+HEAD = "[out:json][timeout:180];"
+Q_MAJOR = HEAD + """rel["route"="hiking"]["network"~"^(iwn|nwn|rwn)$"]({s},{w},{n},{e})->.top;
 (.top; rel(r.top);)->.routes;
-.routes out geom;
-(
+.routes out geom;"""
+Q_MARKED = HEAD + """rel["route"="hiking"]["network"="lwn"]({s},{w},{n},{e});
+out geom;"""
+Q_POIS = HEAD + """(
   nwr["tourism"="camp_site"]({s},{w},{n},{e});
   nwr["amenity"="drinking_water"]({s},{w},{n},{e});
   nwr["man_made"="water_tap"]({s},{w},{n},{e});
 );
-out center tags;
-"""
+out center tags;"""
+BAND = 0.5  # degrees of latitude per marked-trail query
 RANK = {"marked": 0, "regional": 1, "national": 2, "int": 3}
 # Trail-marking colour (first part of osmc:symbol, else colour=) → map colour. Israeli marked trails are red,
 # blue, green or black (Israel Trails Committee); others get a neutral brown.
@@ -33,21 +36,51 @@ MARK_COLOURS = {"red": "#d32f2f", "blue": "#1e63c4", "green": "#2e9b3e", "black"
 SKIP_ROLES = {"alternative", "excursion", "approach", "connection"}
 
 
-def overpass():
-    s, w, n, e = BBOX
-    body = urllib.parse.urlencode({"data": QUERY.format(s=s, w=w, n=n, e=e)}).encode()
+def run_query(q, bbox):
+    s_, w, n, e = bbox
+    body = urllib.parse.urlencode({"data": q.format(s=s_, w=w, n=n, e=e)}).encode()
     last = None
-    for url in ENDPOINTS:
-        for attempt in range(2):
+    for attempt in range(3):
+        for url in ENDPOINTS:
             try:
                 req = urllib.request.Request(url, data=body, headers={"User-Agent": "Topo3D hiking planner (personal, build-time extract; github.com/eliagil321hike-ops/hiking-planner)"})
-                with urllib.request.urlopen(req, timeout=700) as r:
+                with urllib.request.urlopen(req, timeout=240) as r:
                     return json.load(r)
             except Exception as ex:  # noqa: BLE001 - report and try the next endpoint
                 last = ex
                 print(f"overpass {url} attempt {attempt + 1} failed: {ex}", file=sys.stderr)
-                time.sleep(20)
+        time.sleep(30 * (attempt + 1))
     raise RuntimeError(f"all Overpass endpoints failed: {last}")
+
+
+def overpass():
+    """Run the split queries; keep whatever succeeds. Fails only if nothing at all came back."""
+    s_, w, n, e = BBOX
+    parts = [("major routes", Q_MAJOR, BBOX), ("campsites/water", Q_POIS, BBOX)]
+    lat = s_
+    while lat < n:
+        top = min(n, round(lat + BAND, 4))
+        parts.append((f"marked trails {lat:.2f}-{top:.2f}", Q_MARKED, (lat, w, top, e)))
+        lat = top
+    elements, seen, stamp, failed = [], set(), "", []
+    for label, q, bbox in parts:
+        try:
+            d = run_query(q, bbox)
+        except Exception as ex:  # noqa: BLE001
+            failed.append(label)
+            print(f"part '{label}' skipped: {ex}", file=sys.stderr)
+            continue
+        stamp = stamp or d.get("osm3s", {}).get("timestamp_osm_base", "")
+        new = [el for el in d["elements"] if (el["type"], el["id"]) not in seen]
+        seen.update((el["type"], el["id"]) for el in new)
+        elements += new
+        print(f"part '{label}': {len(new)} elements", file=sys.stderr)
+        time.sleep(3)
+    if len(failed) == len(parts):
+        raise RuntimeError("all parts failed")
+    if failed:
+        print(f"WARNING: incomplete extract, missing: {', '.join(failed)}")
+    return {"osm3s": {"timestamp_osm_base": stamp}, "elements": elements}
 
 
 def is_int(tags):

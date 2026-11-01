@@ -336,6 +336,9 @@ with the first real request.
   `site/data/osm-trails.geojson`, `site/data/osm-pois.geojson` (Douglas–Peucker 4 m). Weekly scheduled
   redeploy refreshes it. If Overpass fails the deploy continues without the files (layers stay empty).
   Data © OpenStreetMap contributors, ODbL (attribution on the source).
+  First CI run: one combined query timed out (504) on overpass-api.de and private.coffee → split into
+  small queries (major routes; POIs; marked trails in 0.5° latitude bands), each retried on both servers;
+  parts that fail are skipped and reported, the rest is shipped.
 - Israel National Trail: any route (or section of a super-route) named "שביל ישראל"/"Israel National Trail"
   → orange #ff7a00. Other national #8e24aa, regional #e0287d. National lines are the widest on the map
   (z14: 9 px, z16: 15 px). Names: thin 11 px text along the line from z14.4 (≈ when the scale bar first
