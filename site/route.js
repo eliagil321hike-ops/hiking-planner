@@ -161,6 +161,7 @@ export function initRoute(ctx) {
   // ---------------------------------------------------------------- planning mode + buttons
   function setPlanning(on) {
     planning = on;
+    $('plan-badge').hidden = !on;
     $('plan').setAttribute('aria-pressed', String(on));
     $('plan').textContent = t(on ? 'route.finish' : 'route.plan');
     map.getCanvas().style.cursor = on ? 'crosshair' : '';
@@ -168,6 +169,16 @@ export function initRoute(ctx) {
     render();
   }
   $('plan').addEventListener('click', () => setPlanning(!planning));
+  // "New route" (always visible): clear the current route as one undoable command and start drawing.
+  function newRoute() {
+    const s = editor.state;
+    if ((s.vertices.length || s.waypoints.length) && !confirm(t('route.newConfirm'))) return;
+    selected = null;
+    if (s.vertices.length || s.waypoints.length) editor.run(clearRoute(editor.state));
+    setPlanning(true);
+  }
+  $('new-route').addEventListener('click', newRoute);
+  ctx.isPlanning = () => planning;
   $('r-undo').addEventListener('click', () => editor.undo());
   $('r-redo').addEventListener('click', () => editor.redo());
   $('r-reverse').addEventListener('click', () => editor.run(reverseRoute()));
@@ -319,5 +330,5 @@ export function initRoute(ctx) {
 
   restoreDraft();
   globalThis.__topo3d && (globalThis.__topo3d.editor = editor);
-  return { addRouteLayers, editor, setPlanning };
+  return { addRouteLayers, editor, setPlanning, newRoute };
 }

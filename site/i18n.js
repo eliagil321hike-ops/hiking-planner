@@ -5,7 +5,6 @@
 const STRINGS = {
   he: {
     'app.title': 'Topo3D · מתכנן מסלולים',
-    'panel.toggle': 'הסתר/הצג לוח',
     'map.label': 'מפה טופוגרפית תלת-ממדית',
     'bg.heading': 'רקע',
     'bg.group': 'רקע המפה',
@@ -26,6 +25,11 @@ const STRINGS = {
     'layers.poi': 'נקודות עניין',
     'layers.exaggeration': 'הגבהה',
     'route.heading': 'מסלול',
+    'route.new': 'מסלול חדש',
+    'route.newConfirm': 'להתחיל מסלול חדש? המסלול הנוכחי יימחק (אפשר לבטל עם "בטל").',
+    'route.planning': 'עריכת מסלול',
+    'menu.layers': 'שכבות',
+    'menu.route': 'אפשרויות מסלול',
     'route.plan': 'תכנן מסלול',
     'route.finish': 'סיים עריכה',
     'route.mode': 'קטע חדש',

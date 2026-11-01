@@ -13,6 +13,7 @@ import { applyTopo3d } from './topo3d.js';
 import { initLayers, layerHelpers } from './layers.js';
 import { initBackground } from './background.js';
 import { initRoute } from './route.js';
+import { initMenus } from './menus.js';
 import { createOrsRouter } from './router.js';
 
 const BUILD = '__BUILD__'; // replaced by CI (scripts/stamp_build.sh) with the commit id
@@ -127,9 +128,10 @@ if (overlay.routing?.embeddedKey) {
   ctx.router = createOrsRouter({ key: overlay.routing.embeddedKey, profile: overlay.routing.profile });
 }
 const route = initRoute(ctx);
+const menus = initMenus(ctx);
 
 // Test/debug handle (used by scripts/e2e_test.py).
-globalThis.__topo3d = { map, results, ctx, editor: route.editor };
+globalThis.__topo3d = { map, results, ctx, editor: route.editor, menus };
 
 map.on('load', () => {
   perf.mark('style-loaded');

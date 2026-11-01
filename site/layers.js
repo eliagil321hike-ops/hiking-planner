@@ -1,4 +1,4 @@
-// Layer switches (3D, hillshade, contours, trails, landcover), terrain exaggeration, panel collapse.
+// Layer switches (3D, hillshade, contours, trails, streams, POIs, landcover) and terrain exaggeration.
 // Choices are remembered in this browser (prefs.js).
 
 import { loadPrefs, savePrefs } from './prefs.js';
@@ -39,10 +39,6 @@ export function initLayers(ctx) {
     $('exag').value = String(prefs.exaggeration);
     $('exag-out').textContent = prefs.exaggeration.toFixed(1);
   }
-  if (prefs.panelCollapsed) {
-    $('panel').classList.add('collapsed');
-    $('panel-toggle').setAttribute('aria-expanded', 'false');
-  }
 
   document.querySelectorAll('input[data-group]').forEach((cb) => {
     cb.addEventListener('change', () => {
@@ -63,11 +59,4 @@ export function initLayers(ctx) {
     if (map.getTerrain()) map.setTerrain({ source: 'dem-terrain', exaggeration: ctx.state.exaggeration });
   });
   $('exag').addEventListener('change', () => savePrefs({ exaggeration: ctx.state.exaggeration }));
-  $('panel-toggle').addEventListener('click', () => {
-    const p = $('panel');
-    p.classList.toggle('collapsed');
-    const collapsed = p.classList.contains('collapsed');
-    $('panel-toggle').setAttribute('aria-expanded', String(!collapsed));
-    savePrefs({ panelCollapsed: collapsed });
-  });
 }

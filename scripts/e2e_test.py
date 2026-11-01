@@ -180,6 +180,17 @@ def main():
               .filter((id) => !!m.getLayer(id)); }""")
         r["terrain"] = page.evaluate("() => !!window.__topo3d.map.getTerrain()")
         r["fatal"] = page.evaluate("() => document.getElementById('fatal')?.textContent ?? null")
+        # Toolbar menus: closed by default; icon opens, same icon closes; one menu at a time
+        ui = lambda: page.evaluate("""() => ({ layers: !document.getElementById('menu-layers').hidden, route: !document.getElementById('menu-route').hidden,
+            layersAria: document.getElementById('btn-layers').getAttribute('aria-expanded') })""")
+        m0 = ui()
+        page.evaluate("() => document.getElementById('btn-layers').click()"); m1 = ui()
+        page.evaluate("() => document.getElementById('btn-route').click()"); m2 = ui()
+        page.evaluate("() => document.getElementById('btn-route').click()"); m3 = ui()
+        page.evaluate("() => document.getElementById('btn-layers').click()"); page.keyboard.press("Escape"); m4 = ui()
+        r["menus"] = [m0, m1, m2, m3, m4]
+        r["newRouteVisible"] = page.evaluate("""() => { const b = document.getElementById('new-route'); const q = b.getBoundingClientRect();
+            return q.width > 40 && q.height >= 44 && b.contains(document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2)); }""")
         r["routeColor"] = page.evaluate("() => window.__topo3d.map.getPaintProperty('route-line', 'line-color')")
         r["poiMinzoom"] = page.evaluate("() => window.__topo3d.map.getLayer('topo-poi')?.minzoom")
         r["waterColor"] = page.evaluate("() => window.__topo3d.map.getPaintProperty('topo-waterway', 'line-color')")
@@ -285,6 +296,12 @@ def main():
         if not r["draftRestored"]:
             print("draft before:", draft_before[:300]); print("draft after:", page.evaluate(f"() => JSON.stringify({ed}.state)")[:300])
         r["draftNotice"] = page.evaluate("() => window.__topo3d.results.draftRestored === true")
+        # "New route" with an existing route: confirm → cleared in one step, drawing mode on
+        page.evaluate("() => document.getElementById('new-route').click()"); page.wait_for_timeout(300)
+        r["newRoute"] = page.evaluate(f"() => [{ed}.state.vertices.length, !document.getElementById('plan-badge').hidden]")
+        page.keyboard.press("Control+z"); page.wait_for_timeout(200)
+        r["newRouteUndone"] = nverts() > 0
+        page.evaluate("() => document.getElementById('plan').click()")      # leave drawing mode again
         # Clear (confirmed) → empty; undo brings it back
         btn("#plan"); btn("#r-clear"); page.wait_for_timeout(300)
         r["afterClear"] = (nverts(), page.evaluate(f"() => {ed}.state.waypoints.length"))
@@ -357,6 +374,14 @@ def main():
     expect(r["topo"]["renamed"] == 2, "Hebrew-first names on name labels only (water_name, place_label; not the ref shield)")
     expect(r["topo"]["labelFont"] == ["Noto Sans Regular"], "Regular label font chosen over the first (Italic) one")
     expect(len(r["layers"]) == 10, f"Topo3D (incl. streams, POIs) + route layers present {r['layers']}")
+    m = r["menus"]
+    expect(m[0] == {"layers": False, "route": False, "layersAria": "false"}, f"menus closed at start {m[0]}")
+    expect(m[1]["layers"] and not m[1]["route"] and m[1]["layersAria"] == "true", "layers icon opens the layers menu")
+    expect(m[2]["route"] and not m[2]["layers"], "route icon opens its menu and closes the other")
+    expect(not m[3]["route"] and not m[3]["layers"], "pressing the same icon again closes the menu")
+    expect(not m[4]["layers"], "Escape closes the menu")
+    expect(r["newRouteVisible"], "'new route' button always visible and not covered")
+    expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")
     expect(r["poiMinzoom"] == 13 and r["waterColor"] == "#2f7fd8", f"POIs from z13, streams blue {r['poiMinzoom']} {r['waterColor']}")
     expect(r["waterToggle"] == ["none", "visible"], f"streams switch hides/shows the layer {r['waterToggle']}")

@@ -25,14 +25,18 @@
 
 <div id="fps" class="chip" aria-live="off" hidden>– fps</div>
 
-<aside id="panel" class="panel">
-  <header class="panel-head">
-    <strong data-i18n="app.title">Topo3D · מתכנן מסלולים</strong> <small class="build" title="build">__BUILD__</small>
-    <button id="panel-toggle" class="icon-btn" aria-expanded="true" data-i18n-attr="aria-label:panel.toggle" aria-label="הסתר/הצג לוח">☰</button>
-  </header>
-  <div class="panel-body">
-    <p id="status" class="status" role="status" aria-live="polite" hidden></p>
+<!-- Floating toolbar (owner request D-029): "new route" always visible; layers and route menus open on click. -->
+<div id="toolbar" class="toolbar">
+  <button id="new-route" class="fab" type="button"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><span data-i18n="route.new">מסלול חדש</span></button>
+  <button id="btn-layers" class="tool-btn" type="button" aria-expanded="false" aria-controls="menu-layers" data-i18n-attr="aria-label:menu.layers;title:menu.layers" aria-label="שכבות"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3 2.5 8 12 13l9.5-5L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m2.5 12 9.5 5 9.5-5M2.5 16l9.5 5 9.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+  <button id="btn-route" class="tool-btn" type="button" aria-expanded="false" aria-controls="menu-route" data-i18n-attr="aria-label:menu.route;title:menu.route" aria-label="אפשרויות מסלול"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="6" cy="18" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="6" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.2 17.2c4-1.2 1.2-5.6 4.8-6.6 2.6-.7 3.4-1.8 3.6-2.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="2.2 2.2"/></svg></button>
+  <span id="plan-badge" class="plan-badge" hidden data-i18n="route.planning">עריכת מסלול</span>
+</div>
 
+<p id="status" class="status toast" role="status" aria-live="polite" hidden></p>
+
+<section id="menu-layers" class="popover" hidden>
+  <header class="popover-head"><strong data-i18n="menu.layers">שכבות</strong> <small class="build" title="build">__BUILD__</small></header>
     <section>
       <h2 data-i18n="bg.heading">רקע</h2>
       <div class="seg" role="radiogroup" data-i18n-attr="aria-label:bg.group" aria-label="רקע המפה">
@@ -65,6 +69,24 @@
       <label class="slider"><span data-i18n="layers.exaggeration">הגבהה</span> <input id="exag" type="range" min="1" max="2" step="0.1" value="1.2"> <output id="exag-out">1.2</output></label>
     </section>
 
+    <!-- Developer tools (Phase 0 tests). Shown only with ?dev=1; text stays in English on purpose. -->
+    <section id="dev-section" hidden>
+      <h2>Developer tests (?dev=1)</h2>
+      <div class="row">
+        <button id="t-encoding" class="btn">Encoding check</button>
+        <button id="t-probe" class="btn">DEM max zoom</button>
+        <button id="t-perf" class="btn">FPS test</button>
+      </div>
+      <div class="row">
+        <button id="t-features" class="btn">Layer check</button>
+        <button id="t-copy" class="btn">Copy results</button>
+        <button id="t-style" class="btn">Export style</button>
+      </div>
+      <div id="test-out" class="test-out" aria-live="polite"></div>
+    </section>
+</section>
+
+<section id="menu-route" class="popover" hidden>
     <section>
       <h2 data-i18n="route.heading">מסלול</h2>
       <div class="row">
@@ -90,26 +112,8 @@
       <label><input type="checkbox" id="show-profile" checked> <span data-i18n="route.showProfile">הצג גובה ופרופיל</span></label>
       <dl id="stats" class="stats"></dl>
     </section>
-
-    <!-- Developer tools (Phase 0 tests). Shown only with ?dev=1; text stays in English on purpose. -->
-    <section id="dev-section" hidden>
-      <h2>Developer tests (?dev=1)</h2>
-      <div class="row">
-        <button id="t-encoding" class="btn">Encoding check</button>
-        <button id="t-probe" class="btn">DEM max zoom</button>
-        <button id="t-perf" class="btn">FPS test</button>
-      </div>
-      <div class="row">
-        <button id="t-features" class="btn">Layer check</button>
-        <button id="t-copy" class="btn">Copy results</button>
-        <button id="t-style" class="btn">Export style</button>
-      </div>
-      <div id="test-out" class="test-out" aria-live="polite"></div>
-    </section>
-
     <p class="safety" data-i18n="safety">מסלולים, גבהים וזמני הליכה הם הערכות ועלולים להיות שגויים. בדוק תמיד את השטח, מזג האוויר והמים לפני ובמהלך הטיול.</p>
-  </div>
-</aside>
+</section>
 
 <div id="profile-box" class="profile" hidden>
   <button id="profile-close" class="icon-btn profile-close" type="button" data-i18n-attr="aria-label:route.hideProfile;title:route.hideProfile" aria-label="הסתר פרופיל">✕</button>
