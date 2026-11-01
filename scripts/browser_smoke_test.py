@@ -166,6 +166,13 @@ def main():
               // profile breaks at null
               const div = document.createElement('div'); div.style.width = '400px'; div.style.height = '150px'; document.body.append(div);
               renderProfile(div, [{distance:0,elevation:100},{distance:20,elevation:110},{distance:40,elevation:null},{distance:60,elevation:120},{distance:80,elevation:125}], () => {});
+              // satellite provider config: key required → null without key; key is URL-encoded into the URL
+              const { satelliteSource } = await import(base + 'satellite.js');
+              const ov = await (await fetch(base + 'styles/topo3d.json')).json();
+              const prov = Object.fromEntries(ov.satellite.providers.map((p) => [p.id, p]));
+              out.satEox = satelliteSource(prov['eox-s2-2024'], null)?.tiles[0];
+              out.satEsriNoKey = satelliteSource(prov['esri-world-imagery'], '');
+              out.satMapbox = satelliteSource(prov['mapbox-satellite'], 'pk.a/b+c')?.tiles[0];
               out.profileAreas = div.querySelectorAll('path.profile-area').length;
               out.profileSegs = div.querySelectorAll('line.profile-seg').length;
               out.profileColors = [...new Set([...div.querySelectorAll('line.profile-seg')].map((l) => l.getAttribute('stroke')))];
@@ -191,6 +198,9 @@ def main():
     expect(result["missing"] is None, "missing DEM tile gives null, not 0")
     expect(result["fallback"] == 2.0 and result["fallbackZooms"] == {"12": 1}, "z13 missing → falls back to z12 (same value)")
     expect(result["fallbackMissing"] is None, "no tile at z13 or z12 → null")
+    expect(result["satEox"] and "{z}/{y}/{x}" in result["satEox"] and "{key}" not in result["satEox"], "EOX satellite needs no key, z/y/x order kept")
+    expect(result["satEsriNoKey"] is None, "Esri without a key → no source (never a broken URL)")
+    expect(result["satMapbox"] and "access_token=pk.a%2Fb%2Bc" in result["satMapbox"], "Mapbox key is URL-encoded into the tile URL")
     expect(result["profileAreas"] == 2 and result["profileSegs"] == 2, "profile area and slope line break at missing data (2 runs, 2 segments)")
     expect(len(result["profileColors"]) >= 1, f"slope colours drawn {result['profileColors']}")
     expect(not errors, f"no page errors {errors}")

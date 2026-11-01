@@ -72,3 +72,10 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 }
 
 .build { color: var(--muted); font-weight: 400; font-size: 11px; direction: ltr; }
+
+.seg { display: flex; gap: 6px; }
+.seg label { flex: 1; justify-content: center; border: 1px solid var(--line); border-radius: 8px; min-height: 40px; background: #fff; }
+.seg label:has(input:checked) { border-color: var(--accent); background: #fbeee8; font-weight: 600; }
+.seg input { accent-color: var(--accent); }
+.panel label.stack { display: grid; gap: 4px; margin-top: 8px; }
+.panel select, .panel input[type="password"] { min-height: 38px; border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; font: inherit; background: #fff; color: var(--fg); width: 100%; }

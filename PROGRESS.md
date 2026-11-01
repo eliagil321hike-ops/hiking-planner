@@ -9,10 +9,10 @@ Phase 1 starts only after the owner approves Phase 0 (look vs FATMAP, encoding t
 | --- | --- | --- |
 | Site deployed on GitHub Pages and opens | **PASS** (owner opened it, screenshot 2026-11-01) | Actions run 41294695181 attempt 2: test ✓, deploy ✓; URL https://eliagil321hike-ops.github.io/hiking-planner/ |
 | 3D terrain stable; FPS recorded | **Open** — owner's Intel HD 4400: run 2: 3D 8 fps / 2D 58.5; run 3: 3D ~26 fps (stutters) / 2D 59 (noisy, D-015). Owner relaxed the target for this machine (D-014); to be measured on newer hardware | D-013, D-014 |
-| Hillshade + contours readable z12–16 | Not run | owner review |
+| Hillshade + contours readable z12–16 | **PASS** (owner: yes) | D-016 |
 | Encoding test on real tiles + negative control | **PASS** | owner run: Meron 1202.5, coast 4.5, Dead Sea −432; negative control detected; engine Δ −1.3 m (D-011) |
-| Contour labels and trails legible when tilted | Not run | owner review |
-| Owner FATMAP review | Not run | needs ≥ 3 screenshots |
+| Contour labels and trails legible when tilted | **PASS** (owner: yes) | D-016 |
+| Owner FATMAP review | **PASS for topo** (owner: "looks great" vs komoot reference); satellite look pending (D-017) | D-016 |
 | DECISIONS: engine, contours, hosting, attribution, small-group licences | Mostly done | engine = MapLibre GL JS (D-010); Mapterhorn terms open |
 
 ## Completed
@@ -40,6 +40,5 @@ Real rendering, OpenFreeMap layer matching / Hebrew names, real encoding check, 
   ubuntu-latest moves to Ubuntu 26. Both warnings only.
 
 ## Next task
-Waiting for owner: (1) satellite decision (D-012: topo-only like komoot, or add a satellite layer after a licence
-check); (2) side-by-side screenshots at the Lünersee links vs reference 2 and a verdict; (3) readability of
-hillshade/contours z12–16 and legibility when tilted.
+Owner tests the satellite background (EOX, no key) and decides which high-resolution account to open
+(Esri / Mapbox, D-017). FPS stays open until measured on newer hardware (D-014).

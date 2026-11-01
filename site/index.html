@@ -32,6 +32,26 @@
   </header>
   <div class="panel-body">
     <section>
+      <h2>רקע</h2>
+      <div class="seg" role="radiogroup" aria-label="רקע המפה">
+        <label><input type="radio" name="base" value="topo" checked> טופוגרפי</label>
+        <label><input type="radio" name="base" value="satellite"> לוויין</label>
+      </div>
+      <div id="sat-opts" hidden>
+        <label class="stack">מקור לוויין
+          <select id="sat-provider"></select>
+        </label>
+        <div id="sat-key-row" hidden>
+          <label class="stack">מפתח (נשמר רק בדפדפן הזה)
+            <input id="sat-key" type="password" autocomplete="off" spellcheck="false" dir="ltr">
+          </label>
+          <p class="hint" id="sat-key-help"></p>
+          <button id="sat-key-save" class="btn">שמור מפתח והצג</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
       <h2>שכבות</h2>
       <label><input type="checkbox" data-group="terrain" checked> תלת-ממד</label>
       <label><input type="checkbox" data-group="hillshade" checked> הצללה</label>

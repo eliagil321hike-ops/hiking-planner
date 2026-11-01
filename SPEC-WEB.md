@@ -44,3 +44,10 @@ small group; otherwise self-hosted) · 4 Elevation and statistics · 5 Browser s
 - [ ] Contour labels and trail lines legible when tilted
 - [ ] Owner quality review vs ≥ 3 FATMAP screenshots, verdict recorded by the owner
 - [ ] DECISIONS.md records engine, contour approach, hosting, attribution, licences for a small group
+
+## W8. Satellite (owner decision 2026-11-01, reverses SPEC P10.1)
+- A background switch Topo / Satellite. Satellite: best free quality and resolution.
+- Default provider without account: EOX Sentinel-2 cloudless (10 m, CC BY-NC-SA 4.0, non-commercial).
+- High-resolution providers (Esri World Imagery, Mapbox Satellite) need a key that each user types into
+  the site; keys are stored only in that browser, never in the repository. Opening an account with
+  billing beyond a free tier needs the owner's approval (SPEC 0.4).

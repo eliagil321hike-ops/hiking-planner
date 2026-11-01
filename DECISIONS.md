@@ -161,6 +161,28 @@ Cache: GitHub Pages lets browsers cache ~10 min, so owners can run stale code. A
 build id shown in the panel header and in the report (`build`). Verified on a stamped copy in headless
 Chromium: all 14 local requests carry `?v=`, page loads.
 
+## D-016 (2026-11-01) Owner verdicts on the topographic map
+- Side-by-side at Lünersee vs reference 2 (komoot): owner: **"looks great"** (נראה נהדר).
+- Hillshade + contours readable at z12–16, contour labels and trails legible when tilted: owner: **yes**.
+- Recorded as the owner's verdict; the agent did not judge "FATMAP quality" itself (P10.5). The satellite
+  references (1, 3) are addressed by the satellite layer (D-017), not by this verdict.
+
+## D-017 (2026-11-01) Owner: add satellite, best free quality and resolution (reverses P10.1)
+Free options checked 2026-11-01:
+| Option | Resolution | Account / key | Free amount | Over the limit | Licence fit (owner + friends, non-commercial) | Source |
+| --- | --- | --- | --- | --- | --- | --- |
+| EOX Sentinel-2 cloudless 2024 | 10 m (blurry past ~z14) | none | not stated | — | CC BY-NC-SA 4.0 (2018–2025): non-commercial OK with attribution | cloudless.eox.at licence page; URL from OSM wiki |
+| Esri World Imagery | sub-metre in many areas (not verified for Israel) | ArcGIS Location Platform account + API key (privilege: static basemap tiles) | 2M basemap tiles/month (third-party summary apio.sh, 2026-06; not on an Esri page) | $0.15/1,000 (same summary) — billing behaviour not verified | to verify on Esri terms | developers.arcgis.com MapLibre tutorial |
+| Mapbox satellite | high (not verified for Israel) | Mapbox account + public token (pk.) with URL restriction | 750,000 raster tiles/month (mapbox.com/pricing) | pay-as-you-go $0.25/1,000 | Mapbox docs show use in MapLibre | docs.mapbox.com |
+| MapTiler satellite | high | account + key | 100k requests/month; 512 px raster = 4 requests | service pauses (no charge) | free plan "personal or non-commercial" | maptiler.com pricing; satellite tile URL NOT verified → not implemented |
+Decision:
+- Implemented now: a background switch Topo / Satellite. **EOX S2 cloudless 2024 works immediately** (no
+  account) but is only 10 m. High-resolution providers **Esri** and **Mapbox** are implemented as options
+  that need a key typed into the site; the key is stored only in that browser (localStorage), never in the
+  public repo.
+- Which high-res account to open is the owner's decision (budget gate 0.4: Mapbox bills beyond the free
+  tier; Esri billing behaviour unverified; MapTiler pauses but its URL is unverified).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
