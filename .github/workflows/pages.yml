@@ -19,6 +19,8 @@ jobs:
           node-version: 22             # 22.18+ runs .ts tests natively (type stripping)
       - name: Unit tests (geo package, no dependencies)
         run: cd packages/geo && node --test "test/**/*.test.ts"
+      - name: Unit tests (route editor, no dependencies)
+        run: cd packages/editor && node --test "test/**/*.test.ts"
       - name: Browser tests (headless Chromium; real MapLibre build for e2e)
         run: |
           python3 -m venv .venv

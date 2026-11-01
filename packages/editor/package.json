@@ -1,0 +1,9 @@
+{
+  "name": "@hiking/editor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Route editing state: commands with exact inverses, undo/redo, segment cache, stale-response guard. Pure TypeScript.",
+  "exports": "./src/editor.ts",
+  "scripts": { "test": "node --test \"test/**/*.test.ts\"" }
+}

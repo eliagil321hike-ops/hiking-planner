@@ -251,6 +251,25 @@ Mapterhorn hosted-tile terms, which stay an open question.
     camera (used only when the URL has no camera hash).
   - Attribution: verified in e2e that the control shows base-map and DEM credits, and Esri in satellite mode.
 
+## D-025 (2026-11-01) Phase 2 approved; Phase 3A route editor core; SPEC §8.4 off-by-one
+- Owner: "2 אושר" → Phase 2 closed.
+- `packages/editor` (pure TS, zero deps, 17 tests): vertices with `mode` of the segment ending at them,
+  commands with exact inverses (add/move/insert/delete point, segment mode, reverse, close loop, waypoint
+  add/edit/delete), undo/redo, segment cache keyed (from, to, mode, profile), stale-response guard through
+  the cache, failed snap segments stay snap with status `error` (never silently free), drafts.
+- SPEC §8.4 formula "new vertex at position j gets old mode_{n-j}" is off by one: the segment reaching
+  position j in the new order is the old segment between v(n-j) and v(n-j+1), mode_{n-j+1}. Implemented the
+  rule stated in §8.4's own parenthesis; test with mixed modes ([_, snap, free] → [_, free, snap]).
+- Routed geometries are pinned to the exact control points (a router's end within ~1 cm is replaced).
+
+## D-026 (2026-11-01) Owner: routing provider = openrouteservice (option 1)
+Checked 2026-11-01: openrouteservice.org/plans — free Standard key, Directions 2,000/day and 40/minute.
+BRouter public server not usable (maintainers declined a similar small web planner, GitHub issue #991,
+2026-10-21). GraphHopper free: 500 credits/day, non-commercial. FOSSGIS OSRM foot: 1 req/s, policy page not
+reachable. Owner to create a key; embedding it (like Esri) offered with the trade-offs (no referrer
+restriction found; misuse could exhaust the daily quota; no charges). Profile `foot-hiking` to be verified
+with the first real request.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
