@@ -126,6 +126,18 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
 CONSOLE = []
 
 
+def wait_js(page, expr, timeout_s=60):
+    """Poll a JS condition from Python. More robust than wait_for_function on a page that software WebGL
+    keeps busy: there the in-page polling can starve even though the state is already correct."""
+    import time
+    end = time.time() + timeout_s
+    while time.time() < end:
+        if page.evaluate(expr):
+            return
+        page.wait_for_timeout(300)
+    raise TimeoutError(f"condition not met within {timeout_s}s: {expr}")
+
+
 def main():
     ml_js, ml_css = maplibre_files()
     httpd = socketserver.TCPServer(("127.0.0.1", 0), Quiet)
@@ -318,11 +330,11 @@ def main():
                 hill: v('topo-hillshade'), land: v('topo-landcover'), trails: v('topo-trails-path'), terrain: !!window.__topo3d.map.getTerrain() }}; }}""")
         r["styles"] = styles
         page.evaluate("() => document.getElementById('btn-3d').click()")
-        page.wait_for_function("() => window.__topo3d.map.getPitch() < 1 && !window.__topo3d.map.isMoving()", polling=250, timeout=30_000)
+        wait_js(page, "() => window.__topo3d.map.getPitch() < 1 && !window.__topo3d.map.isMoving()")
         d2 = page.evaluate("() => ({ terrain: !!window.__topo3d.map.getTerrain(), pitch: window.__topo3d.map.getPitch(), label: document.getElementById('btn-3d').textContent })")
         page.evaluate("() => document.getElementById('btn-3d').click()")
         try:
-            page.wait_for_function("() => window.__topo3d.map.getPitch() > 50 && !window.__topo3d.map.isMoving()", polling=250, timeout=30_000)
+            wait_js(page, "() => window.__topo3d.map.getPitch() > 50 && !window.__topo3d.map.isMoving()")
         except Exception:
             print("TILT-DEBUG", page.evaluate("() => { const m = window.__topo3d.map; return { pitch: m.getPitch(), moving: m.isMoving(), terrain: !!m.getTerrain(), is3D: window.__topo3d.ctx.view.is3D(), label: document.getElementById('btn-3d').textContent, zoom: m.getZoom(), maxPitch: m.getMaxPitch() }; }"), CONSOLE[-6:], flush=True)
             raise
