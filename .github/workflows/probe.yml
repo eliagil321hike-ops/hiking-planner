@@ -1,0 +1,13 @@
+# One-off data probe (D-032). Runs only on probe/* branches; deleted after use.
+name: probe
+on:
+  push:
+    branches: ["probe/**"]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with: { node-version: 22 }
+      - run: cd probe && npm init -y >/dev/null && npm i @mapbox/vector-tile@2 pbf@4 >/dev/null && node routes.mjs
