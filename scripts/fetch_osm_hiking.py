@@ -25,8 +25,16 @@ Q_POIS = HEAD + """(
   nwr["tourism"="camp_site"]({s},{w},{n},{e});
   nwr["amenity"="drinking_water"]({s},{w},{n},{e});
   nwr["man_made"="water_tap"]({s},{w},{n},{e});
+  node["natural"="spring"]({s},{w},{n},{e});
+  nwr["tourism"="viewpoint"]({s},{w},{n},{e});
+  nwr["amenity"="shelter"]({s},{w},{n},{e});
+  nwr["tourism"~"^(wilderness_hut|alpine_hut)$"]({s},{w},{n},{e});
 );
 out center tags;"""
+# All car parks; only those within PARKING_NEAR_M of a hiking route are kept (trailheads, not city car parks).
+Q_PARKING = HEAD + """nwr["amenity"="parking"]({s},{w},{n},{e});
+out center tags;"""
+PARKING_NEAR_M = 400
 BAND = 0.25  # degrees of latitude per marked-trail query (0.5 timed out on the dense centre, 2026-11-01)
 RANK = {"marked": 0, "regional": 1, "national": 2, "int": 3}
 # Trail-marking colour (first part of osmc:symbol, else colour=) → map colour. Israeli marked trails are red,
@@ -56,7 +64,7 @@ def run_query(q, bbox):
 def overpass():
     """Run the split queries; keep whatever succeeds. Fails only if nothing at all came back."""
     s_, w, n, e = BBOX
-    parts = [("major routes", Q_MAJOR, BBOX), ("campsites/water", Q_POIS, BBOX)]
+    parts = [("major routes", Q_MAJOR, BBOX), ("campsites/water/springs/views/shelters", Q_POIS, BBOX), ("parking", Q_PARKING, BBOX)]
     lat = s_
     while lat < n:
         top = min(n, round(lat + BAND, 4))
@@ -170,23 +178,74 @@ def build(data):
                        "geometry": {"type": "MultiLineString", "coordinates": lines}})
         seen.setdefault(k, []).append(label_of(rid))
 
+    near = trail_index(trails)
     pois = []
     for el in data["elements"]:
         if el["type"] == "relation" and "center" not in el:
             continue
-        t = el.get("tags", {})
-        if t.get("tourism") == "camp_site":
-            kind = "camp"
-        elif t.get("amenity") == "drinking_water" or t.get("man_made") == "water_tap":
-            if t.get("drinking_water") == "no" or t.get("access") in ("private", "no"):
-                continue
-            kind = "water"
-        else:
+        kind = poi_kind(el.get("tags", {}))
+        if not kind:
             continue
+        t = el["tags"]
         lon, lat = (el["lon"], el["lat"]) if "lon" in el else (el["center"]["lon"], el["center"]["lat"])
-        pois.append({"type": "Feature", "properties": {"kind": kind, "name": t.get("name:he") or t.get("name") or ""},
+        if kind == "parking" and not near(lon, lat):
+            continue
+        props = {"kind": kind, "name": t.get("name:he") or t.get("name") or ""}
+        if kind == "spring" and t.get("seasonal") in ("yes", "spring", "winter") or t.get("intermittent") == "yes":
+            props["seasonal"] = 1
+        pois.append({"type": "Feature", "properties": props,
                      "geometry": {"type": "Point", "coordinates": [round(lon, 6), round(lat, 6)]}})
     return trails, pois, seen
+
+
+def poi_kind(t):
+    if t.get("tourism") == "camp_site":
+        return "camp"
+    if t.get("amenity") == "drinking_water" or t.get("man_made") == "water_tap":
+        return None if t.get("drinking_water") == "no" or t.get("access") in ("private", "no") else "water"
+    if t.get("amenity") == "parking":
+        if t.get("parking") in ("underground", "multi-storey", "rooftop", "street_side", "lane") or t.get("access") in ("private", "no", "customers", "permit"):
+            return None
+        return "parking"
+    if t.get("natural") == "spring":
+        return "spring"
+    if t.get("tourism") == "viewpoint":
+        return "viewpoint"
+    if t.get("tourism") in ("wilderness_hut", "alpine_hut") or (t.get("amenity") == "shelter" and t.get("shelter_type") not in ("public_transport", "changing_rooms", "field_shelter")):
+        return "shelter"
+    return None
+
+
+def trail_index(trails, cell=0.01):
+    """Return near(lon, lat) → True when a hiking-route line passes within PARKING_NEAR_M (grid of densified points)."""
+    grid = set()
+    step = 100 / 111_320  # densify to ~100 m so long straight segments are indexed too
+    for f in trails:
+        for line in f["geometry"]["coordinates"]:
+            for (x1, y1), (x2, y2) in zip(line, line[1:]):
+                n = max(1, int(math.hypot(x2 - x1, y2 - y1) / step))
+                for i in range(n + 1):
+                    x, y = x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n
+                    grid.add((round(x, 4), round(y, 4)))  # ~10 m buckets, deduplicated
+    cells = {}
+    for x, y in grid:
+        cells.setdefault((int(x / cell), int(y / cell)), []).append((x, y))
+    r = PARKING_NEAR_M / 111_320
+    def near(lon, lat):
+        k = math.cos(math.radians(lat))
+        cx, cy = int(lon / cell), int(lat / cell)
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for x, y in cells.get((cx + dx, cy + dy), ()):
+                    if ((x - lon) * k) ** 2 + (y - lat) ** 2 <= r * r:
+                        return True
+        return False
+    return near
+
+
+def counts(pois):
+    kinds = ('camp', 'water', 'parking', 'spring', 'viewpoint', 'shelter')
+    return ', '.join(f"{k} {sum(p['properties']['kind'] == k for p in pois)}" for k in kinds)
 
 
 def main():
@@ -231,7 +290,7 @@ def main():
             json.dump({"type": "FeatureCollection", "osm_base": fstamp, "features": feats}, f, ensure_ascii=False, separators=(",", ":"))
     sizes = {n: os.path.getsize(os.path.join(out, n)) for n in ("osm-trails.geojson", "osm-pois.geojson")}
     print(f"OSM base {stamp}; trails {len(trails)}, pois {len(pois)} "
-          f"(camp {sum(p['properties']['kind'] == 'camp' for p in pois)}, water {sum(p['properties']['kind'] == 'water' for p in pois)}); bytes {sizes}")
+          f"({counts(pois)}); bytes {sizes}")
     for k in ("int", "national", "regional", "marked"):
         names = sorted(set(seen.get(k, [])))
         print(f"  {k}: {len(seen.get(k, []))} relations: {', '.join(names[:40])}{' …' if len(names) > 40 else ''}")

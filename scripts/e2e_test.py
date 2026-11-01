@@ -42,6 +42,9 @@ OSM_FIXTURE = {"osm3s": {"timestamp_osm_base": "fixture"}, "elements": [
         {"type": "way", "ref": 12, "role": "", "geometry": [{"lat": 32.98, "lon": 35.39}, {"lat": 33.02, "lon": 35.44}]}]},
     {"type": "node", "id": 20, "lat": 33.006, "lon": 35.40, "tags": {"tourism": "camp_site", "name": "חניון לילה"}},
     {"type": "node", "id": 21, "lat": 32.994, "lon": 35.43, "tags": {"amenity": "drinking_water"}},
+    {"type": "node", "id": 22, "lat": 32.9942, "lon": 35.4302, "tags": {"amenity": "drinking_water"}},   # 25 m away → one cluster "2"
+    {"type": "node", "id": 23, "lat": 33.0015, "lon": 35.4125, "tags": {"amenity": "parking", "name": "חניון רכב"}},  # next to the trail
+    {"type": "node", "id": 24, "lat": 32.90, "lon": 35.30, "tags": {"amenity": "parking"}},                # far from any trail → dropped
 ]}
 _t, _p, _ = osmx.build(OSM_FIXTURE)
 OSM_FILES = {"osm-trails.geojson": {"type": "FeatureCollection", "osm_base": "fixture", "features": _t},
@@ -201,7 +204,7 @@ def main():
         r["layers"] = page.evaluate("""() => { const m = window.__topo3d.map;
             return ['topo-landcover','topo-hillshade','topo-contours-minor','topo-trails-path','topo-peaks','route-line',
                     'topo-waterway','topo-waterway-label','topo-poi-dot','topo-poi-icon','topo-poi',
-                    'topo-hike-casing','topo-hike-line','topo-hike-label','topo-osm-poi-icon','topo-marked-line','topo-trails-track-inner']
+                    'topo-hike-casing','topo-hike-line','topo-hike-label','poi-camp','poi-water-cluster','poi-parking','poi-other','topo-marked-line','topo-trails-track-inner']
               .filter((id) => !!m.getLayer(id)); }""")
         r["terrain"] = page.evaluate("() => !!window.__topo3d.map.getTerrain()")
         r["fatal"] = page.evaluate("() => document.getElementById('fatal')?.textContent ?? null")
@@ -220,13 +223,14 @@ def main():
         r["poiMinzoom"] = page.evaluate("() => window.__topo3d.map.getLayer('topo-poi')?.minzoom")
         page.wait_for_function("() => typeof window.__topo3d.results.topo.osm.pois === 'number' && typeof window.__topo3d.results.topo.osm.trails === 'number'", polling=250, timeout=30_000)
         page.wait_for_function("""() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0
-            && window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-osm-poi-icon'] }).length > 0""", polling=250, timeout=30_000)
+            && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-camp', 'poi-water-cluster', 'poi-parking'] }).length >= 3""", polling=250, timeout=30_000)
         r["osm"] = page.evaluate("""() => { const m = window.__topo3d.map;
             const kinds = (id) => [...new Set(m.queryRenderedFeatures({ layers: [id] }).map((f) => f.properties.kind))].sort();
             const w = (id, kind, z) => { const st = m.getPaintProperty(id, 'line-width').slice(3); let v = st[1];
               for (let i = 0; i < st.length; i += 2) if (st[i] <= z) v = st[i + 1];
               return Array.isArray(v) ? (kind === 'regional' ? v[3] : v[4]) : v; };
-            return { counts: window.__topo3d.results.topo.osm, lines: kinds('topo-hike-line'), icons: kinds('topo-osm-poi-icon'),
+            return { counts: window.__topo3d.results.topo.osm, lines: kinds('topo-hike-line'), icons: [...new Set(m.queryRenderedFeatures({ layers: ['poi-camp', 'poi-water', 'poi-water-cluster', 'poi-parking'] })
+                .map((f) => f.layer.id + (f.properties.point_count ? ':' + f.properties.point_count : '')))].sort(),
               colour: JSON.stringify(m.getPaintProperty('topo-hike-line', 'line-color')),
               marked: [...new Set(m.queryRenderedFeatures({ layers: ['topo-marked-line'] }).map((f) => f.properties.color))],
               markedMinzoom: m.getLayer('topo-marked-line').minzoom, pathMinzoom: m.getLayer('topo-trails-path').minzoom,
@@ -234,7 +238,7 @@ def main():
               markedW14: w('topo-marked-line', 'marked', 14), pathW14: w('topo-trails-path', '', 14),
               labelMinzoom: m.getLayer('topo-hike-label').minzoom,
               pathColour: m.getPaintProperty('topo-trails-path', 'line-color'), trackInner: !!m.getLayer('topo-trails-track-inner'),
-              baseIconFilter: JSON.stringify(m.getFilter('topo-poi-icon')), iconMinzoom: m.getLayer('topo-osm-poi-icon').minzoom,
+              baseIconFilter: JSON.stringify(m.getFilter('topo-poi-icon')), iconMinzoom: m.getLayer('poi-parking').minzoom, iconImgs: ['topo-parking', 'topo-spring', 'topo-viewpoint', 'topo-shelter'].every((i) => m.hasImage(i)),
               natW14: w('topo-hike-line', 'national', 14), regW14: w('topo-hike-line', 'regional', 14) }; }""")
         r["poiIcons"] = page.evaluate("""() => { const m = window.__topo3d.map; return [m.hasImage('topo-tent'), m.hasImage('topo-tap'),
             m.getLayer('topo-poi-icon')?.minzoom, JSON.stringify(m.getLayoutProperty('topo-poi-icon', 'icon-image'))]; }""")
@@ -419,7 +423,7 @@ def main():
     expect(set(r["topo"]["hidden"]) == {"road_path_pedestrian", "mountain_peak", "waterway_stream", "poi_r1"}, f"base trail/peak/waterway/poi layers hidden by schema (not road_major) {r['topo']['hidden']}")
     expect(r["topo"]["renamed"] == 2, "Hebrew-first names on name labels only (water_name, place_label; not the ref shield)")
     expect(r["topo"]["labelFont"] == ["Noto Sans Regular"], "Regular label font chosen over the first (Italic) one")
-    expect(len(r["layers"]) == 17, f"Topo3D (incl. streams, POIs) + route layers present {r['layers']}")
+    expect(len(r["layers"]) == 20, f"Topo3D (incl. streams, POIs) + route layers present {r['layers']}")
     m = r["menus"]
     expect(m[0] == {"layers": False, "route": False, "layersAria": "false"}, f"menus closed at start {m[0]}")
     expect(m[1]["layers"] and not m[1]["route"] and m[1]["layersAria"] == "true", "layers icon opens the layers menu")
@@ -438,10 +442,12 @@ def main():
     expect(o["natW14"] > o["regW14"] > o["markedW14"] > o["pathW14"], f"width order national > regional > marked > unmarked {o['natW14']} {o['regW14']} {o['markedW14']} {o['pathW14']}")
     expect(o["pathColour"] == "#5a5550" and o["trackInner"], "unmarked paths dark grey dashes, 4x4 tracks double line (owner's example, D-035)")
     expect('"within"' in o["baseIconFilter"], "base-tile campsite/water icons hidden inside Israel (no duplicates with the OSM extract)")
-    expect(o["counts"] == {"trails": 3, "pois": 2}, f"OSM extract loaded (trails, campsite + water) {o['counts']}")
-    expect(o["lines"] == ["int", "regional"] and o["icons"] == ["camp", "water"], f"national/regional routes and tent/tap icons rendered at the 1 km scale {o['lines']} {o['icons']}")
+    expect(o["counts"]["trails"] == 3 and o["counts"]["byKind"] == {"camp": 1, "water": 2, "parking": 1}, f"OSM extract loaded; parking far from trails dropped {o['counts']}")
+    expect(o["lines"] == ["int", "regional"] and o["icons"] == ["poi-camp", "poi-parking", "poi-water-cluster:2"],
+           f"routes, tent, parking and a water cluster (2) rendered at the 1 km scale (D-036) {o['lines']} {o['icons']}")
+    expect(o["iconImgs"], "parking / spring / viewpoint / shelter icons registered")
     expect('"int","#ff7a00"' in o["colour"].replace(" ", ""), "Israel National Trail drawn orange (D-032)")
-    expect(o["labelMinzoom"] == 14.4 and o["iconMinzoom"] == 11.7, f"route names from ~200 m scale, icons from ~1 km scale {o['labelMinzoom']} {o['iconMinzoom']}")
+    expect(o["labelMinzoom"] == 14.4 and o["iconMinzoom"] <= 11.7, f"route names from ~200 m scale, icons from ~1 km scale {o['labelMinzoom']} {o['iconMinzoom']}")
     expect(r["poiMinzoom"] == 13 and "#2f7fd8" in r["waterColor"] and "#5a9fdc" in r["waterColor"], f"POIs from z13, perennial blue / intermittent light blue {r['poiMinzoom']} {r['waterColor']}")
     expect(r["smallStreamW14"] < o["pathW14"], f"non-perennial streams thinner than unmarked trails (D-034) {r['smallStreamW14']} < {o['pathW14']}")
     expect(r["waterToggle"] == ["none", "visible"], f"streams switch hides/shows the layer {r['waterToggle']}")

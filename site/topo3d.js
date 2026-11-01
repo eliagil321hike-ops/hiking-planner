@@ -4,6 +4,8 @@
 
 import { addPoiIcons } from './poi-icons.js';
 
+const CLUSTERED = ['camp', 'water', 'parking'];
+
 export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   const style = map.getStyle();
   const report = { baseSource: null, labelFont: null, hidden: [], renamed: 0, added: [], warnings: [] };
@@ -69,13 +71,27 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   const empty = { type: 'FeatureCollection', features: [] };
   const osm = overlay.osmExtract;
   map.addSource('osm-trails', { type: 'geojson', data: empty, attribution: osm.attribution });
-  map.addSource('osm-pois', { type: 'geojson', data: empty });
-  report.osm = { trails: null, pois: null };
-  for (const [src, key] of [['osm-trails', 'trails'], ['osm-pois', 'pois']]) {
-    fetch(osm[key]).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((fc) => { map.getSource(src)?.setData(fc); report.osm[key] = fc.features.length; report.osmBase = fc.osm_base; })
-      .catch((e) => { report.osm[key] = `unavailable (${e.message})`; });
+  // Points of interest: one source per category (D-036). Campsites, water and parking are clustered at
+  // distant zooms (a cluster shows the category icon + a count, and splits as you zoom in); springs,
+  // viewpoints and shelters share one unclustered source.
+  for (const kind of CLUSTERED) {
+    map.addSource(`poi-${kind}`, { type: 'geojson', data: empty, cluster: true, clusterMaxZoom: 13, clusterRadius: 36 });
   }
+  map.addSource('poi-other', { type: 'geojson', data: empty });
+  report.osm = { trails: null, pois: null };
+  const load = (url) => fetch(url).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))));
+  load(osm.trails)
+    .then((fc) => { map.getSource('osm-trails')?.setData(fc); report.osm.trails = fc.features.length; report.osmBase = fc.osm_base; })
+    .catch((e) => { report.osm.trails = `unavailable (${e.message})`; });
+  load(osm.pois)
+    .then((fc) => {
+      const by = (pred) => ({ type: 'FeatureCollection', features: fc.features.filter(pred) });
+      for (const kind of CLUSTERED) map.getSource(`poi-${kind}`)?.setData(by((f) => f.properties.kind === kind));
+      map.getSource('poi-other')?.setData(by((f) => !CLUSTERED.includes(f.properties.kind)));
+      report.osm.pois = fc.features.length;
+      report.osm.byKind = Object.fromEntries([...new Set(fc.features.map((f) => f.properties.kind))].map((k) => [k, fc.features.filter((f) => f.properties.kind === k).length]));
+    })
+    .catch((e) => { report.osm.pois = `unavailable (${e.message})`; });
 
   // 6. Layer order: landcover tint + hillshade go under roads/buildings (so roads stay crisp);
   //    contours and trails under the first base label; Topo3D labels on top of everything.

@@ -9,7 +9,11 @@ export const GROUPS = {
   trails: ['topo-trails-casing', 'topo-trails-track', 'topo-trails-track-inner', 'topo-trails-path', 'topo-trails-footway', 'topo-marked-casing', 'topo-marked-line', 'topo-hike-casing', 'topo-hike-line', 'topo-hike-label'],
   landcover: ['topo-landcover'],
   water: ['topo-waterway', 'topo-waterway-label'],
-  poi: ['topo-poi-dot', 'topo-poi-icon', 'topo-poi', 'topo-osm-poi-icon'],
+  peaks: ['topo-peaks'],
+  camp: ['poi-camp-cluster', 'poi-camp'],
+  drinking: ['poi-water-cluster', 'poi-water'],
+  parking: ['poi-parking-cluster', 'poi-parking'],
+  poi: ['topo-poi-dot', 'topo-poi-icon', 'topo-poi', 'poi-other'],
 };
 
 /** Shared helpers put on ctx (used by background and developer tools too). */
