@@ -166,7 +166,9 @@ def main():
               // profile breaks at null
               const div = document.createElement('div'); div.style.width = '400px'; div.style.height = '150px'; document.body.append(div);
               renderProfile(div, [{distance:0,elevation:100},{distance:20,elevation:110},{distance:40,elevation:null},{distance:60,elevation:120},{distance:80,elevation:125}], () => {});
-              out.profilePath = div.querySelector('path')?.getAttribute('d');
+              out.profileAreas = div.querySelectorAll('path.profile-area').length;
+              out.profileSegs = div.querySelectorAll('line.profile-seg').length;
+              out.profileColors = [...new Set([...div.querySelectorAll('line.profile-seg')].map((l) => l.getAttribute('stroke')))];
               return out;
             }""",
             base,
@@ -189,7 +191,8 @@ def main():
     expect(result["missing"] is None, "missing DEM tile gives null, not 0")
     expect(result["fallback"] == 2.0 and result["fallbackZooms"] == {"12": 1}, "z13 missing → falls back to z12 (same value)")
     expect(result["fallbackMissing"] is None, "no tile at z13 or z12 → null")
-    expect(result["profilePath"] is not None and result["profilePath"].count("M") == 2, "profile line breaks at missing data")
+    expect(result["profileAreas"] == 2 and result["profileSegs"] == 2, "profile area and slope line break at missing data (2 runs, 2 segments)")
+    expect(len(result["profileColors"]) >= 1, f"slope colours drawn {result['profileColors']}")
     expect(not errors, f"no page errors {errors}")
     sys.exit(0 if ok else 1)
 

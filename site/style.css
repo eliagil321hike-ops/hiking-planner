@@ -53,11 +53,15 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .chip { position: fixed; top: 12px; inset-inline-start: 56px; z-index: 2; background: rgba(255,255,255,0.9); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font: 600 12px var(--font); direction: ltr; }
 
 .profile {
-  position: fixed; inset-inline: 12px; bottom: 34px; height: 150px; z-index: 2; background: rgba(251,250,247,0.96);
+  position: fixed; inset-inline: 12px; bottom: 34px; height: 170px; z-index: 2; background: rgba(251,250,247,0.96);
   border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--panel-shadow); padding: 4px; direction: ltr;
 }
-.profile-line { fill: none; stroke: var(--accent); stroke-width: 2; }
-.profile-axis { font: 11px var(--font); fill: var(--muted); }
+.profile-area { fill: rgba(42, 36, 29, 0.78); }
+.profile-seg { stroke-width: 3; stroke-linecap: round; }
+.profile-grid { stroke: var(--line); stroke-width: 1; }
+.profile-dot { fill: var(--fg); stroke: #fff; stroke-width: 1.5; }
+.profile-strong { font-weight: 700; fill: var(--fg); }
+.profile-axis { font: 11px var(--font); fill: var(--muted); paint-order: stroke; stroke: rgba(251,250,247,0.85); stroke-width: 3px; }
 .profile-cursor { stroke: var(--fg); stroke-width: 1; stroke-dasharray: 3 3; }
 
 .maplibregl-ctrl-attrib { font-size: 11px; }

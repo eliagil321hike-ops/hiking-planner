@@ -115,6 +115,17 @@ Evidence: owner's "copy results" JSON + screenshot (Chrome 156, Windows, 4 cores
 - The layer test ran at z10.3 over Turkey (contours and trails start at z11) → zero counts were expected.
   The test now always measures at the same Meron view (z13.5).
 
+## D-012 (2026-11-01) Owner's FATMAP reference screenshots — what they show
+Three references received: (1) FATMAP 3D route view with draped **satellite imagery**, bright route line,
+stats bar (distance, elevation range, ascent, descent, max slope); (2) a **komoot** 2D topo map
+(Lünersee / Schesaplana, Austria) with soft hillshade, muted green woods, contours labelled "2400 m",
+peaks "Name (2965 m)", and an elevation profile with slope-coloured line, dark fill, km axis,
+highest/lowest point; (3) a FATMAP promo image: 3D **satellite** Alps with peak labels and horizon haze.
+Finding: references 1 and 3 get their look mainly from satellite imagery, which SPEC P10 removed
+("no satellite layer"). The free topo stack can approach reference 2, not 1 and 3. → Owner question.
+Changes made now (independent of that answer): slope-coloured profile with fill, km grid, highest/lowest
+point, drag readout, text legend (not colour only); sky + horizon haze (MapLibre sky spec, GL JS ≥ 4.5).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

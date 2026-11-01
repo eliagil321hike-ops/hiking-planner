@@ -93,6 +93,8 @@ map.on('load', () => {
     throw e;
   }
   addRouteLayers();
+  // Horizon haze like the FATMAP references (sky spec: GL JS ≥ 4.5, checked 2026-11-01).
+  if (overlay.sky) map.setSky(Object.fromEntries(Object.entries(overlay.sky).filter(([k]) => !k.startsWith('$'))));
   map.once('idle', () => {
     perf.mark('first-idle');
     results.gpu = gpuInfo();
@@ -200,7 +202,7 @@ async function updateRoute() {
     <dt>מקור גובה</dt><dd>Mapterhorn z${samplingZoom} (גיבוי z12) · ${ms} ms</dd>
     ${st.incomplete ? '<dt>אזהרה</dt><dd>חסרים נתוני גובה בחלק מהקו</dd>' : ''}`;
   $('profile').hidden = false;
-  renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map));
+  renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max });
 }
 
 // ---------------------------------------------------------------- test: encoding (P10.5)

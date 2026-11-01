@@ -1,6 +1,6 @@
 {
   "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by site/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "base": "https://tiles.openfreemap.org/styles/liberty",
   "dem": {
     "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
@@ -11,10 +11,32 @@
     "maxzoomNote": "Owner run 2026-11-01: Meron tiles exist z10-13, 404 at z14-17. z13 at 512 px ≈ 8 m/px matches the 10 m isr10 DEM. z13 is NOT guaranteed outside covered areas, so the MAP stays at z12 (try ?demz=13 to compare); the elevation SAMPLER uses z13 and falls back to z12 on 404.",
     "attribution": "<a href=\"https://mapterhorn.com/attribution/\">Mapterhorn</a>: 10 m DEM of Israel (isr10) — ASTER GDEM courtesy of METI and NASA processed by 4cast LTD; Copernicus GLO-30 © DLR e.V. 2010-2014, Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA"
   },
-  "terrain": { "exaggeration": 1.2, "min": 1.0, "max": 2.0 },
-  "camera": { "center": [35.4167, 33.0], "zoom": 13, "pitch": 60, "bearing": -20, "maxPitch": 70 },
+  "terrain": {
+    "exaggeration": 1.2,
+    "min": 1.0,
+    "max": 2.0
+  },
+  "camera": {
+    "center": [
+      35.4167,
+      33.0
+    ],
+    "zoom": 13,
+    "pitch": 60,
+    "bearing": -20,
+    "maxPitch": 70
+  },
   "contours": {
-    "thresholds": { "11": [50, 250], "13": [20, 100] },
+    "thresholds": {
+      "11": [
+        50,
+        250
+      ],
+      "13": [
+        20,
+        100
+      ]
+    },
     "minzoom": 11,
     "elevationKey": "ele",
     "levelKey": "level",
@@ -22,8 +44,16 @@
   },
   "hideBaseLayers": {
     "$comment": "Base layers replaced by Topo3D layers, matched by source-layer and filter text, not by id.",
-    "trails": { "sourceLayer": "transportation", "filterMentionsAny": ["path", "track"] },
-    "peaks": { "sourceLayer": "mountain_peak" }
+    "trails": {
+      "sourceLayer": "transportation",
+      "filterMentionsAny": [
+        "path",
+        "track"
+      ]
+    },
+    "peaks": {
+      "sourceLayer": "mountain_peak"
+    }
   },
   "layers": [
     {
@@ -31,11 +61,44 @@
       "type": "fill",
       "source": "$base",
       "source-layer": "landcover",
-      "filter": ["match", ["get", "class"], ["wood", "grass", "rock", "sand", "farmland", "wetland"], true, false],
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "wood",
+          "grass",
+          "rock",
+          "sand",
+          "farmland",
+          "wetland"
+        ],
+        true,
+        false
+      ],
       "paint": {
-        "fill-color": ["match", ["get", "class"],
-          "wood", "#b9cfa0", "grass", "#d8e3b8", "rock", "#d9d2c5", "sand", "#ece2c4",
-          "farmland", "#e6e3c8", "wetland", "#c9dccf", "#e0e0d0"],
+        "fill-color": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          "wood",
+          "#b9cfa0",
+          "grass",
+          "#d8e3b8",
+          "rock",
+          "#d9d2c5",
+          "sand",
+          "#ece2c4",
+          "farmland",
+          "#e6e3c8",
+          "wetland",
+          "#c9dccf",
+          "#e0e0d0"
+        ],
         "fill-opacity": 0.45
       }
     },
@@ -58,8 +121,30 @@
       "source": "contours",
       "source-layer": "contours",
       "minzoom": 11,
-      "filter": ["==", ["get", "level"], 0],
-      "paint": { "line-color": "rgba(140, 95, 50, 0.55)", "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.4, 16, 0.9] }
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        0
+      ],
+      "paint": {
+        "line-color": "rgba(140, 95, 50, 0.55)",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          11,
+          0.4,
+          16,
+          0.9
+        ]
+      }
     },
     {
       "id": "topo-contours-index",
@@ -67,8 +152,30 @@
       "source": "contours",
       "source-layer": "contours",
       "minzoom": 11,
-      "filter": [">", ["get", "level"], 0],
-      "paint": { "line-color": "rgba(125, 80, 35, 0.8)", "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.9, 16, 1.8] }
+      "filter": [
+        ">",
+        [
+          "get",
+          "level"
+        ],
+        0
+      ],
+      "paint": {
+        "line-color": "rgba(125, 80, 35, 0.8)",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          11,
+          0.9,
+          16,
+          1.8
+        ]
+      }
     },
     {
       "id": "topo-trails-casing",
@@ -76,9 +183,39 @@
       "source": "$base",
       "source-layer": "transportation",
       "minzoom": 11,
-      "filter": ["match", ["get", "class"], ["path", "track"], true, false],
-      "layout": { "line-cap": "round", "line-join": "round" },
-      "paint": { "line-color": "rgba(255, 255, 255, 0.7)", "line-width": ["interpolate", ["linear"], ["zoom"], 11, 1.5, 16, 4.5] }
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "path",
+          "track"
+        ],
+        true,
+        false
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgba(255, 255, 255, 0.7)",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          11,
+          1.5,
+          16,
+          4.5
+        ]
+      }
     },
     {
       "id": "topo-trails-track",
@@ -86,11 +223,33 @@
       "source": "$base",
       "source-layer": "transportation",
       "minzoom": 11,
-      "filter": ["==", ["get", "class"], "track"],
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "track"
+      ],
       "paint": {
         "line-color": "#7a4a1e",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.8, 16, 2.4],
-        "line-dasharray": [4, 2]
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          11,
+          0.8,
+          16,
+          2.4
+        ],
+        "line-dasharray": [
+          4,
+          2
+        ]
       }
     },
     {
@@ -99,11 +258,44 @@
       "source": "$base",
       "source-layer": "transportation",
       "minzoom": 11,
-      "filter": ["all", ["==", ["get", "class"], "path"], ["!=", ["get", "subclass"], "footway"]],
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "path"
+        ],
+        [
+          "!=",
+          [
+            "get",
+            "subclass"
+          ],
+          "footway"
+        ]
+      ],
       "paint": {
         "line-color": "#c0392b",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.8, 16, 2.2],
-        "line-dasharray": [2, 1.5]
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          11,
+          0.8,
+          16,
+          2.2
+        ],
+        "line-dasharray": [
+          2,
+          1.5
+        ]
       }
     },
     {
@@ -112,12 +304,47 @@
       "source": "$base",
       "source-layer": "transportation",
       "minzoom": 13,
-      "filter": ["all", ["==", ["get", "class"], "path"], ["==", ["get", "subclass"], "footway"]],
-      "layout": { "line-cap": "round" },
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "path"
+        ],
+        [
+          "==",
+          [
+            "get",
+            "subclass"
+          ],
+          "footway"
+        ]
+      ],
+      "layout": {
+        "line-cap": "round"
+      },
       "paint": {
         "line-color": "#6b5b95",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 13, 1, 16, 2],
-        "line-dasharray": [0.1, 2]
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          13,
+          1,
+          16,
+          2
+        ],
+        "line-dasharray": [
+          0.1,
+          2
+        ]
       }
     },
     {
@@ -126,16 +353,34 @@
       "source": "contours",
       "source-layer": "contours",
       "minzoom": 12,
-      "filter": [">", ["get", "level"], 0],
+      "filter": [
+        ">",
+        [
+          "get",
+          "level"
+        ],
+        0
+      ],
       "layout": {
         "symbol-placement": "line",
-        "text-field": ["number-format", ["get", "ele"], {}],
+        "text-field": [
+          "number-format",
+          [
+            "get",
+            "ele"
+          ],
+          {}
+        ],
         "text-font": "$labelFont",
         "text-size": 11,
         "text-pitch-alignment": "viewport",
         "text-max-angle": 30
       },
-      "paint": { "text-color": "#6d4521", "text-halo-color": "rgba(255,255,255,0.9)", "text-halo-width": 1.4 }
+      "paint": {
+        "text-color": "#6d4521",
+        "text-halo-color": "rgba(255,255,255,0.9)",
+        "text-halo-width": 1.4
+      }
     },
     {
       "id": "topo-peaks",
@@ -144,20 +389,78 @@
       "source-layer": "mountain_peak",
       "minzoom": 10,
       "layout": {
-        "text-field": ["format",
-          "$nameExpr", {},
-          "\n", {},
-          ["case", ["has", "ele"], ["concat", ["to-string", ["get", "ele"]], " מ׳"], ""], { "font-scale": 0.85 }],
+        "text-field": [
+          "format",
+          "$nameExpr",
+          {},
+          "\n",
+          {},
+          [
+            "case",
+            [
+              "has",
+              "ele"
+            ],
+            [
+              "concat",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ele"
+                ]
+              ],
+              " מ׳"
+            ],
+            ""
+          ],
+          {
+            "font-scale": 0.85
+          }
+        ],
         "text-font": "$labelFont",
         "text-size": 12,
         "text-anchor": "top",
-        "text-offset": [0, 0.6],
+        "text-offset": [
+          0,
+          0.6
+        ],
         "icon-allow-overlap": false
       },
-      "paint": { "text-color": "#3b2a1a", "text-halo-color": "rgba(255,255,255,0.95)", "text-halo-width": 1.5 }
+      "paint": {
+        "text-color": "#3b2a1a",
+        "text-halo-color": "rgba(255,255,255,0.95)",
+        "text-halo-width": 1.5
+      }
     }
   ],
   "insertBefore": "firstSymbolLayer",
-  "symbolLayersOnTop": ["topo-contour-labels", "topo-peaks"],
-  "nameExpr": ["coalesce", ["get", "name:he"], ["get", "name:latin"], ["get", "name"]]
+  "symbolLayersOnTop": [
+    "topo-contour-labels",
+    "topo-peaks"
+  ],
+  "nameExpr": [
+    "coalesce",
+    [
+      "get",
+      "name:he"
+    ],
+    [
+      "get",
+      "name:latin"
+    ],
+    [
+      "get",
+      "name"
+    ]
+  ],
+  "sky": {
+    "$comment": "Light horizon haze; fog only applies with 3D terrain.",
+    "sky-color": "#a9cbe8",
+    "horizon-color": "#eef2f4",
+    "fog-color": "#e4e9ec",
+    "sky-horizon-blend": 0.6,
+    "horizon-fog-blend": 0.7,
+    "fog-ground-blend": 0.35
+  }
 }
