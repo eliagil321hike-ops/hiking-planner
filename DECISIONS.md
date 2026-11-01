@@ -211,6 +211,16 @@ Owner screenshot (build 8ea6715): Esri imagery draped on 3D terrain at Meron, ex
 with labels (800/900/1,000), trails, Hebrew peak labels. Owner: "satisfied" (מרוצה). Recorded as the
 owner's quality verdict for the satellite look (P10.5 owner review); the agent did not judge it.
 
+## D-021 (2026-11-01) Owner: embed the Esri key in the public site (option B)
+After the implications were explained (key public in repo and git history forever; referrer restriction
+can be bypassed outside browsers; misuse can exhaust the 2M-tile free quota → Esri satellite stops for
+everyone until the next cycle; no charges possible without a payment method; expiry 2027-01-30), the owner
+chose B: write the key directly in the code. This is a deliberate, owner-approved exception to SPEC 0.1
+rule 5 ("never hardcode secrets"); the key is a public-application key of the type Esri intends for client
+apps. Stored in `site/styles/topo3d.json` (`embeddedKey`). A key typed by a user overrides it.
+Esri is now the default satellite provider. To revoke: regenerate/delete the key in the ArcGIS portal and
+update `embeddedKey`.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

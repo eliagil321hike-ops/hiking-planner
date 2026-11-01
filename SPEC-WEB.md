@@ -51,3 +51,5 @@ small group; otherwise self-hosted) · 4 Elevation and statistics · 5 Browser s
 - High-resolution providers (Esri World Imagery, Mapbox Satellite) need a key that each user types into
   the site; keys are stored only in that browser, never in the repository. Opening an account with
   billing beyond a free tier needs the owner's approval (SPEC 0.4).
+- Exception (DECISIONS D-021, owner-approved): the owner's Esri public-application key (referrer-restricted,
+  basemaps only, no payment method) is embedded in the site so friends get high-resolution imagery.

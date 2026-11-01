@@ -1,6 +1,6 @@
 {
   "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by site/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "base": "https://tiles.openfreemap.org/styles/liberty",
   "dem": {
     "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
@@ -465,7 +465,7 @@
   },
   "satellite": {
     "$comment": "D-017. Default provider works without an account. Keys are never stored in this repo.",
-    "default": "eox-s2-2024",
+    "default": "esri-world-imagery",
     "beforeLayer": "topo-landcover",
     "providers": [
       {
@@ -480,14 +480,16 @@
       },
       {
         "id": "esri-world-imagery",
-        "label": "Esri World Imagery (רזולוציה גבוהה, דורש מפתח)",
+        "label": "Esri World Imagery (רזולוציה גבוהה)",
         "needsKey": true,
         "keyHelp": "ArcGIS Location Platform API key, privilege: Location services → Basemaps → Static basemap tiles. Do NOT add a payment method: without pay-as-you-go, access just stops at the free limit.",
         "tiles": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token={key}",
         "tileSize": 256,
         "maxzoom": 18,
         "attribution": "Powered by Esri · Esri, Maxar, Earthstar Geographics, and the GIS User Community",
-        "note": "URL + attribution from developers.arcgis.com MapLibre tutorial (2026-11-01). tileSize and maxzoom not stated there: 256/18 chosen conservatively; verify on the owner's run."
+        "note": "URL + attribution from developers.arcgis.com MapLibre tutorial (2026-11-01). tileSize and maxzoom not stated there: 256/18 chosen conservatively; verify on the owner's run.",
+        "embeddedKey": "AAPTaU4o9HgNkwaicLTja-2fbYQ..Eg20mfBsXcI8mRt0-HdoyEESFwa6fsvlI2DZGT3hhEmfK5zdzehCINK_RN8eAdgJqWUZheZG3Hs2Ikc4589dQvd2C-TOnEly6-Mltd85dkpHxfDs6gss1YA0EoAKikaNoOm86cmHdA2Khya6emdB_SFUEPSPBfb5GMQY2pKmX9F2Wh1LDbtDcfSxq_CAjNJO-JmwBR54E_J3Z2olLlpRFHATgcN-N2SzKCVLg7_tIdsVnC5B9LqCpRw5yET0ahq1wIUHydRHUrtZAT1_pmqSTuWK",
+        "embeddedKeyNote": "D-021: owner-approved public-application key, referrer-restricted to https://eliagil321hike-ops.github.io, Basemaps privilege only, no item access, no payment method (no charges possible), expires 2027-01-30. A key typed in the site overrides it."
       },
       {
         "id": "maptiler-satellite",

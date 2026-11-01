@@ -174,6 +174,7 @@ def main():
               out.satEsriNoKey = satelliteSource(prov['esri-world-imagery'], '');
               out.satEsriKey = satelliteSource(prov['esri-world-imagery'], 'a/b+c')?.tiles[0];
               out.noMapbox = !prov['mapbox-satellite'];
+              out.esriEmbedded = !!prov['esri-world-imagery'].embeddedKey && ov.satellite.default === 'esri-world-imagery';
               out.satMaptiler = satelliteSource(prov['maptiler-satellite'], 'k1')?.url;
               out.profileAreas = div.querySelectorAll('path.profile-area').length;
               out.profileSegs = div.querySelectorAll('line.profile-seg').length;
@@ -203,6 +204,7 @@ def main():
     expect(result["satEox"] and "{z}/{y}/{x}" in result["satEox"] and "{key}" not in result["satEox"], "EOX satellite needs no key, z/y/x order kept")
     expect(result["satEsriNoKey"] is None, "Esri without a key → no source (never a broken URL)")
     expect(result["satEsriKey"] and "token=a%2Fb%2Bc" in result["satEsriKey"], "Esri key is URL-encoded into the tile URL")
+    expect(result["esriEmbedded"], "Esri has the owner's embedded key and is the default satellite (D-021)")
     expect(result["noMapbox"], "Mapbox removed (owner: free only, D-018)")
     expect(result["satMaptiler"] and result["satMaptiler"].endswith("tiles.json?key=k1"), "MapTiler uses its TileJSON URL")
     expect(result["profileAreas"] == 2 and result["profileSegs"] == 2, "profile area and slope line break at missing data (2 runs, 2 segments)")

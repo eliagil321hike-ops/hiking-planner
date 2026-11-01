@@ -128,7 +128,9 @@ function initBackground() {
 function syncKeyRow() {
   const p = providerById(providerId);
   $('sat-key-row').hidden = !p.needsKey;
-  $('sat-key-help').textContent = p.keyHelp ?? '';
+  $('sat-key-help').textContent = p.embeddedKey
+    ? 'מפתח מובנה פעיל — אין צורך להזין. אפשר להזין מפתח אישי שיחליף אותו.'
+    : (p.keyHelp ?? '');
   $('sat-key').value = store.get(keyName(p.id)) ?? '';
 }
 
@@ -141,7 +143,8 @@ function applyBackground() {
   let shown = false;
   if (sat) {
     const p = providerById(providerId);
-    shown = setSatellite(map, p, store.get(keyName(p.id)), SAT.beforeLayer);
+    // A key typed by this user wins; otherwise the owner's embedded public key (D-021).
+    shown = setSatellite(map, p, store.get(keyName(p.id)) || p.embeddedKey, SAT.beforeLayer);
     if (!shown) log(`${p.label}: enter a key to show this imagery`, 'fail');
   } else {
     removeSatellite(map);
