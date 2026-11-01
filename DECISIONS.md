@@ -325,6 +325,35 @@ with the first real request.
   owner's examples. The owner's tap picture is a watermarked VectorStock stock image, so it is not copied.
 - Coverage depends on OSM tagging in the OpenFreeMap tiles; a campsite missing from OSM shows no icon.
 
+## D-032 (2026-11-01) Owner: icons from ~1 km scale; national/regional trails coloured; Israel Trail orange
+- Verified: OpenMapTiles `poi` has campsites/taps **only from z14** (poi.sql: z12–13 = railway stations,
+  halts, ferry terminals). So the z13 POIs of D-028/D-031 really appeared only at z14 — corrected here.
+  OpenMapTiles has **no hiking-route relations** at all.
+- New data path: `scripts/fetch_osm_hiking.py` queries the Overpass API **at deploy time in GitHub Actions**
+  (the agent workspace cannot reach Overpass) for the Israel bbox (29.45,34.2 – 33.45,35.95): hiking route
+  relations with network iwn/nwn/rwn/lwn (+ their child sections), `tourism=camp_site`,
+  `amenity=drinking_water`, `man_made=water_tap` (not `drinking_water=no`/private). Output:
+  `site/data/osm-trails.geojson`, `site/data/osm-pois.geojson` (Douglas–Peucker 4 m). Weekly scheduled
+  redeploy refreshes it. If Overpass fails the deploy continues without the files (layers stay empty).
+  Data © OpenStreetMap contributors, ODbL (attribution on the source).
+- Israel National Trail: any route (or section of a super-route) named "שביל ישראל"/"Israel National Trail"
+  → orange #ff7a00. Other national #8e24aa, regional #e0287d. National lines are the widest on the map
+  (z14: 9 px, z16: 15 px). Names: thin 11 px text along the line from z14.4 (≈ when the scale bar first
+  shows 200 m at Israel's latitude).
+- Tent/tap icons from the extract from z11.7 (≈ scale bar 1 km); names from z13. Outside Israel the
+  base-tile icons (z14) remain.
+- Scale-bar ↔ zoom: MapLibre's bar (max 100 px) rounds to 1/2/3/5×10ⁿ; at lat 33° m/px = 65 644 / 2^z
+  → 1 km from z11.7, 500 m from z12.7, 200 m from z14.4.
+
+## D-033 (2026-11-01) Owner: trails before small streams; marked trails before unmarked; width order
+- Appearance when zooming in: national/regional routes z7 → rivers/canals z8 → **marked trails z10** →
+  unmarked paths/tracks z11 → small streams (stream/drain/ditch) **z13**.
+- Marked trails = OSM `network=lwn` hiking routes (Israel Trails Committee trails are tagged this way, e.g.
+  relation 1397878 "סובב הר איתן", lwn, osmc:symbol red:white:red_stripe), drawn in their marking colour
+  from `osmc:symbol` (red/blue/green/black…), solid, with a white casing.
+- Width order at z14 (owner): national 9 > regional 6 ≈ rivers 6 > marked 3.5 > unmarked 1.8 ≈ intermittent
+  streams 1.8 (perennial streams 2.2, drains 1).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

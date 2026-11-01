@@ -64,6 +64,18 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   map.addSource('dem-terrain', demSrc({ attribution: overlay.dem.attribution }));
   map.addSource('dem-hillshade', demSrc({}));
   map.addSource('contours', { type: 'vector', tiles: [contourTiles], maxzoom: 15 });
+  // Build-time OSM extract (D-032): national/regional hiking routes + campsites/taps. Start empty, fill
+  // when the files arrive; a missing file (e.g. the extract failed at deploy) just leaves the layers empty.
+  const empty = { type: 'FeatureCollection', features: [] };
+  const osm = overlay.osmExtract;
+  map.addSource('osm-trails', { type: 'geojson', data: empty, attribution: osm.attribution });
+  map.addSource('osm-pois', { type: 'geojson', data: empty });
+  report.osm = { trails: null, pois: null };
+  for (const [src, key] of [['osm-trails', 'trails'], ['osm-pois', 'pois']]) {
+    fetch(osm[key]).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((fc) => { map.getSource(src)?.setData(fc); report.osm[key] = fc.features.length; report.osmBase = fc.osm_base; })
+      .catch((e) => { report.osm[key] = `unavailable (${e.message})`; });
+  }
 
   // 6. Layer order: landcover tint + hillshade go under roads/buildings (so roads stay crisp);
   //    contours and trails under the first base label; Topo3D labels on top of everything.
@@ -81,7 +93,7 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   };
   report.icons = addPoiIcons(map); // tent / tap images must exist before the icon layer renders
   for (const raw of overlay.layers) {
-    const layer = fill(raw);
+    const { $comment, ...layer } = fill(raw); // eslint-disable-line no-unused-vars
     const onTop = overlay.symbolLayersOnTop.includes(layer.id);
     map.addLayer(layer, onTop ? undefined : underStructure.has(layer.type) ? firstStructure : firstSymbol);
     report.added.push(layer.id);

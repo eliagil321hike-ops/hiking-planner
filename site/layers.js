@@ -6,10 +6,10 @@ import { loadPrefs, savePrefs } from './prefs.js';
 export const GROUPS = {
   hillshade: ['topo-hillshade'],
   contours: ['topo-contours-minor', 'topo-contours-index', 'topo-contour-labels'],
-  trails: ['topo-trails-casing', 'topo-trails-track', 'topo-trails-path', 'topo-trails-footway'],
+  trails: ['topo-trails-casing', 'topo-trails-track', 'topo-trails-path', 'topo-trails-footway', 'topo-marked-casing', 'topo-marked-line', 'topo-hike-casing', 'topo-hike-line', 'topo-hike-label'],
   landcover: ['topo-landcover'],
   water: ['topo-waterway', 'topo-waterway-label'],
-  poi: ['topo-poi-dot', 'topo-poi-icon', 'topo-poi'],
+  poi: ['topo-poi-dot', 'topo-poi-icon', 'topo-poi', 'topo-osm-poi-icon'],
 };
 
 /** Shared helpers put on ctx (used by background and developer tools too). */

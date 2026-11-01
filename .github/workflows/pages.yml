@@ -6,6 +6,8 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+  schedule:
+    - cron: "17 2 * * 1"   # weekly redeploy: refreshes the OSM trails/campsites/water extract (D-032)
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -43,6 +45,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: OSM extract for Israel (national/regional/marked trails, campsites, water) via Overpass
+        run: python3 scripts/fetch_osm_hiking.py site/data --soft
       - name: Stamp build (cache busting, version shown in the page)
         run: bash scripts/stamp_build.sh site "${GITHUB_SHA::7}"
       - name: Setup Pages
