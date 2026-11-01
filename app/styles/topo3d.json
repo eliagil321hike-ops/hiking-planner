@@ -1,0 +1,162 @@
+{
+  "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by prototypes/b-webview/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
+  "version": "0.1.0",
+  "base": "https://tiles.openfreemap.org/styles/liberty",
+  "dem": {
+    "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
+    "encoding": "terrarium",
+    "tileSize": 512,
+    "maxzoomDefault": 12,
+    "maxzoomNote": "planet.pmtiles covers z0-12 everywhere; z13-17 exist per area (Mapterhorn Data Access page). The page probes the real max zoom over Israel.",
+    "attribution": "<a href=\"https://mapterhorn.com/attribution/\">Mapterhorn</a>: 10 m DEM of Israel (isr10) — ASTER GDEM courtesy of METI and NASA processed by 4cast LTD; Copernicus GLO-30 © DLR e.V. 2010-2014, Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA"
+  },
+  "terrain": { "exaggeration": 1.2, "min": 1.0, "max": 2.0 },
+  "camera": { "center": [35.4167, 33.0], "zoom": 13, "pitch": 60, "bearing": -20, "maxPitch": 70 },
+  "contours": {
+    "thresholds": { "11": [50, 250], "13": [20, 100] },
+    "minzoom": 11,
+    "elevationKey": "ele",
+    "levelKey": "level",
+    "contourLayer": "contours"
+  },
+  "hideBaseLayers": {
+    "$comment": "Base layers replaced by Topo3D layers, matched by source-layer and filter text, not by id.",
+    "trails": { "sourceLayer": "transportation", "filterMentionsAny": ["path", "track"] },
+    "peaks": { "sourceLayer": "mountain_peak" }
+  },
+  "layers": [
+    {
+      "id": "topo-landcover",
+      "type": "fill",
+      "source": "$base",
+      "source-layer": "landcover",
+      "filter": ["match", ["get", "class"], ["wood", "grass", "rock", "sand", "farmland", "wetland"], true, false],
+      "paint": {
+        "fill-color": ["match", ["get", "class"],
+          "wood", "#b9cfa0", "grass", "#d8e3b8", "rock", "#d9d2c5", "sand", "#ece2c4",
+          "farmland", "#e6e3c8", "wetland", "#c9dccf", "#e0e0d0"],
+        "fill-opacity": 0.45
+      }
+    },
+    {
+      "id": "topo-hillshade",
+      "type": "hillshade",
+      "source": "dem-hillshade",
+      "paint": {
+        "hillshade-illumination-direction": 315,
+        "hillshade-illumination-anchor": "map",
+        "hillshade-exaggeration": 0.6,
+        "hillshade-shadow-color": "rgba(60, 55, 50, 0.55)",
+        "hillshade-highlight-color": "rgba(255, 255, 250, 0.35)",
+        "hillshade-accent-color": "rgba(70, 60, 50, 0.25)"
+      }
+    },
+    {
+      "id": "topo-contours-minor",
+      "type": "line",
+      "source": "contours",
+      "source-layer": "contours",
+      "minzoom": 11,
+      "filter": ["==", ["get", "level"], 0],
+      "paint": { "line-color": "rgba(140, 95, 50, 0.55)", "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.4, 16, 0.9] }
+    },
+    {
+      "id": "topo-contours-index",
+      "type": "line",
+      "source": "contours",
+      "source-layer": "contours",
+      "minzoom": 11,
+      "filter": [">", ["get", "level"], 0],
+      "paint": { "line-color": "rgba(125, 80, 35, 0.8)", "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.9, 16, 1.8] }
+    },
+    {
+      "id": "topo-trails-casing",
+      "type": "line",
+      "source": "$base",
+      "source-layer": "transportation",
+      "minzoom": 11,
+      "filter": ["match", ["get", "class"], ["path", "track"], true, false],
+      "layout": { "line-cap": "round", "line-join": "round" },
+      "paint": { "line-color": "rgba(255, 255, 255, 0.7)", "line-width": ["interpolate", ["linear"], ["zoom"], 11, 1.5, 16, 4.5] }
+    },
+    {
+      "id": "topo-trails-track",
+      "type": "line",
+      "source": "$base",
+      "source-layer": "transportation",
+      "minzoom": 11,
+      "filter": ["==", ["get", "class"], "track"],
+      "paint": {
+        "line-color": "#7a4a1e",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.8, 16, 2.4],
+        "line-dasharray": [4, 2]
+      }
+    },
+    {
+      "id": "topo-trails-path",
+      "type": "line",
+      "source": "$base",
+      "source-layer": "transportation",
+      "minzoom": 11,
+      "filter": ["all", ["==", ["get", "class"], "path"], ["!=", ["get", "subclass"], "footway"]],
+      "paint": {
+        "line-color": "#c0392b",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.8, 16, 2.2],
+        "line-dasharray": [2, 1.5]
+      }
+    },
+    {
+      "id": "topo-trails-footway",
+      "type": "line",
+      "source": "$base",
+      "source-layer": "transportation",
+      "minzoom": 13,
+      "filter": ["all", ["==", ["get", "class"], "path"], ["==", ["get", "subclass"], "footway"]],
+      "layout": { "line-cap": "round" },
+      "paint": {
+        "line-color": "#6b5b95",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 13, 1, 16, 2],
+        "line-dasharray": [0.1, 2]
+      }
+    },
+    {
+      "id": "topo-contour-labels",
+      "type": "symbol",
+      "source": "contours",
+      "source-layer": "contours",
+      "minzoom": 12,
+      "filter": [">", ["get", "level"], 0],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": ["number-format", ["get", "ele"], {}],
+        "text-font": "$labelFont",
+        "text-size": 11,
+        "text-pitch-alignment": "viewport",
+        "text-max-angle": 30
+      },
+      "paint": { "text-color": "#6d4521", "text-halo-color": "rgba(255,255,255,0.9)", "text-halo-width": 1.4 }
+    },
+    {
+      "id": "topo-peaks",
+      "type": "symbol",
+      "source": "$base",
+      "source-layer": "mountain_peak",
+      "minzoom": 10,
+      "layout": {
+        "text-field": ["format",
+          "$nameExpr", {},
+          "\n", {},
+          ["case", ["has", "ele"], ["concat", ["to-string", ["get", "ele"]], " מ׳"], ""], { "font-scale": 0.85 }],
+        "text-font": "$labelFont",
+        "text-size": 12,
+        "text-anchor": "top",
+        "text-offset": [0, 0.6],
+        "icon-allow-overlap": false
+      },
+      "paint": { "text-color": "#3b2a1a", "text-halo-color": "rgba(255,255,255,0.95)", "text-halo-width": 1.5 }
+    }
+  ],
+  "insertBefore": "firstSymbolLayer",
+  "symbolLayersOnTop": ["topo-contour-labels", "topo-peaks"],
+  "nameExpr": ["coalesce", ["get", "name:he"], ["get", "name:latin"], ["get", "name"]]
+}

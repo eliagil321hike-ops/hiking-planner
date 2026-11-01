@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Topo3D – אב-טיפוס B</title>
+<!-- Versions pinned to the official MapLibre RTL example (checked 2026-11-01). See DECISIONS D-008. -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/maplibre-contour@0.1.0/dist/index.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="map" aria-label="מפה טופוגרפית תלת-ממדית"></div>
+
+<div id="fps" class="chip" aria-live="off">– fps</div>
+
+<aside id="panel" class="panel">
+  <header class="panel-head">
+    <strong>Topo3D · אב-טיפוס B</strong>
+    <button id="panel-toggle" class="icon-btn" aria-expanded="true" aria-label="הסתר/הצג לוח">☰</button>
+  </header>
+  <div class="panel-body">
+    <section>
+      <h2>שכבות</h2>
+      <label><input type="checkbox" data-group="terrain" checked> תלת-ממד</label>
+      <label><input type="checkbox" data-group="hillshade" checked> הצללה</label>
+      <label><input type="checkbox" data-group="contours" checked> קווי גובה</label>
+      <label><input type="checkbox" data-group="trails" checked> שבילים</label>
+      <label><input type="checkbox" data-group="landcover" checked> צמחייה וכיסוי קרקע</label>
+      <label class="slider">הגבהה <input id="exag" type="range" min="1" max="2" step="0.1" value="1.2"> <output id="exag-out">1.2</output></label>
+    </section>
+
+    <section>
+      <h2>קו ופרופיל</h2>
+      <div class="row">
+        <button id="draw" class="btn" aria-pressed="false">צייר קו</button>
+        <button id="undo-pt" class="btn">בטל נקודה</button>
+        <button id="clear" class="btn">נקה</button>
+      </div>
+      <p class="hint" id="draw-hint">לחץ "צייר קו" ואז הקש על המפה להוספת נקודות.</p>
+      <dl id="stats" class="stats"></dl>
+    </section>
+
+    <section>
+      <h2>בדיקות (שלב 0)</h2>
+      <div class="row">
+        <button id="t-encoding" class="btn">בדיקת קידוד</button>
+        <button id="t-probe" class="btn">זום DEM מקסימלי</button>
+        <button id="t-perf" class="btn">בדיקת FPS</button>
+      </div>
+      <div class="row">
+        <button id="t-features" class="btn">בדיקת שכבות</button>
+        <button id="t-copy" class="btn">העתק תוצאות</button>
+        <button id="t-style" class="btn">ייצוא סגנון</button>
+      </div>
+      <div id="test-out" class="test-out" aria-live="polite"></div>
+    </section>
+
+    <p class="safety">מסלולים, גבהים וזמני הליכה הם הערכות ועלולים להיות שגויים. בדוק תמיד את השטח, מזג האוויר והמים לפני ובמהלך הטיול.</p>
+  </div>
+</aside>
+
+<div id="profile" class="profile" hidden></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
