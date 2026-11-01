@@ -234,8 +234,8 @@ def main():
 
         # The DEM fixture only has z12; open at z12 so terrain loads real fixture tiles.
         page.goto(f"http://127.0.0.1:{port}/?demz=12#12/33.0/35.4167/0/0")
-        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo", polling=250, timeout=60_000)
-        page.wait_for_function("() => window.__topo3d.map.loaded()", polling=250, timeout=60_000)
+        wait_js(page, "() => window.__topo3d && window.__topo3d.results.topo", 60)
+        wait_js(page, "() => window.__topo3d.map.loaded()", 60)
 
         r = {}
         r["topo"] = page.evaluate("() => window.__topo3d.results.topo")
@@ -261,9 +261,9 @@ def main():
         r["routeW14"] = page.evaluate("() => { const st = window.__topo3d.map.getPaintProperty('route-line', 'line-width').slice(3); return st[st.indexOf(14) + 1]; }")
         r["exagDefault"] = page.evaluate("() => [window.__topo3d.map.getTerrain()?.exaggeration, document.getElementById('exag').value]")
         r["poiMinzoom"] = page.evaluate("() => window.__topo3d.map.getLayer('topo-poi')?.minzoom")
-        page.wait_for_function("() => typeof window.__topo3d.results.topo.osm.pois === 'number' && typeof window.__topo3d.results.topo.osm.trails === 'number'", polling=250, timeout=30_000)
-        page.wait_for_function("""() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0
-            && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-camp', 'poi-water-cluster', 'poi-parking'] }).length >= 3""", polling=250, timeout=30_000)
+        wait_js(page, "() => typeof window.__topo3d.results.topo.osm.pois === 'number' && typeof window.__topo3d.results.topo.osm.trails === 'number'", 60)
+        wait_js(page, """() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0
+            && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-camp', 'poi-water-cluster', 'poi-parking'] }).length >= 3""", 60)
         r["osm"] = page.evaluate("""() => { const m = window.__topo3d.map;
             const kinds = (id) => [...new Set(m.queryRenderedFeatures({ layers: [id] }).map((f) => f.properties.kind))].sort();
             const w = (id, kind, z) => { const st = m.getPaintProperty(id, 'line-width').slice(3); let v = st[1];
@@ -285,14 +285,14 @@ def main():
         # Abroad: no Overpass request inside Israel; at Antalya (z12) one request, trail + campsite shown (D-042)
         r["overpassInIsrael"] = len(seen.get("overpass", []))
         page.evaluate(f"() => window.__topo3d.map.jumpTo({{ center: [{ABROAD[0]}, {ABROAD[1]}], zoom: 12 }})")
-        page.wait_for_function("() => window.__topo3d.results.topo.osmLoader.dynamicCells > 0 || window.__topo3d.results.topo.osmLoader.errors > 0", polling=250, timeout=30_000)
-        page.wait_for_function("() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-marked-line', 'poi-camp'] }).length >= 2", polling=250, timeout=30_000)
+        wait_js(page, "() => window.__topo3d.results.topo.osmLoader.dynamicCells > 0 || window.__topo3d.results.topo.osmLoader.errors > 0", 60)
+        wait_js(page, "() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-marked-line', 'poi-camp'] }).length >= 2", 60)
         r["abroad"] = page.evaluate("""() => { const m = window.__topo3d.map; return { stats: { ...window.__topo3d.results.topo.osmLoader },
             marked: [...new Set(m.queryRenderedFeatures({ layers: ['topo-marked-line'] }).map((f) => f.properties.color))],
             camp: m.queryRenderedFeatures({ layers: ['poi-camp'] }).length }; }""")
         r["overpassAbroad"] = list(seen.get("overpass", []))
         page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 12 })")
-        page.wait_for_function("() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0", polling=250, timeout=30_000)
+        wait_js(page, "() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0", 60)
         r["poiIcons"] = page.evaluate("""() => { const m = window.__topo3d.map; return [m.hasImage('topo-tent'), m.hasImage('topo-tap'),
             m.getLayer('topo-poi-icon')?.minzoom, JSON.stringify(m.getLayoutProperty('topo-poi-icon', 'icon-image'))]; }""")
         r["waterColor"] = page.evaluate("() => JSON.stringify(window.__topo3d.map.getPaintProperty('topo-waterway', 'line-color'))")
@@ -343,7 +343,7 @@ def main():
         for g in ("slope", "aspect", "relief"):
             page.evaluate(f"() => document.querySelector('input[data-group={g}]').click()")
         try:
-            page.wait_for_function("() => window.__topo3d.results.topo.derive.tiles >= 2", polling=500, timeout=180_000)
+            wait_js(page, "() => window.__topo3d.results.topo.derive.tiles >= 2", 180)
         except Exception:
             print("DERIVE-DEBUG", page.evaluate("""() => { const m = window.__topo3d.map; return { vis: m.getLayoutProperty('topo-slope','visibility'), src: !!m.getSource('derive-slope'),
                 loaded: m.isSourceLoaded('derive-slope'), z: m.getZoom(), stats: window.__topo3d.results.topo.derive, hasML: typeof maplibregl, reg: m.__deriveRegistered }; }"""), CONSOLE[-8:], flush=True)
@@ -356,7 +356,7 @@ def main():
             page.evaluate(f"() => document.querySelector('input[data-group={g}]').click()")
         # search: Enter → one request → results → pick the first → map moves there, marker shown
         page.evaluate("() => { document.getElementById('search-q').value = 'הר מירון'; document.getElementById('search').requestSubmit(); }")
-        page.wait_for_function("() => !document.getElementById('search-results').hidden", polling=250, timeout=15_000)
+        wait_js(page, "() => !document.getElementById('search-results').hidden", 60)
         r["searchList"] = page.evaluate("() => [...document.querySelectorAll('#search-results strong')].map((e) => e.textContent)")
         page.evaluate("() => document.querySelector('#search-results button').click()")
         page.wait_for_timeout(1600)
@@ -376,7 +376,7 @@ def main():
             page.wait_for_timeout(300)
         ed = "window.__topo3d.editor"
         nverts = lambda: page.evaluate(f"() => {ed}.state.vertices.length")
-        page.wait_for_function("() => document.getElementById('stats').textContent.includes('מרחק')", polling=250, timeout=20_000)
+        wait_js(page, "() => document.getElementById('stats').textContent.includes('מרחק')", 60)
         r["stats"] = page.inner_text("#stats")
         r["profileVisible"] = page.evaluate("() => !document.getElementById('profile-box').hidden && !!document.querySelector('#profile svg path.profile-area')")
         r["panel"] = page.evaluate("""() => ({ big: [...document.querySelectorAll('#stats .rp-main .stat .l')].map((e) => e.textContent),
@@ -386,7 +386,7 @@ def main():
         page.evaluate("() => document.getElementById('profile-toggle').click()"); page.wait_for_timeout(300)
         r["routePoints"] = nverts()
         r["modes"] = page.evaluate(f"() => {ed}.state.vertices.map(v => v.mode)")
-        page.wait_for_function(f"() => {ed}.segments().every(s => s.status === 'ok')", polling=250, timeout=20_000)
+        wait_js(page, f"() => {ed}.segments().every(s => s.status === 'ok')", 60)
         r["snapped"] = page.evaluate(f"() => {ed}.segments().map(s => [s.status, s.geometry.length])")
         r["orsCalls"] = len(seen["ors"])
         r["orsUrl"] = seen["ors"][0] if seen["ors"] else ""
@@ -396,12 +396,12 @@ def main():
         r["profileHidden"] = page.evaluate("""() => [document.getElementById('profile-box').hidden, document.getElementById('stats').hidden,
             JSON.parse(localStorage.getItem('topo3d.prefs')).showProfile === false]""")
         page.evaluate("() => document.getElementById('show-profile').click()")
-        page.wait_for_function("() => !document.getElementById('profile-box').hidden", polling=250, timeout=20_000)
+        wait_js(page, "() => !document.getElementById('profile-box').hidden", 60)
         r["profileShownAgain"] = page.evaluate("() => !document.getElementById('stats').hidden")
         # Router failure: segment shows an error, stays snap (never silently straight); user can switch it
         ors["fail"] = True
         page.mouse.click(1050, 250)
-        page.wait_for_function(f"() => {ed}.segments().at(-1).status === 'error'", polling=250, timeout=20_000)
+        wait_js(page, f"() => {ed}.segments().at(-1).status === 'error'", 60)
         r["errSeg"] = page.evaluate(f"() => {{ const s = {ed}.segments().at(-1); return [s.mode, s.status, s.provisional]; }}")
         r["errUi"] = page.inner_text("#seg-errors")
         btn("#seg-errors button")
@@ -443,7 +443,7 @@ def main():
         # Draft survives a reload
         draft_before = page.evaluate(f"() => JSON.stringify({ed}.state)")
         page.reload(wait_until="domcontentloaded", timeout=60_000)
-        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", polling=250, timeout=60_000)
+        wait_js(page, "() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", 60)
         r["draftRestored"] = page.evaluate(f"() => JSON.stringify({ed}.state)") == draft_before
         if not r["draftRestored"]:
             print("draft before:", draft_before[:300]); print("draft after:", page.evaluate(f"() => JSON.stringify({ed}.state)")[:300])
@@ -467,11 +467,11 @@ def main():
             const q = b.getBoundingClientRect(); return b.contains(document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2)); }""")
         # The control checks geolocation support asynchronously after load; wait until it is ready, and press
         # again if a slow CI machine swallowed the first press (no location call is made before a press).
-        page.wait_for_function("() => { const b = document.querySelector('.maplibregl-ctrl-geolocate'); return b && !b.disabled; }", polling=250, timeout=20_000)
+        wait_js(page, "() => { const b = document.querySelector('.maplibregl-ctrl-geolocate'); return b && !b.disabled; }", 60)
         for attempt in range(3):
             page.evaluate("() => document.querySelector('.maplibregl-ctrl-geolocate').click()")
             try:
-                page.wait_for_function("() => window.__geoCalls.get > 0", polling=250, timeout=8_000)
+                wait_js(page, "() => window.__geoCalls.get > 0", 60)
                 break
             except Exception:  # noqa: BLE001
                 print(f"(location press {attempt + 1} not handled yet)")
@@ -487,7 +487,7 @@ def main():
         page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.3, 32.9], zoom: 12.5, pitch: 30, bearing: 10 })")
         page.wait_for_timeout(500)
         page.goto(f"http://127.0.0.1:{port}/?demz=12", wait_until="domcontentloaded", timeout=60_000)
-        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", polling=250, timeout=60_000)
+        wait_js(page, "() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", 60)
         r["prefsAfterReload"] = page.evaluate("""() => { const m = window.__topo3d.map; const c = m.getCenter();
             return { contoursBox: document.querySelector('input[data-group=contours]').checked,
                      contoursLayer: m.getLayoutProperty('topo-contours-minor', 'visibility'),
@@ -496,8 +496,8 @@ def main():
 
         # Developer mode: test panel visible and the devtools module loaded
         page.goto(f"http://127.0.0.1:{port}/?demz=12&dev=1#12/33.0/35.4167/0/0", wait_until="domcontentloaded", timeout=60_000)
-        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", polling=250, timeout=60_000)
-        page.wait_for_function("() => document.getElementById('test-out').textContent.includes('hidden base layers')", polling=250, timeout=30_000)
+        wait_js(page, "() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", 60)
+        wait_js(page, "() => document.getElementById('test-out').textContent.includes('hidden base layers')", 60)
         r["devShown"] = page.evaluate("() => !document.getElementById('dev-section').hidden && !document.getElementById('fps').hidden")
         try:  # best effort: software WebGL can keep the page busy
             page.screenshot(path=str(CACHE / "e2e.png"), timeout=15_000)
