@@ -21,6 +21,8 @@ jobs:
         run: cd packages/geo && node --test "test/**/*.test.ts"
       - name: Unit tests (route editor, no dependencies)
         run: cd packages/editor && node --test "test/**/*.test.ts"
+      - name: Unit tests (routing provider, fake server)
+        run: node --test "tests/*.test.mjs"
       - name: Browser tests (headless Chromium; real MapLibre build for e2e)
         run: |
           python3 -m venv .venv

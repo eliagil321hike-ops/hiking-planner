@@ -94,7 +94,8 @@ def main():
     httpd = socketserver.TCPServer(("127.0.0.1", 0), Quiet)
     port = httpd.server_address[1]
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
-    seen = {"satellite": [], "dem": 0}
+    seen = {"satellite": [], "dem": 0, "ors": []}
+    ors = {"fail": False}
 
     with sync_playwright() as p:
         browser = p.chromium.launch(args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"])
@@ -141,6 +142,21 @@ def main():
             seen["satellite"].append(route.request.url)
             route.fulfill(body=solid_tile((60, 110, 60), "JPEG"), headers={"content-type": "image/jpeg", "access-control-allow-origin": "*"})
 
+        def route_ors(route):
+            from urllib.parse import urlparse, parse_qs
+            u = route.request.url
+            seen["ors"].append(u)
+            q = parse_qs(urlparse(u).query)
+            if ors["fail"]:
+                return route.fulfill(status=404, body=json.dumps({"error": {"code": 2010, "message": "Could not find routable point"}}),
+                                     headers={"content-type": "application/json", "access-control-allow-origin": "*"})
+            (x1, y1), (x2, y2) = [map(float, q[k][0].split(",")) for k in ("start", "end")]
+            mid = [(x1 + x2) / 2 + 0.001, (y1 + y2) / 2 + 0.001]          # a bend: proves the routed line is used
+            body = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {},
+                    "geometry": {"type": "LineString", "coordinates": [[x1, y1, 500], mid + [510], [x2, y2, 520]]}}]}
+            route.fulfill(body=json.dumps(body), headers={"content-type": "application/geo+json", "access-control-allow-origin": "*"})
+
+        page.route("https://api.openrouteservice.org/**", route_ors)
         page.route("https://unpkg.com/**", unpkg)
         page.route("https://tiles.openfreemap.org/**", openfreemap)
         page.route("https://tiles.mapterhorn.com/**", dem)
@@ -149,8 +165,8 @@ def main():
 
         # The DEM fixture only has z12; open at z12 so terrain loads real fixture tiles.
         page.goto(f"http://127.0.0.1:{port}/?demz=12#12/33.0/35.4167/0/0")
-        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo", timeout=60_000)
-        page.wait_for_function("() => window.__topo3d.map.loaded()", timeout=60_000)
+        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo", polling=250, timeout=60_000)
+        page.wait_for_function("() => window.__topo3d.map.loaded()", polling=250, timeout=60_000)
 
         r = {}
         r["topo"] = page.evaluate("() => window.__topo3d.results.topo")
@@ -179,7 +195,7 @@ def main():
 
         # ---- Route editor (Phase 3A). No router configured yet → new segments are free (straight).
         page.on("dialog", lambda d: d.accept())          # "clear route?" confirmation
-        r["snapDisabled"] = page.evaluate("() => document.querySelector('#seg-mode option[value=snap]').disabled && document.getElementById('seg-mode').value === 'free'")
+        r["snapDefault"] = page.evaluate("() => !document.querySelector('#seg-mode option[value=snap]').disabled && document.getElementById('seg-mode').value === 'snap'")
         # Panel buttons are pressed from inside the page (same handlers): with software WebGL the renderer can be
         # too busy to acknowledge synthetic mouse input in time. Map gestures below stay real mouse input.
         btn = lambda sel: page.evaluate(f"() => document.querySelector('{sel}').click()")
@@ -189,11 +205,27 @@ def main():
             page.wait_for_timeout(300)
         ed = "window.__topo3d.editor"
         nverts = lambda: page.evaluate(f"() => {ed}.state.vertices.length")
-        page.wait_for_function("() => document.getElementById('stats').textContent.includes('מרחק')", timeout=20_000)
+        page.wait_for_function("() => document.getElementById('stats').textContent.includes('מרחק')", polling=250, timeout=20_000)
         r["stats"] = page.inner_text("#stats")
         r["profileVisible"] = page.evaluate("() => !document.getElementById('profile').hidden && !!document.querySelector('#profile svg path.profile-area')")
         r["routePoints"] = nverts()
         r["modes"] = page.evaluate(f"() => {ed}.state.vertices.map(v => v.mode)")
+        page.wait_for_function(f"() => {ed}.segments().every(s => s.status === 'ok')", polling=250, timeout=20_000)
+        r["snapped"] = page.evaluate(f"() => {ed}.segments().map(s => [s.status, s.geometry.length])")
+        r["orsCalls"] = len(seen["ors"])
+        r["orsUrl"] = seen["ors"][0] if seen["ors"] else ""
+        r["attribRoute"] = page.evaluate("() => document.querySelector('.maplibregl-ctrl-attrib-inner')?.textContent ?? ''")
+        # Router failure: segment shows an error, stays snap (never silently straight); user can switch it
+        ors["fail"] = True
+        page.mouse.click(1050, 250)
+        page.wait_for_function(f"() => {ed}.segments().at(-1).status === 'error'", polling=250, timeout=20_000)
+        r["errSeg"] = page.evaluate(f"() => {{ const s = {ed}.segments().at(-1); return [s.mode, s.status, s.provisional]; }}")
+        r["errUi"] = page.inner_text("#seg-errors")
+        btn("#seg-errors button")
+        r["afterToFree"] = page.evaluate(f"() => {{ const s = {ed}.segments().at(-1); return [s.mode, s.status]; }}")
+        ors["fail"] = False
+        page.keyboard.press("Control+z"); page.keyboard.press("Control+z")   # undo "to free" and the 4th point
+        page.wait_for_timeout(300)
         btn("#r-undo"); r["afterUndo"] = nverts()
         btn("#r-redo"); r["afterRedo"] = nverts()
         first = page.evaluate(f"() => [{ed}.state.vertices[0].lon, {ed}.state.vertices[0].lat]")
@@ -228,7 +260,7 @@ def main():
         # Draft survives a reload
         draft_before = page.evaluate(f"() => JSON.stringify({ed}.state)")
         page.reload(wait_until="domcontentloaded", timeout=60_000)
-        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", timeout=60_000)
+        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", polling=250, timeout=60_000)
         r["draftRestored"] = page.evaluate(f"() => JSON.stringify({ed}.state)") == draft_before
         if not r["draftRestored"]:
             print("draft before:", draft_before[:300]); print("draft after:", page.evaluate(f"() => JSON.stringify({ed}.state)")[:300])
@@ -245,7 +277,7 @@ def main():
         r["geoButtonOnTop"] = page.evaluate("""() => { const b = document.querySelector('.maplibregl-ctrl-geolocate');
             const q = b.getBoundingClientRect(); return b.contains(document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2)); }""")
         page.evaluate("() => document.querySelector('.maplibregl-ctrl-geolocate').click()")
-        page.wait_for_function("() => window.__geoCalls.get > 0", timeout=10_000)
+        page.wait_for_function("() => window.__geoCalls.get > 0", polling=250, timeout=10_000)
         page.wait_for_timeout(2500)
         r["geoAfter"] = page.evaluate("() => ({ ...window.__geoCalls })")
         r["centerAfterGeo"] = page.evaluate("() => window.__topo3d.map.getCenter().toArray()")
@@ -257,7 +289,7 @@ def main():
         page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.3, 32.9], zoom: 12.5, pitch: 30, bearing: 10 })")
         page.wait_for_timeout(500)
         page.goto(f"http://127.0.0.1:{port}/?demz=12", wait_until="domcontentloaded", timeout=60_000)
-        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", timeout=60_000)
+        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", polling=250, timeout=60_000)
         r["prefsAfterReload"] = page.evaluate("""() => { const m = window.__topo3d.map; const c = m.getCenter();
             return { contoursBox: document.querySelector('input[data-group=contours]').checked,
                      contoursLayer: m.getLayoutProperty('topo-contours-minor', 'visibility'),
@@ -266,8 +298,8 @@ def main():
 
         # Developer mode: test panel visible and the devtools module loaded
         page.goto(f"http://127.0.0.1:{port}/?demz=12&dev=1#12/33.0/35.4167/0/0", wait_until="domcontentloaded", timeout=60_000)
-        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", timeout=60_000)
-        page.wait_for_function("() => document.getElementById('test-out').textContent.includes('hidden base layers')", timeout=30_000)
+        page.wait_for_function("() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", polling=250, timeout=60_000)
+        page.wait_for_function("() => document.getElementById('test-out').textContent.includes('hidden base layers')", polling=250, timeout=30_000)
         r["devShown"] = page.evaluate("() => !document.getElementById('dev-section').hidden && !document.getElementById('fps').hidden")
         try:  # best effort: software WebGL can keep the page busy
             page.screenshot(path=str(CACHE / "e2e.png"), timeout=15_000)
@@ -277,6 +309,8 @@ def main():
     httpd.shutdown()
 
     import re
+    if r.get("orsUrl"):
+        r["orsUrl"] = re.sub(r"api_key=[^&]+", "api_key=<redacted>", r["orsUrl"])
     if r.get("satTiles"):
         r["satTiles"] = re.sub(r"token=[^&]+", "token=<redacted>", r["satTiles"])  # CI logs are public
     print(json.dumps({k: v for k, v in r.items() if k != "topo"} | {"hidden": r["topo"]["hidden"], "renamed": r["topo"]["renamed"], "labelFont": r["topo"]["labelFont"], "demRequests": seen["dem"], "satelliteRequests": len(seen["satellite"])}, ensure_ascii=False, indent=2))
@@ -315,8 +349,13 @@ def main():
     expect(p_["exag"] == 1.7, f"exaggeration remembered {p_['exag']}")
     expect(p_["center"] == [35.3, 32.9] and p_["zoom"] == 12.5, f"last view restored when the URL has no camera {p_['center']} z{p_['zoom']}")
     expect(r["geoAfterReload"] == {"get": 0, "watch": 0}, "no location request after reload either")
-    expect(r["snapDisabled"], "snap mode disabled until a router is configured (new segments free)")
-    expect(r["routePoints"] == 3 and r["modes"] == [None, "free", "free"], f"3 points added by clicks {r['modes']}")
+    expect(r["snapDefault"], "router configured → snap to trails is the default for new segments")
+    expect(r["routePoints"] == 3 and r["modes"] == [None, "snap", "snap"], f"3 points added by clicks {r['modes']}")
+    expect(all(st == "ok" and n >= 3 for st, n in r["snapped"]), f"segments replaced by routed (bent) lines {r['snapped']}")
+    expect(r["orsCalls"] == 2 and "/v2/directions/foot-hiking?api_key=" in r["orsUrl"], f"one foot-hiking request per segment ({r['orsCalls']})")
+    expect("openrouteservice" in r["attribRoute"], "routing attribution shown")
+    expect(r["errSeg"] == ["snap", "error", True] and "לא נמצא מסלול" in r["errUi"], f"router failure → error shown, segment stays snap {r['errSeg']}")
+    expect(r["afterToFree"] == ["free", "ok"], "user switches the failed segment to a straight line explicitly")
     expect((r["afterUndo"], r["afterRedo"]) == (2, 3), f"undo/redo buttons {r['afterUndo']},{r['afterRedo']}")
     expect(r["reversedLast"], "reverse puts the first point last")
     expect((r["afterLoop"], r["afterLoop2"], r["afterCtrlZ"]) == (4, 4, 3), f"close loop once, no duplicate, Ctrl+Z {r['afterLoop']},{r['afterLoop2']},{r['afterCtrlZ']}")

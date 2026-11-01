@@ -270,6 +270,24 @@ reachable. Owner to create a key; embedding it (like Esri) offered with the trad
 restriction found; misuse could exhaust the daily quota; no charges). Profile `foot-hiking` to be verified
 with the first real request.
 
+## D-027 (2026-11-01) Phase 3 build: route editor UI + openrouteservice snapping
+- Owner created an openrouteservice key and sent it to embed (consent to embed, like Esri D-021). Embedded
+  in `site/styles/topo3d.json` → `routing.embeddedKey`. No referrer restriction found for ORS keys; misuse
+  can exhaust 2,000 directions/day (routing stops until the next day); no payment method → no charges.
+- `site/router.js`: GET /v2/directions/foot-hiking?api_key=…&start=lon,lat&end=lon,lat (ORS API spec:
+  profile list includes foot-hiking; GET returns GeoJSON). Requests queued ≥ 1.6 s apart (< 40/minute).
+  HTTP errors → codes NO_PATH / AUTH / RATE_LIMITED / SERVER / NETWORK / TIMEOUT. Attribution
+  "© openrouteservice.org by HeiGIT" (exact required text not verified: the ToS page was offline).
+- `site/route.js` (UI): plan mode; click add, drag move, drag mid-handle insert, select + Delete, right-click
+  waypoint with name/note form, undo/redo (buttons + Ctrl+Z/Y), reverse, close loop, clear as ONE command,
+  draft saved on every change and restored with a notice. Segment styles by pattern: snap solid, free
+  dashed, pending dotted grey, error dotted red + an explicit "switch to straight line" button.
+- Bugs found by tests and fixed: background logic cleared the "draft restored" notice; clear was N
+  commands (undo restored one point); routed ends kept the router's coordinate instead of the exact point.
+- Test notes: e2e uses a fake ORS server (bent lines, and 404 for the failure case); waits poll on an
+  interval because software WebGL starves animation-frame polling; panel buttons are clicked from inside the
+  page; the offline RTL plugin error is excluded (external script not available in tests).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

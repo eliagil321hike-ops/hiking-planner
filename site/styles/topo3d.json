@@ -1,6 +1,6 @@
 {
   "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by site/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "base": "https://tiles.openfreemap.org/styles/liberty",
   "dem": {
     "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
@@ -501,5 +501,11 @@
         "note": "TileJSON URL pattern from docs.maptiler.com Tiles API; tileset satellite-v2 (zoom 0–22, ~1 m/px Middle East) from docs.maptiler.com schema-raster/satellite. Attribution and tile size come from the TileJSON at runtime; '© MapTiler' added as a minimum."
       }
     ]
+  },
+  "routing": {
+    "$comment": "D-026/D-027. openrouteservice foot-hiking. Owner's free Standard key embedded by owner decision (same trade-offs as D-021; no referrer restriction found). 2,000 directions/day, 40/minute.",
+    "provider": "openrouteservice",
+    "profile": "foot-hiking",
+    "embeddedKey": "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjBhYmFjNmFiZDY0NjQ3MzFhYmZhOGQzZTJmZmQ5Nzk1IiwiaCI6Im11cm11cjY0In0="
   }
 }

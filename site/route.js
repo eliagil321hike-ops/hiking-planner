@@ -26,12 +26,12 @@ export function initRoute(ctx) {
   let statsSeq = 0;
   let samples = [];
   const hoverMarker = new maplibregl.Marker({ color: '#2a241d', scale: 0.7 });
-  ctx.router = ctx.router ?? null; // set in Phase 3B (routing provider)
 
   // ---------------------------------------------------------------- layers
   function addRouteLayers() {
     const font = ctx.results.topo?.labelFont ?? ['Noto Sans Regular'];
-    for (const id of ['route', 'route-handles', 'route-waypoints']) map.addSource(id, { type: 'geojson', data: FC([]) });
+    map.addSource('route', { type: 'geojson', data: FC([]), ...(ctx.router ? { attribution: ctx.router.attribution } : {}) });
+    for (const id of ['route-handles', 'route-waypoints']) map.addSource(id, { type: 'geojson', data: FC([]) });
     // Segment styles differ by pattern, not only colour (SPEC §11): snap solid, free dashed,
     // pending dotted grey, error dotted red.
     map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' },
@@ -108,7 +108,7 @@ export function initRoute(ctx) {
     const ok = !!ctx.router;
     const opt = $('seg-mode').querySelector('option[value="snap"]');
     opt.disabled = !ok;
-    if (!ok) $('seg-mode').value = 'free';
+    $('seg-mode').value = ok ? 'snap' : 'free';     // SPEC 8.2: snap is the default when routing is available
     $('snap-hint').hidden = ok;
   }
   ctx.onRouterChange = () => { syncSnapAvailability(); requestRoutes(); };

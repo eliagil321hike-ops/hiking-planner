@@ -13,6 +13,7 @@ import { applyTopo3d } from './topo3d.js';
 import { initLayers, layerHelpers } from './layers.js';
 import { initBackground } from './background.js';
 import { initRoute } from './route.js';
+import { createOrsRouter } from './router.js';
 
 const BUILD = '__BUILD__'; // replaced by CI (scripts/stamp_build.sh) with the commit id
 const perf = createPerf();
@@ -121,6 +122,10 @@ Object.assign(ctx, layerHelpers(ctx));
 initLayers(ctx);
 const background = initBackground(ctx);
 ctx.applyBackground = background.applyBackground;
+// Routing (snap to trails): openrouteservice with the owner's embedded key (D-027).
+if (overlay.routing?.embeddedKey) {
+  ctx.router = createOrsRouter({ key: overlay.routing.embeddedKey, profile: overlay.routing.profile });
+}
 const route = initRoute(ctx);
 
 // Test/debug handle (used by scripts/e2e_test.py).
