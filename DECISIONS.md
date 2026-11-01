@@ -221,6 +221,11 @@ apps. Stored in `site/styles/topo3d.json` (`embeddedKey`). A key typed by a user
 Esri is now the default satellite provider. To revoke: regenerate/delete the key in the ArcGIS portal and
 update `embeddedKey`.
 
+## D-022 (2026-11-01) Owner approved Phase 0 → Phase 1
+Owner answer "כן" to "approve Phase 0 and move to Phase 1". Phase 0 closes with every W7 criterion passed
+except FPS ≥ 30 in 3D, which stays open by owner decision D-014 (to be measured on newer hardware), and the
+Mapterhorn hosted-tile terms, which stay an open question.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

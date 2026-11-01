@@ -1,8 +1,18 @@
 # PROGRESS
 
 ## Current phase
-**Phase 0 (web) — map feasibility on the live site.** Product is a website (SPEC-WEB.md, DECISIONS D-010).
-Phase 1 starts only after the owner approves Phase 0 (look vs FATMAP, encoding test, FPS).
+**Phase 1 (web) — foundations.** Phase 0 approved by the owner 2026-11-01 (D-022).
+
+## Phase 1 plan and criteria (SPEC-WEB W6 "site structure, i18n Hebrew-first + RTL, CI tests, deploy")
+- [ ] End-to-end test with the real MapLibre build in headless Chromium (fixture style + synthetic DEM),
+      runs locally and in CI before deploy
+- [ ] Code split into modules (map setup, background, route drawing, dev tools); behaviour unchanged (e2e)
+- [ ] All UI text from one i18n file, Hebrew default, RTL layout verified
+- [ ] Phase 0 test panel hidden by default, shown with `?dev=1`
+- [ ] Leftovers removed (Android ignores, Windows server scripts, standalone build), docs updated
+- [ ] Deploy green; owner confirms the site works as before
+
+## Phase 0 result (closed)
 
 ## Status of Phase 0 criteria (SPEC-WEB W7)
 | Criterion | Status | Evidence |
