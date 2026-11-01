@@ -11,9 +11,15 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   if (!baseSource) throw new Error('Base style has no vector source');
   report.baseSource = baseSource;
 
-  // 2. A font that the base style's glyph server certainly has
-  const symbol = style.layers.find((l) => l.type === 'symbol' && l.layout?.['text-font']);
-  const labelFont = symbol?.layout['text-font'];
+  // 2. A font that the base style's glyph server certainly has. Prefer an upright "Regular" font:
+  //    the first symbol layer in Liberty uses "Noto Sans Italic" (owner run 2026-11-01).
+  const fonts = style.layers
+    .filter((l) => l.type === 'symbol' && Array.isArray(l.layout?.['text-font']))
+    .map((l) => l.layout['text-font']);
+  const labelFont =
+    fonts.find((f) => f.some((n) => /regular/i.test(n))) ??
+    fonts.find((f) => !f.some((n) => /italic/i.test(n))) ??
+    fonts[0];
   if (!labelFont) report.warnings.push('No text-font found in base style; labels may not render');
   report.labelFont = labelFont;
 

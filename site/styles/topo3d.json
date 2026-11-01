@@ -1,13 +1,14 @@
 {
   "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by site/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "base": "https://tiles.openfreemap.org/styles/liberty",
   "dem": {
     "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
     "encoding": "terrarium",
     "tileSize": 512,
     "maxzoomDefault": 12,
-    "maxzoomNote": "planet.pmtiles covers z0-12 everywhere; z13-17 exist per area (Mapterhorn Data Access page). The page probes the real max zoom over Israel.",
+    "samplingZoom": 13,
+    "maxzoomNote": "Owner run 2026-11-01: Meron tiles exist z10-13, 404 at z14-17. z13 at 512 px ≈ 8 m/px matches the 10 m isr10 DEM. z13 is NOT guaranteed outside covered areas, so the MAP stays at z12 (try ?demz=13 to compare); the elevation SAMPLER uses z13 and falls back to z12 on 404.",
     "attribution": "<a href=\"https://mapterhorn.com/attribution/\">Mapterhorn</a>: 10 m DEM of Israel (isr10) — ASTER GDEM courtesy of METI and NASA processed by 4cast LTD; Copernicus GLO-30 © DLR e.V. 2010-2014, Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA"
   },
   "terrain": { "exaggeration": 1.2, "min": 1.0, "max": 2.0 },

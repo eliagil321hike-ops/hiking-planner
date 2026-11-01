@@ -158,6 +158,11 @@ def main():
               out.coastExact = await good.elevationAt([34.7668, 32.0836]);
               // missing tile -> null, never 0
               out.missing = await good.elevationAt([35.0, 30.0]);
+              // z13 requested, only z12 exists in the fixture -> falls back to z12, same value
+              const z13 = createDemSampler({ ...DEM, zoom: 13, fallbackMinZoom: 12, encoding: 'terrarium' });
+              out.fallback = await z13.elevationAt([34.7668, 32.0836]);
+              out.fallbackZooms = Object.fromEntries(z13.zoomUsed);
+              out.fallbackMissing = await z13.elevationAt([35.0, 30.0]);
               // profile breaks at null
               const div = document.createElement('div'); div.style.width = '400px'; div.style.height = '150px'; document.body.append(div);
               renderProfile(div, [{distance:0,elevation:100},{distance:20,elevation:110},{distance:40,elevation:null},{distance:60,elevation:120},{distance:80,elevation:125}], () => {});
@@ -182,6 +187,8 @@ def main():
     expect(result["negative"] == "EncodingCheckError", "negative control: 'mapbox' decoding is rejected loudly")
     expect(result["coastExact"] == 2.0, "WebP bytes survive browser decoding exactly (coast = 2.0 m)")
     expect(result["missing"] is None, "missing DEM tile gives null, not 0")
+    expect(result["fallback"] == 2.0 and result["fallbackZooms"] == {"12": 1}, "z13 missing → falls back to z12 (same value)")
+    expect(result["fallbackMissing"] is None, "no tile at z13 or z12 → null")
     expect(result["profilePath"] is not None and result["profilePath"].count("M") == 2, "profile line breaks at missing data")
     expect(not errors, f"no page errors {errors}")
     sys.exit(0 if ok else 1)

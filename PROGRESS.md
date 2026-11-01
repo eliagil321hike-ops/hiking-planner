@@ -7,10 +7,10 @@ Phase 1 starts only after the owner approves Phase 0 (look vs FATMAP, encoding t
 ## Status of Phase 0 criteria (SPEC-WEB W7)
 | Criterion | Status | Evidence |
 | --- | --- | --- |
-| Site deployed on GitHub Pages and opens | **Deployed**; opening not yet confirmed by owner | Actions run 41294695181 attempt 2: test ✓, deploy ✓; URL https://eliagil321hike-ops.github.io/hiking-planner/ |
-| 3D terrain stable; FPS recorded on owner's computer | Not run | "בדיקת FPS" button |
+| Site deployed on GitHub Pages and opens | **PASS** (owner opened it, screenshot 2026-11-01) | Actions run 41294695181 attempt 2: test ✓, deploy ✓; URL https://eliagil321hike-ops.github.io/hiking-planner/ |
+| 3D terrain stable; FPS recorded on owner's computer | **FAIL so far: avg 9.6 fps** (target 30) | D-011; improved FPS test pending owner rerun |
 | Hillshade + contours readable z12–16 | Not run | owner review |
-| Encoding test on real tiles + negative control | Implemented, not run on real tiles | geo 31/31; browser smoke 7/7 (synthetic tiles) |
+| Encoding test on real tiles + negative control | **PASS** | owner run: Meron 1202.5, coast 4.5, Dead Sea −432; negative control detected; engine Δ −1.3 m (D-011) |
 | Contour labels and trails legible when tilted | Not run | owner review |
 | Owner FATMAP review | Not run | needs ≥ 3 screenshots |
 | DECISIONS: engine, contours, hosting, attribution, small-group licences | Mostly done | engine = MapLibre GL JS (D-010); Mapterhorn terms open |
@@ -40,4 +40,5 @@ Real rendering, OpenFreeMap layer matching / Hebrew names, real encoding check, 
   ubuntu-latest moves to Ubuntu 26. Both warnings only.
 
 ## Next task
-Owner opens the site, runs the test buttons, sends results + screenshots + FATMAP references.
+Owner reruns the new FPS test and layer test, and sends FATMAP references. If FPS stays low with a real GPU:
+profile per layer, then try pixelRatio 1, lower maxPitch, contour worker settings.

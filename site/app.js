@@ -57,7 +57,8 @@ const contourTiles = demSource.contourProtocolUrl({
   buffer: 1,
 });
 
-const sampler = createDemSampler({ ...DEM, zoom: demMaxzoom });
+const samplingZoom = Math.max(demMaxzoom, overlay.dem.samplingZoom ?? demMaxzoom);
+const sampler = createDemSampler({ ...DEM, zoom: samplingZoom, fallbackMinZoom: Math.min(12, samplingZoom) });
 
 const cam = overlay.camera;
 const map = new maplibregl.Map({
@@ -94,6 +95,7 @@ map.on('load', () => {
   addRouteLayers();
   map.once('idle', () => {
     perf.mark('first-idle');
+    results.gpu = gpuInfo();
     log(`cold start → first full map: ${results.timingsText()}`);
     log(`DEM maxzoom ${demMaxzoom} · base source "${results.topo.baseSource}" · hidden base layers: ${results.topo.hidden.join(', ') || 'none'} · names switched to Hebrew-first: ${results.topo.renamed}`);
     if (results.topo.hidden.length === 0) log('WARNING: no base trail/peak layers were matched — check base style', 'fail');
@@ -195,7 +197,7 @@ async function updateRoute() {
     <dt>ירידה</dt><dd>${fmt(st.descent)}</dd>
     <dt>מינ׳ / מקס׳</dt><dd>${fmt(st.min)} / ${fmt(st.max)}</dd>
     <dt>זמן (הערכה)</dt><dd>${Math.floor(dur / 3600)}:${String(Math.round((dur % 3600) / 60)).padStart(2, '0')} שעות</dd>
-    <dt>מקור גובה</dt><dd>Mapterhorn z${demMaxzoom} · ${ms} ms</dd>
+    <dt>מקור גובה</dt><dd>Mapterhorn z${samplingZoom} (גיבוי z12) · ${ms} ms</dd>
     ${st.incomplete ? '<dt>אזהרה</dt><dd>חסרים נתוני גובה בחלק מהקו</dd>' : ''}`;
   $('profile').hidden = false;
   renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map));
@@ -226,14 +228,14 @@ async function runReferenceCheck(s) {
 
 $('t-encoding').addEventListener('click', async (ev) => {
   ev.target.disabled = true;
-  const report = { declared: DEM, zoom: demMaxzoom, points: null, pass: false, negativeControl: null };
+  const report = { declared: DEM, zoom: samplingZoom, points: null, pass: false, negativeControl: null };
   try {
     // 1. Real tiles, declared encoding → must PASS
     try {
       const res = await runReferenceCheck(sampler);
       report.points = res.map(({ name, measured, min, max, pass }) => ({ name, measured, min, max, pass }));
       report.pass = true;
-      log(`<span class="pass">ENCODING CHECK PASSED</span> (terrarium, z${demMaxzoom})\n` +
+      log(`<span class="pass">ENCODING CHECK PASSED</span> (terrarium, z${samplingZoom}→12)\n` +
         res.map((r) => `  ✓ ${r.name}: ${r.measured.toFixed(1)} m (expected ${r.min}…${r.max})`).join('\n'));
     } catch (e) {
       if (!(e instanceof EncodingCheckError)) throw e;
@@ -241,7 +243,7 @@ $('t-encoding').addEventListener('click', async (ev) => {
       log(`<span class="fail">${e.message.replace(/\n/g, '<br>')}</span>`);
     }
     // 2. Negative control: same tiles, WRONG encoding → must FAIL, proving the test can fail
-    const wrong = createDemSampler({ ...DEM, encoding: 'mapbox', zoom: demMaxzoom });
+    const wrong = createDemSampler({ ...DEM, encoding: 'mapbox', zoom: samplingZoom, fallbackMinZoom: Math.min(12, samplingZoom) });
     try {
       await runReferenceCheck(wrong);
       report.negativeControl = 'NOT DETECTED';
@@ -300,29 +302,79 @@ $('t-probe').addEventListener('click', async (ev) => {
 });
 
 // ---------------------------------------------------------------- test: FPS while rotating and tilting
+// Which GPU does the browser use? Software rendering (SwiftShader, "Basic Render Driver") explains very
+// low FPS and is fixed in browser settings, not in our code.
+function gpuInfo() {
+  try {
+    const gl = map.getCanvas().getContext('webgl2') || map.getCanvas().getContext('webgl');
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const renderer = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+    const vendor = ext ? gl.getParameter(ext.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR);
+    const software = /swiftshader|basic render|llvmpipe|software/i.test(renderer);
+    return { renderer, vendor, software, webgl2: !!map.getCanvas().getContext('webgl2'), pixelRatio: map.getPixelRatio() };
+  } catch (e) { return { error: e.message }; }
+}
+
+const MERON_VIEW = { center: [35.4167, 33.0], zoom: 13.5, pitch: 60, bearing: -20 };
+const idle = () => new Promise((r) => map.once('idle', r));
+const orbit = (start) => (p) => map.jumpTo({ bearing: start.bearing + 360 * p, pitch: 52.5 + 12.5 * Math.sin(p * Math.PI * 4) });
+function setGroup(g, on) {
+  if (g === 'terrain') map.setTerrain(on ? { source: 'dem-terrain', exaggeration } : null);
+  else for (const id of GROUPS[g]) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+}
+
+// Repeatable FPS test: always at the same Meron view; a warm-up orbit first (tiles load, not measured),
+// then measured orbits with everything on, without contours, and without 3D terrain, to find the cost.
 $('t-perf').addEventListener('click', async (ev) => {
   ev.target.disabled = true;
-  const start = { bearing: map.getBearing(), pitch: map.getPitch() };
-  log('FPS run: 12 s orbit (360° rotation, pitch 40–65°) — do not touch the map…');
-  const run = await perf.frameRun(`orbit z${map.getZoom().toFixed(1)} terrain=${!!map.getTerrain()}`, 12_000, (p) => {
-    map.jumpTo({ bearing: start.bearing + 360 * p, pitch: 52.5 + 12.5 * Math.sin(p * Math.PI * 4) });
-  });
-  map.jumpTo(start);
-  log(`${run.label}: avg ${run.avgFps} fps, slowest-5% ${run.p5Fps} fps, stutters(>50 ms) ${run.longFrames}`,
-    run.avgFps >= 30 ? 'pass' : 'fail');
+  const before = { center: map.getCenter(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+  const gpu = gpuInfo();
+  log(`GPU: ${gpu.renderer ?? gpu.error} · WebGL2 ${gpu.webgl2} · pixelRatio ${gpu.pixelRatio?.toFixed(2)}`, gpu.software ? 'fail' : undefined);
+  if (gpu.software) log('The browser is drawing WITHOUT the graphics card (software rendering). In Chrome: Settings → System → turn on "Use graphics acceleration when available", restart Chrome.', 'fail');
+  log('FPS test ≈ 50 s at Meron — do not touch the map…');
+  map.jumpTo(MERON_VIEW);
+  await idle();
+  await perf.frameRun('warm-up (not counted)', 8_000, orbit(MERON_VIEW));
+  await idle();
+  const variants = [
+    ['all layers', () => {}],
+    ['no contours', () => setGroup('contours', false)],
+    ['no 3D terrain', () => { setGroup('contours', true); setGroup('terrain', false); }],
+  ];
+  const runs = [];
+  for (const [name, apply] of variants) {
+    apply();
+    map.jumpTo(MERON_VIEW);
+    await idle();
+    const run = await perf.frameRun(`Meron z13.5 · ${name}`, 12_000, orbit(MERON_VIEW));
+    runs.push(run);
+    log(`${run.label}: avg ${run.avgFps} fps, slowest-5% ${run.p5Fps} fps, stutters(>50 ms) ${run.longFrames}`,
+      run.avgFps >= 30 ? 'pass' : 'fail');
+  }
+  setGroup('terrain', true);
+  document.querySelectorAll('input[data-group]').forEach((cb) => setGroup(cb.dataset.group, cb.checked));
+  results.perfTest = { gpu, runs };
+  map.jumpTo(before);
   ev.target.disabled = false;
 });
 
-// ---------------------------------------------------------------- test: do the Topo3D layers find data here?
-$('t-features').addEventListener('click', () => {
-  results.features = { at: map.getCenter().toArray(), zoom: map.getZoom(), counts: layerFeatureCounts(map, results.topo?.added ?? []) };
-  log(`features in view (z${map.getZoom().toFixed(1)}):\n` +
+// ---------------------------------------------------------------- test: do the Topo3D layers find data?
+// Always measured at the same Meron view (flat, z13.5) so results are comparable.
+$('t-features').addEventListener('click', async (ev) => {
+  ev.target.disabled = true;
+  const before = { center: map.getCenter(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+  map.jumpTo({ ...MERON_VIEW, pitch: 0, bearing: 0 });
+  await idle();
+  results.features = { at: MERON_VIEW.center, zoom: MERON_VIEW.zoom, counts: layerFeatureCounts(map, results.topo?.added ?? []) };
+  log(`features at Meron (z${MERON_VIEW.zoom}):\n` +
     Object.entries(results.features.counts).map(([k, v]) => `  ${v > 0 ? '✓' : '·'} ${k}: ${v}`).join('\n'));
+  map.jumpTo(before);
+  ev.target.disabled = false;
 });
 
 // ---------------------------------------------------------------- export
 function fullReport() {
-  return { ...perf.report(), demMaxzoom, overlayVersion: overlay.version, camera: location.hash, ...results, timingsText: undefined };
+  return { ...perf.report(), demMaxzoom, samplingZoom, overlayVersion: overlay.version, camera: location.hash, ...results, timingsText: undefined };
 }
 $('t-copy').addEventListener('click', async () => {
   const json = JSON.stringify(fullReport(), null, 2);

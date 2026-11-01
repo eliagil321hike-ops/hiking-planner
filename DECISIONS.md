@@ -96,6 +96,25 @@ Consequences:
   by default (see register). Mapterhorn hosted-tile terms remain an open question.
 - `start-windows.bat` / `dist/topo3d-standalone.html` stay as local fallbacks.
 
+## D-011 (2026-11-01) First real run on the owner's computer — findings and changes
+Evidence: owner's "copy results" JSON + screenshot (Chrome 156, Windows, 4 cores, 8 GB, 1178×527, DPR 1.36).
+- **Encoding check on real Mapterhorn tiles: PASSED.** Meron max within 1.2 km 1,202.5 m (1,170…1,225),
+  Tel Aviv beach 4.5 m (−5…15), Dead Sea −432 m (−450…−390). Negative control ("mapbox") detected.
+  MapLibre terrain vs own decoder at the Meron reference point: 1,028.2 vs 1,029.5 m (Δ −1.3 m).
+- **DEM zoom at Meron:** z10–13 → 200, z14–17 → 404. Map keeps maxzoom 12 (guaranteed worldwide; z13 not
+  guaranteed outside covered areas → possible holes). The elevation sampler now uses z13 with fallback
+  to z12 (tested). Visual A/B for the map: `?demz=13`.
+- **Rendering works:** screenshot shows 3D terrain, hillshade, contours with index lines, peak labels
+  with elevation, drawn route and profile. Trail/peak base layers were matched by schema (12 hidden).
+- **Label font bug:** the overlay took the base style's first font, "Noto Sans Italic" → peak and contour
+  labels were italic. Fixed: prefer a "Regular" font.
+- **FPS: avg 9.6, slowest-5% 4.6, 73 stutters in 12 s** (orbit at z14.2, not at Meron). Far below 30. The
+  run mixed tile loading with rendering. The FPS test now: reports the GPU (detects software rendering),
+  runs at a fixed Meron view, does an unmeasured warm-up orbit, then measures all layers / no contours /
+  no 3D terrain to locate the cost.
+- The layer test ran at z10.3 over Turkey (contours and trails start at z11) → zero counts were expected.
+  The test now always measures at the same Meron view (z13.5).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
