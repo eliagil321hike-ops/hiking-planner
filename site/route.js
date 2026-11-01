@@ -12,8 +12,10 @@ import {
   addWaypoint, editWaypoint, deleteWaypoint, clearRoute,
 } from './vendor/editor/editor.js';
 import { store } from './satellite.js';
+import { loadPrefs, savePrefs } from './prefs.js';
 
 const DRAFT_KEY = 'topo3d.draft';
+export const ROUTE_COLOR = '#39ff14';   // fluorescent green (owner request)
 const FC = (features) => ({ type: 'FeatureCollection', features });
 const pt = (c, props = {}) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: c }, properties: props });
 
@@ -34,21 +36,23 @@ export function initRoute(ctx) {
     for (const id of ['route-handles', 'route-waypoints']) map.addSource(id, { type: 'geojson', data: FC([]) });
     // Segment styles differ by pattern, not only colour (SPEC §11): snap solid, free dashed,
     // pending dotted grey, error dotted red.
+    // Owner request: a fluorescent route colour unlike any trail (red/brown/purple) or stream (blue) colour,
+    // with a dark casing so it also stands out on satellite imagery.
     map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': 0.9 } });
+      paint: { 'line-color': '#0a1f0a', 'line-width': 9, 'line-opacity': 0.75 } });
     map.addLayer({ id: 'route-line', type: 'line', source: 'route', filter: ['==', ['get', 'status'], 'ok'],
       layout: { 'line-join': 'round' },
-      paint: { 'line-color': '#b5502a', 'line-width': 4, 'line-dasharray': ['case', ['==', ['get', 'mode'], 'free'], ['literal', [2, 1.2]], ['literal', [1, 0]]] } });
+      paint: { 'line-color': ROUTE_COLOR, 'line-width': 5, 'line-dasharray': ['case', ['==', ['get', 'mode'], 'free'], ['literal', [2, 1.2]], ['literal', [1, 0]]] } });
     map.addLayer({ id: 'route-provisional', type: 'line', source: 'route', filter: ['!=', ['get', 'status'], 'ok'],
       layout: { 'line-cap': 'round' },
-      paint: { 'line-color': ['case', ['==', ['get', 'status'], 'error'], '#c62828', '#6b6257'], 'line-width': 4, 'line-dasharray': [0.1, 1.6] } });
+      paint: { 'line-color': ['case', ['==', ['get', 'status'], 'error'], '#ff2d55', '#e8e8e8'], 'line-width': 4, 'line-dasharray': [0.1, 1.6] } });
     map.addLayer({ id: 'route-mid', type: 'circle', source: 'route-handles', filter: ['==', ['get', 'kind'], 'mid'],
-      paint: { 'circle-radius': 4.5, 'circle-color': '#ffffff', 'circle-opacity': 0.9, 'circle-stroke-color': '#b5502a', 'circle-stroke-width': 1.5 } });
+      paint: { 'circle-radius': 4.5, 'circle-color': '#ffffff', 'circle-opacity': 0.9, 'circle-stroke-color': '#0a1f0a', 'circle-stroke-width': 1.5 } });
     map.addLayer({ id: 'route-points', type: 'circle', source: 'route-handles', filter: ['==', ['get', 'kind'], 'vertex'],
       paint: {
         'circle-radius': ['case', ['get', 'selected'], 9, 6.5],
-        'circle-color': ['case', ['get', 'first'], '#b5502a', '#ffffff'],
-        'circle-stroke-color': ['case', ['get', 'selected'], '#2a241d', '#b5502a'],
+        'circle-color': ['case', ['get', 'first'], ROUTE_COLOR, '#ffffff'],
+        'circle-stroke-color': ['case', ['get', 'selected'], '#ff2d55', '#0a1f0a'],
         'circle-stroke-width': 3,
       } });
     map.addLayer({ id: 'route-waypoints', type: 'symbol', source: 'route-waypoints',
@@ -148,6 +152,7 @@ export function initRoute(ctx) {
       if (d?.version === 1 && Array.isArray(d.state?.vertices) && (d.state.vertices.length || d.state.waypoints?.length)) {
         editor.load({ vertices: d.state.vertices, waypoints: d.state.waypoints ?? [] }, d.cache ?? {});
         notify(t('route.draftRestored'));
+        ctx.results.draftRestored = true;
         setTimeout(() => { if ($('status').textContent === t('route.draftRestored')) notify(null); }, 6000);
       }
     } catch (e) { log(`draft not restored: ${e.message}`, 'fail'); }
@@ -270,7 +275,7 @@ export function initRoute(ctx) {
   async function updateStats() {
     const seq = ++statsSeq;
     const line = editor.geometry();
-    if (line.length < 2) { $('profile').hidden = true; $('stats').innerHTML = ''; hoverMarker.remove(); return; }
+    if (line.length < 2) { $('profile-box').hidden = true; $('stats').innerHTML = ''; hoverMarker.remove(); return; }
     const t0 = performance.now();
     const pts = resampleLine(line, 20);
     let elevs;
@@ -296,9 +301,21 @@ export function initRoute(ctx) {
       <dt>${t('stats.source')}</dt><dd>${t('stats.sourceValue', { z: samplingZoom })} · ${ms} ms</dd>
       ${st.incomplete ? `<dt>${t('stats.warning')}</dt><dd>${t('stats.incomplete')}</dd>` : ''}
       ${provisional ? `<dt>${t('stats.warning')}</dt><dd>${t('stats.provisional')}</dd>` : ''}`;
-    $('profile').hidden = false;
+    $('profile-box').hidden = !showProfile;
     renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max });
   }
+
+  // Elevation stats + profile can be hidden (owner request); remembered in prefs.
+  let showProfile = loadPrefs().showProfile !== false;
+  function applyProfileVisibility() {
+    $('show-profile').checked = showProfile;
+    $('stats').hidden = !showProfile;
+    if (!showProfile) { $('profile-box').hidden = true; hoverMarker.remove(); }
+    else if (editor.geometry().length >= 2) updateStats();
+  }
+  $('show-profile').addEventListener('change', (e) => { showProfile = e.target.checked; savePrefs({ showProfile }); applyProfileVisibility(); });
+  $('profile-close').addEventListener('click', () => { showProfile = false; savePrefs({ showProfile }); applyProfileVisibility(); });
+  applyProfileVisibility();
 
   restoreDraft();
   globalThis.__topo3d && (globalThis.__topo3d.editor = editor);

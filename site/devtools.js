@@ -219,5 +219,6 @@ export function initDevtools(ctx) {
       if (results.topo.hidden.length === 0) log('WARNING: no base trail/peak layers were matched — check base style', 'fail');
     }
   };
-  if (map.loaded() && results.topo) startup(); else map.once('idle', startup);
+  // Run once the Topo3D overlay is applied (not on 'idle': a busy map may take long to become idle).
+  const iv = setInterval(() => { if (results.topo) { clearInterval(iv); startup(); } }, 200);
 }

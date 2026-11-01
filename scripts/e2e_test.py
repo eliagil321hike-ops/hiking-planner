@@ -69,6 +69,10 @@ FIXTURE_STYLE = {
          "layout": {"text-field": "{name}", "text-font": ["Noto Sans Regular"]}},
         {"id": "place_label", "type": "symbol", "source": "openmaptiles", "source-layer": "place",
          "layout": {"text-field": ["coalesce", ["get", "name:latin"], ["get", "name"]], "text-font": ["Noto Sans Regular"]}},
+        {"id": "waterway_stream", "type": "line", "source": "openmaptiles", "source-layer": "waterway",
+         "filter": ["==", ["get", "class"], "stream"]},
+        {"id": "poi_r1", "type": "symbol", "source": "openmaptiles", "source-layer": "poi", "minzoom": 15,
+         "layout": {"text-field": ["get", "name"], "text-font": ["Noto Sans Regular"]}},
         {"id": "highway_shield", "type": "symbol", "source": "openmaptiles", "source-layer": "transportation_name",
          "layout": {"text-field": ["get", "ref"], "text-font": ["Noto Sans Regular"]}},
     ],
@@ -171,10 +175,19 @@ def main():
         r = {}
         r["topo"] = page.evaluate("() => window.__topo3d.results.topo")
         r["layers"] = page.evaluate("""() => { const m = window.__topo3d.map;
-            return ['topo-landcover','topo-hillshade','topo-contours-minor','topo-trails-path','topo-peaks','route-line']
+            return ['topo-landcover','topo-hillshade','topo-contours-minor','topo-trails-path','topo-peaks','route-line',
+                    'topo-waterway','topo-waterway-label','topo-poi-dot','topo-poi']
               .filter((id) => !!m.getLayer(id)); }""")
         r["terrain"] = page.evaluate("() => !!window.__topo3d.map.getTerrain()")
         r["fatal"] = page.evaluate("() => document.getElementById('fatal')?.textContent ?? null")
+        r["routeColor"] = page.evaluate("() => window.__topo3d.map.getPaintProperty('route-line', 'line-color')")
+        r["poiMinzoom"] = page.evaluate("() => window.__topo3d.map.getLayer('topo-poi')?.minzoom")
+        r["waterColor"] = page.evaluate("() => window.__topo3d.map.getPaintProperty('topo-waterway', 'line-color')")
+        page.evaluate("() => document.querySelector('input[data-group=water]').click()")
+        wt = [page.evaluate("() => window.__topo3d.map.getLayoutProperty('topo-waterway', 'visibility')")]
+        page.evaluate("() => document.querySelector('input[data-group=water]').click()")
+        wt.append(page.evaluate("() => window.__topo3d.map.getLayoutProperty('topo-waterway', 'visibility')"))
+        r["waterToggle"] = wt
         r["devHidden"] = page.evaluate("() => document.getElementById('dev-section').hidden && document.getElementById('fps').hidden")
         r["geoBefore"] = page.evaluate("() => ({ ...window.__geoCalls })")
         r["attribTopo"] = page.evaluate("() => document.querySelector('.maplibregl-ctrl-attrib-inner')?.textContent ?? ''")
@@ -182,13 +195,13 @@ def main():
         r["i18n"] = page.evaluate("() => [document.querySelector('[data-i18n=\\'layers.contours\\']').textContent, document.documentElement.lang, document.documentElement.dir]")
 
         # Background switch → satellite (Esri default, embedded key)
-        page.click("input[name=base][value=satellite]")
+        page.evaluate("() => document.querySelector('input[name=base][value=satellite]').click()")
         page.wait_for_timeout(1500)
         r["satLayer"] = page.evaluate("() => !!window.__topo3d.map.getLayer('satellite')")
         r["satTiles"] = page.evaluate("() => window.__topo3d.map.getStyle().sources.satellite?.tiles?.[0] ?? null")
         r["landcoverInSat"] = page.evaluate("() => window.__topo3d.map.getLayoutProperty('topo-landcover','visibility')")
         r["attribSat"] = page.evaluate("() => document.querySelector('.maplibregl-ctrl-attrib-inner')?.textContent ?? ''")
-        page.click("input[name=base][value=topo]")
+        page.evaluate("() => document.querySelector('input[name=base][value=topo]').click()")
         page.wait_for_timeout(500)
         r["satAfterTopo"] = page.evaluate("() => !!window.__topo3d.map.getLayer('satellite')")
         r["landcoverInTopo"] = page.evaluate("() => window.__topo3d.map.getLayoutProperty('topo-landcover','visibility')")
@@ -207,7 +220,7 @@ def main():
         nverts = lambda: page.evaluate(f"() => {ed}.state.vertices.length")
         page.wait_for_function("() => document.getElementById('stats').textContent.includes('מרחק')", polling=250, timeout=20_000)
         r["stats"] = page.inner_text("#stats")
-        r["profileVisible"] = page.evaluate("() => !document.getElementById('profile').hidden && !!document.querySelector('#profile svg path.profile-area')")
+        r["profileVisible"] = page.evaluate("() => !document.getElementById('profile-box').hidden && !!document.querySelector('#profile svg path.profile-area')")
         r["routePoints"] = nverts()
         r["modes"] = page.evaluate(f"() => {ed}.state.vertices.map(v => v.mode)")
         page.wait_for_function(f"() => {ed}.segments().every(s => s.status === 'ok')", polling=250, timeout=20_000)
@@ -215,6 +228,13 @@ def main():
         r["orsCalls"] = len(seen["ors"])
         r["orsUrl"] = seen["ors"][0] if seen["ors"] else ""
         r["attribRoute"] = page.evaluate("() => document.querySelector('.maplibregl-ctrl-attrib-inner')?.textContent ?? ''")
+        # Hide the profile with ✕ → profile and stats hidden, checkbox off, remembered; show again
+        btn("#profile-close")
+        r["profileHidden"] = page.evaluate("""() => [document.getElementById('profile-box').hidden, document.getElementById('stats').hidden,
+            JSON.parse(localStorage.getItem('topo3d.prefs')).showProfile === false]""")
+        page.evaluate("() => document.getElementById('show-profile').click()")
+        page.wait_for_function("() => !document.getElementById('profile-box').hidden", polling=250, timeout=20_000)
+        r["profileShownAgain"] = page.evaluate("() => !document.getElementById('stats').hidden")
         # Router failure: segment shows an error, stays snap (never silently straight); user can switch it
         ors["fail"] = True
         page.mouse.click(1050, 250)
@@ -264,7 +284,7 @@ def main():
         r["draftRestored"] = page.evaluate(f"() => JSON.stringify({ed}.state)") == draft_before
         if not r["draftRestored"]:
             print("draft before:", draft_before[:300]); print("draft after:", page.evaluate(f"() => JSON.stringify({ed}.state)")[:300])
-        r["draftNotice"] = page.inner_text("#status")
+        r["draftNotice"] = page.evaluate("() => window.__topo3d.results.draftRestored === true")
         # Clear (confirmed) → empty; undo brings it back
         btn("#plan"); btn("#r-clear"); page.wait_for_timeout(300)
         r["afterClear"] = (nverts(), page.evaluate(f"() => {ed}.state.waypoints.length"))
@@ -293,7 +313,7 @@ def main():
         r["userDot"] = page.evaluate("() => !!document.querySelector('.maplibregl-user-location-dot')")
 
         # Remembered settings: switch contours off, change exaggeration, move; reload WITHOUT a hash
-        page.uncheck("input[data-group=contours]")
+        page.evaluate("() => document.querySelector('input[data-group=contours]').click()")
         page.evaluate("() => { const e = document.getElementById('exag'); e.value = '1.7'; e.dispatchEvent(new Event('input')); e.dispatchEvent(new Event('change')); }")
         page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.3, 32.9], zoom: 12.5, pitch: 30, bearing: 10 })")
         page.wait_for_timeout(500)
@@ -333,10 +353,14 @@ def main():
     # The RTL text plugin is an external script not available offline; the test serves an empty file for it.
     real_errors = [e for e in errors if "RTL Text Plugin" not in e]
     expect(not real_errors and r["fatal"] is None, f"boots without page errors {real_errors} {r['fatal']}")
-    expect(set(r["topo"]["hidden"]) == {"road_path_pedestrian", "mountain_peak"}, "base trail and peak layers hidden by schema (not road_major)")
+    expect(set(r["topo"]["hidden"]) == {"road_path_pedestrian", "mountain_peak", "waterway_stream", "poi_r1"}, f"base trail/peak/waterway/poi layers hidden by schema (not road_major) {r['topo']['hidden']}")
     expect(r["topo"]["renamed"] == 2, "Hebrew-first names on name labels only (water_name, place_label; not the ref shield)")
     expect(r["topo"]["labelFont"] == ["Noto Sans Regular"], "Regular label font chosen over the first (Italic) one")
-    expect(len(r["layers"]) == 6, f"Topo3D + route layers present {r['layers']}")
+    expect(len(r["layers"]) == 10, f"Topo3D (incl. streams, POIs) + route layers present {r['layers']}")
+    expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")
+    expect(r["poiMinzoom"] == 13 and r["waterColor"] == "#2f7fd8", f"POIs from z13, streams blue {r['poiMinzoom']} {r['waterColor']}")
+    expect(r["waterToggle"] == ["none", "visible"], f"streams switch hides/shows the layer {r['waterToggle']}")
+    expect(r["profileHidden"] == [True, True, True] and r["profileShownAgain"], f"profile + stats can be hidden (✕), remembered, and shown again {r['profileHidden']}")
     expect(r["terrain"], "3D terrain on")
     expect(seen["dem"] > 0, "DEM tiles requested")
     expect(r["satLayer"] and "ibasemaps-api.arcgis.com" in (r["satTiles"] or "") and "token=" in r["satTiles"], "satellite: Esri layer with embedded key")
@@ -371,7 +395,7 @@ def main():
     expect(r["dragMoved"], "dragging a point moves it (one command, no new point)")
     expect(r["afterDelete"] == 2, f"click + Delete removes the selected point ({r['afterDelete']})")
     expect(r["waypoints"] == ["מעיין"], f"right-click adds a named waypoint {r['waypoints']}")
-    expect(r["draftRestored"] and "שוחזרה" in r["draftNotice"], "draft restored after reload, with a notice")
+    expect(r["draftRestored"] and r["draftNotice"], "draft restored after reload (exact state), notice shown")
     expect(r["afterClear"] == (0, 0) and r["clearUndone"], f"clear (confirmed) empties the route, and is undoable {r['afterClear']}")
     expect("מרחק" in r["stats"] and "עלייה" in r["stats"], "stats shown")
     expect(r["profileVisible"], "elevation profile drawn")

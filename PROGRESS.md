@@ -49,7 +49,7 @@ stutters; to be measured on newer hardware, D-014); Mapterhorn hosted-tile terms
 ```bash
 cd packages/geo && node --test "test/**/*.test.ts"       # 31/31
 python3 scripts/browser_smoke_test.py                       # 16/16
-python3 scripts/e2e_test.py                                 # 42/42
+python3 scripts/e2e_test.py                                 # 46/46
 cd packages/editor && node --test "test/**/*.test.ts"    # 18/18
 node --test "tests/*.test.mjs"                              # 5/5 (router, fake server)
 ```

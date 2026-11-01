@@ -288,6 +288,20 @@ with the first real request.
   interval because software WebGL starves animation-frame polling; panel buttons are clicked from inside the
   page; the offline RTL plugin error is excluded (external script not available in tests).
 
+## D-028 (2026-11-01) Owner fixes: streams, POIs from ~500 m scale, hide profile, fluorescent route
+- Streams: own layers on the OpenMapTiles `waterway` source-layer (base waterway layers hidden by schema):
+  blue #2f7fd8; width by class (river > canal > stream > drain/ditch), at z14: 4 / 2.6 / 2 / 1 px vs trails
+  ~1.6–2 px; intermittent streams (wadis, `intermittent=1`) dashed; names along the line from z12.
+  New switch "נחלים".
+- Points of interest: own layers on the `poi` source-layer from **z13** (≈ a 500 m scale bar at the owner's
+  screen width): parking, campsites, picnic sites, water, springs, viewpoints, shelters, huts, toilets,
+  information, ruins/archaeological sites, places of worship, monuments (class or subclass). Hebrew-first
+  name, otherwise a Hebrew type label (e.g. "חניון"). Base poi layers hidden. New switch "נקודות עניין".
+  Limitation: OpenFreeMap tiles stop at z14 and the poi layer may be rank-limited at z13.
+- Elevation stats + profile can be hidden (✕ on the profile or the "הצג גובה ופרופיל" switch); remembered.
+- Route line: fluorescent green #39ff14 with a dark casing (owner: "fluorescent, more prominent, a different
+  hue from the trails"); pending segments dotted light grey, errors dotted pink-red #ff2d55.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

@@ -8,6 +8,8 @@ export const GROUPS = {
   contours: ['topo-contours-minor', 'topo-contours-index', 'topo-contour-labels'],
   trails: ['topo-trails-casing', 'topo-trails-track', 'topo-trails-path', 'topo-trails-footway'],
   landcover: ['topo-landcover'],
+  water: ['topo-waterway', 'topo-waterway-label'],
+  poi: ['topo-poi-dot', 'topo-poi'],
 };
 
 /** Shared helpers put on ctx (used by background and developer tools too). */

@@ -1,6 +1,6 @@
 {
   "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by site/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "base": "https://tiles.openfreemap.org/styles/liberty",
   "dem": {
     "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
@@ -53,6 +53,12 @@
     },
     "peaks": {
       "sourceLayer": "mountain_peak"
+    },
+    "waterway": {
+      "sourceLayer": "waterway"
+    },
+    "poi": {
+      "sourceLayer": "poi"
     }
   },
   "layers": [
@@ -113,6 +119,118 @@
         "hillshade-shadow-color": "rgba(60, 55, 50, 0.55)",
         "hillshade-highlight-color": "rgba(255, 255, 250, 0.35)",
         "hillshade-accent-color": "rgba(70, 60, 50, 0.25)"
+      }
+    },
+    {
+      "id": "topo-waterway",
+      "type": "line",
+      "source": "$base",
+      "source-layer": "waterway",
+      "minzoom": 9,
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "river",
+          "stream",
+          "canal",
+          "drain",
+          "ditch"
+        ],
+        true,
+        false
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#2f7fd8",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            "river",
+            1.6,
+            "canal",
+            1.2,
+            "stream",
+            0.7,
+            0.4
+          ],
+          14,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            "river",
+            4,
+            "canal",
+            2.6,
+            "stream",
+            2,
+            1
+          ],
+          17,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            "river",
+            7,
+            "canal",
+            4,
+            "stream",
+            3.5,
+            1.6
+          ]
+        ],
+        "line-dasharray": [
+          "case",
+          [
+            "==",
+            [
+              "to-number",
+              [
+                "get",
+                "intermittent"
+              ]
+            ],
+            1
+          ],
+          [
+            "literal",
+            [
+              3,
+              1.5
+            ]
+          ],
+          [
+            "literal",
+            [
+              1,
+              0
+            ]
+          ]
+        ]
       }
     },
     {
@@ -432,12 +550,301 @@
         "text-halo-color": "rgba(255,255,255,0.95)",
         "text-halo-width": 1.5
       }
+    },
+    {
+      "id": "topo-waterway-label",
+      "type": "symbol",
+      "source": "$base",
+      "source-layer": "waterway",
+      "minzoom": 12,
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "river",
+          "stream",
+          "canal"
+        ],
+        true,
+        false
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": "$nameExpr",
+        "text-font": "$labelFont",
+        "text-size": 12,
+        "text-max-angle": 30,
+        "text-letter-spacing": 0.05
+      },
+      "paint": {
+        "text-color": "#1f5fa8",
+        "text-halo-color": "rgba(255,255,255,0.9)",
+        "text-halo-width": 1.4
+      }
+    },
+    {
+      "id": "topo-poi-dot",
+      "type": "circle",
+      "source": "$base",
+      "source-layer": "poi",
+      "minzoom": 13,
+      "filter": [
+        "any",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "parking",
+            "campsite",
+            "camp_site",
+            "picnic_site",
+            "drinking_water",
+            "water_point",
+            "spring",
+            "viewpoint",
+            "shelter",
+            "alpine_hut",
+            "wilderness_hut",
+            "information",
+            "toilets",
+            "attraction",
+            "ruins",
+            "archaeological_site",
+            "place_of_worship",
+            "monument",
+            "memorial"
+          ],
+          true,
+          false
+        ],
+        [
+          "match",
+          [
+            "get",
+            "subclass"
+          ],
+          [
+            "parking",
+            "campsite",
+            "camp_site",
+            "picnic_site",
+            "drinking_water",
+            "water_point",
+            "spring",
+            "viewpoint",
+            "shelter",
+            "alpine_hut",
+            "wilderness_hut",
+            "information",
+            "toilets",
+            "attraction",
+            "ruins",
+            "archaeological_site",
+            "place_of_worship",
+            "monument",
+            "memorial"
+          ],
+          true,
+          false
+        ]
+      ],
+      "paint": {
+        "circle-radius": 4,
+        "circle-color": [
+          "match",
+          [
+            "coalesce",
+            [
+              "get",
+              "subclass"
+            ],
+            [
+              "get",
+              "class"
+            ]
+          ],
+          "parking",
+          "#1d4e89",
+          "drinking_water",
+          "#2f7fd8",
+          "water_point",
+          "#2f7fd8",
+          "spring",
+          "#2f7fd8",
+          "viewpoint",
+          "#7d3218",
+          [
+            "campsite",
+            "camp_site",
+            "picnic_site"
+          ],
+          "#2e7d32",
+          "#5c4d3c"
+        ],
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.5
+      }
+    },
+    {
+      "id": "topo-poi",
+      "type": "symbol",
+      "source": "$base",
+      "source-layer": "poi",
+      "minzoom": 13,
+      "filter": [
+        "any",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "parking",
+            "campsite",
+            "camp_site",
+            "picnic_site",
+            "drinking_water",
+            "water_point",
+            "spring",
+            "viewpoint",
+            "shelter",
+            "alpine_hut",
+            "wilderness_hut",
+            "information",
+            "toilets",
+            "attraction",
+            "ruins",
+            "archaeological_site",
+            "place_of_worship",
+            "monument",
+            "memorial"
+          ],
+          true,
+          false
+        ],
+        [
+          "match",
+          [
+            "get",
+            "subclass"
+          ],
+          [
+            "parking",
+            "campsite",
+            "camp_site",
+            "picnic_site",
+            "drinking_water",
+            "water_point",
+            "spring",
+            "viewpoint",
+            "shelter",
+            "alpine_hut",
+            "wilderness_hut",
+            "information",
+            "toilets",
+            "attraction",
+            "ruins",
+            "archaeological_site",
+            "place_of_worship",
+            "monument",
+            "memorial"
+          ],
+          true,
+          false
+        ]
+      ],
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name:he"
+          ],
+          [
+            "get",
+            "name:latin"
+          ],
+          [
+            "get",
+            "name"
+          ],
+          [
+            "match",
+            [
+              "coalesce",
+              [
+                "get",
+                "subclass"
+              ],
+              [
+                "get",
+                "class"
+              ]
+            ],
+            "parking",
+            "חניון",
+            "picnic_site",
+            "חניון",
+            "campsite",
+            "חניון לילה",
+            "camp_site",
+            "חניון לילה",
+            "drinking_water",
+            "מים",
+            "water_point",
+            "מים",
+            "spring",
+            "מעיין",
+            "viewpoint",
+            "תצפית",
+            "shelter",
+            "מחסה",
+            "alpine_hut",
+            "בקתה",
+            "wilderness_hut",
+            "בקתה",
+            "toilets",
+            "שירותים",
+            "information",
+            "מידע",
+            "ruins",
+            "חורבה",
+            "archaeological_site",
+            "אתר ארכאולוגי",
+            ""
+          ]
+        ],
+        "text-font": "$labelFont",
+        "text-size": 11.5,
+        "text-anchor": "top",
+        "text-offset": [
+          0,
+          0.5
+        ],
+        "text-max-width": 8,
+        "text-optional": true
+      },
+      "paint": {
+        "text-color": "#3b2a1a",
+        "text-halo-color": "rgba(255,255,255,0.95)",
+        "text-halo-width": 1.5
+      }
     }
   ],
   "insertBefore": "firstSymbolLayer",
   "symbolLayersOnTop": [
     "topo-contour-labels",
-    "topo-peaks"
+    "topo-peaks",
+    "topo-waterway-label",
+    "topo-poi-dot",
+    "topo-poi"
   ],
   "nameExpr": [
     "coalesce",
@@ -507,5 +914,6 @@
     "provider": "openrouteservice",
     "profile": "foot-hiking",
     "embeddedKey": "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjBhYmFjNmFiZDY0NjQ3MzFhYmZhOGQzZTJmZmQ5Nzk1IiwiaCI6Im11cm11cjY0In0="
-  }
+  },
+  "poiNote": "POI classes per the OpenMapTiles poi layer (class/subclass). OpenFreeMap tiles end at z14; at z13 the poi layer may be rank-limited, so not every POI shows before z14."
 }

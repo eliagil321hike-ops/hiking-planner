@@ -59,6 +59,8 @@
       <label><input type="checkbox" data-group="hillshade" checked> <span data-i18n="layers.hillshade">הצללה</span></label>
       <label><input type="checkbox" data-group="contours" checked> <span data-i18n="layers.contours">קווי גובה</span></label>
       <label><input type="checkbox" data-group="trails" checked> <span data-i18n="layers.trails">שבילים</span></label>
+      <label><input type="checkbox" data-group="water" checked> <span data-i18n="layers.water">נחלים</span></label>
+      <label><input type="checkbox" data-group="poi" checked> <span data-i18n="layers.poi">נקודות עניין</span></label>
       <label><input type="checkbox" data-group="landcover" checked> <span data-i18n="layers.landcover">צמחייה וכיסוי קרקע</span></label>
       <label class="slider"><span data-i18n="layers.exaggeration">הגבהה</span> <input id="exag" type="range" min="1" max="2" step="0.1" value="1.2"> <output id="exag-out">1.2</output></label>
     </section>
@@ -85,6 +87,7 @@
       <p class="hint" id="draw-hint" data-i18n="route.hint"></p>
       <p class="hint" id="snap-hint" hidden data-i18n="route.snapUnavailable"></p>
       <div id="seg-errors"></div>
+      <label><input type="checkbox" id="show-profile" checked> <span data-i18n="route.showProfile">הצג גובה ופרופיל</span></label>
       <dl id="stats" class="stats"></dl>
     </section>
 
@@ -108,7 +111,10 @@
   </div>
 </aside>
 
-<div id="profile" class="profile" hidden></div>
+<div id="profile-box" class="profile" hidden>
+  <button id="profile-close" class="icon-btn profile-close" type="button" data-i18n-attr="aria-label:route.hideProfile;title:route.hideProfile" aria-label="הסתר פרופיל">✕</button>
+  <div id="profile"></div>
+</div>
 
 <script type="module" src="app.js"></script>
 </body>
