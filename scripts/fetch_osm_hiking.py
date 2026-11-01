@@ -27,7 +27,7 @@ Q_POIS = HEAD + """(
   nwr["man_made"="water_tap"]({s},{w},{n},{e});
 );
 out center tags;"""
-BAND = 0.5  # degrees of latitude per marked-trail query
+BAND = 0.25  # degrees of latitude per marked-trail query (0.5 timed out on the dense centre, 2026-11-01)
 RANK = {"marked": 0, "regional": 1, "national": 2, "int": 3}
 # Trail-marking colour (first part of osmc:symbol, else colour=) → map colour. Israeli marked trails are red,
 # blue, green or black (Israel Trails Committee); others get a neutral brown.
