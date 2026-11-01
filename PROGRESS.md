@@ -8,7 +8,7 @@ Phase 1 starts only after the owner approves Phase 0 (look vs FATMAP, encoding t
 | Criterion | Status | Evidence |
 | --- | --- | --- |
 | Site deployed on GitHub Pages and opens | **PASS** (owner opened it, screenshot 2026-11-01) | Actions run 41294695181 attempt 2: test ✓, deploy ✓; URL https://eliagil321hike-ops.github.io/hiking-planner/ |
-| 3D terrain stable; FPS recorded on owner's computer | **FAIL: 8 fps all layers; 17 without contours; 58.5 in 2D** (Intel HD 4400) | D-013; savings variants pending owner rerun |
+| 3D terrain stable; FPS recorded | **Open** — recorded on owner's Intel HD 4400: 3D 8 fps, 3D w/o contours 17, 2D 58.5. Owner relaxed the target for this machine (D-014); to be measured on newer hardware | D-013, D-014 |
 | Hillshade + contours readable z12–16 | Not run | owner review |
 | Encoding test on real tiles + negative control | **PASS** | owner run: Meron 1202.5, coast 4.5, Dead Sea −432; negative control detected; engine Δ −1.3 m (D-011) |
 | Contour labels and trails legible when tilted | Not run | owner review |
@@ -40,5 +40,6 @@ Real rendering, OpenFreeMap layer matching / Hebrew names, real encoding check, 
   ubuntu-latest moves to Ubuntu 26. Both warnings only.
 
 ## Next task
-Owner reruns the new FPS test and layer test, and sends FATMAP references. If FPS stays low with a real GPU:
-profile per layer, then try pixelRatio 1, lower maxPitch, contour worker settings.
+Waiting for owner: (1) satellite decision (D-012: topo-only like komoot, or add a satellite layer after a licence
+check); (2) side-by-side screenshots at the Lünersee links vs reference 2 and a verdict; (3) readability of
+hillshade/contours z12–16 and legibility when tilted.

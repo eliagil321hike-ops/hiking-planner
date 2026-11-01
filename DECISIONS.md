@@ -138,6 +138,16 @@ pixel ratio at load. If these are not enough: MapLibre GL JS v6 (release notes l
 optimisations), at the cost of re-checking maplibre-contour compatibility. Note: cold-start "first idle"
 was 681 s in run 2 → the map rarely becomes fully idle with 3D + contours on this machine.
 
+## D-014 (2026-11-01) Owner: relax the 30 FPS target for this computer
+Owner chose option 3 (of: try MapLibre v6 / automatic low-power settings / lower the target for this
+machine and measure on newer hardware). Decision:
+- The ≥ 30 FPS 3D criterion is **not applied to the owner's current computer** (Intel HD Graphics 4400,
+  2013). Its numbers stay recorded as a low-end reference: 3D all layers 8 fps, 3D without contours 17,
+  2D 58.5.
+- The FPS criterion will be measured on a newer device (computer or phone) when one is available; until
+  then it stays **open**, not passed.
+- No performance work is scheduled now. Options 1 (MapLibre v6) and 2 (low-power mode) remain available.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
