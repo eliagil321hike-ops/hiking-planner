@@ -1,5 +1,6 @@
 // Place search (D-038) with the public Nominatim service (OpenStreetMap data, free, no key), and category
-// search (D-045): a category word shows all its points in the current view, without any request to Nominatim.
+// search (D-045, D-046): a category word shows all its points in the current view, and the results list shows
+// that category first, then places with that name. Clearing the search box clears the category display.
 // Usage policy: no search-as-you-type, at most one request per second, OpenStreetMap attribution. So a search
 // runs only when the user presses Enter or the button, and requests are spaced ≥ 1.1 s apart.
 
@@ -15,9 +16,12 @@ export function initSearch(ctx, { fetchImpl = (...a) => fetch(...a) } = {}) {
 
   const close = () => { list.hidden = true; list.innerHTML = ''; };
 
-  function show(results) {
+  function show(results, catLine = null) {
     list.innerHTML = '';
-    if (!results.length) {
+    if (catLine) {
+      const li = document.createElement('li'); li.className = 'cat-line'; li.textContent = catLine; list.append(li);
+    }
+    if (!results.length && !catLine) {
       const li = document.createElement('li'); li.className = 'empty'; li.textContent = t('search.none'); list.append(li);
     }
     for (const r of results) {
@@ -57,7 +61,7 @@ export function initSearch(ctx, { fetchImpl = (...a) => fetch(...a) } = {}) {
   async function showCategory(cat) {
     close();
     const api = ctx.results.topo?.osmApi;
-    if (!api) return;
+    if (!api) return null;
     const b = map.getBounds();
     form.classList.add('busy');
     try {
@@ -69,6 +73,7 @@ export function initSearch(ctx, { fetchImpl = (...a) => fetch(...a) } = {}) {
         : t(tooLargeAbroad ? 'search.catZoomAbroad' : 'search.catNone', { label: cat.label });
       chip.hidden = false;
       ctx.results.category = { kind: cat.kind, count: features.length, tooLargeAbroad };
+      return chip.querySelector('span').textContent;
     } finally {
       form.classList.remove('busy');
     }
@@ -79,8 +84,8 @@ export function initSearch(ctx, { fetchImpl = (...a) => fetch(...a) } = {}) {
     const q = input.value.trim();
     if (q.length < 2) return;
     const cat = categoryFor(q);
-    if (cat) { await showCategory(cat); return; }
-    clearCategory();
+    // a category word: its points first (on the map and as the first line of the list), then places by name
+    const catLine = cat ? await showCategory(cat) : (clearCategory(), null);
     const wait = last + MIN_GAP_MS - Date.now();
     if (wait > 0) await new Promise((res) => setTimeout(res, wait));
     last = Date.now();
@@ -91,7 +96,7 @@ export function initSearch(ctx, { fetchImpl = (...a) => fetch(...a) } = {}) {
       const res = await fetchImpl(url, { headers: { Accept: 'application/json' } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (my === seq) show(data);
+      if (my === seq) show(data, catLine);
     } catch (err) {
       notify(t('search.error', { message: err.message }));
     } finally {
@@ -99,6 +104,8 @@ export function initSearch(ctx, { fetchImpl = (...a) => fetch(...a) } = {}) {
     }
   });
   input.addEventListener('keydown', (e) => { if (e.key === 'Escape') { close(); input.blur(); } });
+  // Owner (D-046): emptying the search box (typing it away or its built-in ✕) ends the category display.
+  input.addEventListener('input', () => { if (!input.value.trim()) { clearCategory(); close(); } });
   document.addEventListener('click', (e) => { if (!form.contains(e.target)) close(); });
   return { close };
 }

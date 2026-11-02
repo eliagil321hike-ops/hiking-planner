@@ -252,3 +252,4 @@ input.switch:focus-visible { outline: 3px solid #39ff14; outline-offset: 2px; }
 .cat-chip button { width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(42, 36, 29, 0.08); cursor: pointer; color: var(--muted); }
 .cat-chip button:hover { background: rgba(42, 36, 29, 0.16); color: var(--fg); }
 @media (max-width: 600px) { .cat-chip { top: 112px; } }
+.search-results .cat-line { padding: 8px 10px; font-weight: 600; color: var(--fg); border-bottom: 1px solid var(--line); margin-bottom: 2px; }

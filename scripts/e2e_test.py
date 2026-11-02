@@ -262,8 +262,19 @@ def main():
         r["exagDefault"] = page.evaluate("() => [window.__topo3d.map.getTerrain()?.exaggeration, document.getElementById('exag').value]")
         r["poiMinzoom"] = page.evaluate("() => window.__topo3d.map.getLayer('topo-poi')?.minzoom")
         wait_js(page, "() => typeof window.__topo3d.results.topo.osm.pois === 'number' && typeof window.__topo3d.results.topo.osm.trails === 'number'", 60)
-        wait_js(page, """() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0
-            && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-camp', 'poi-water-cluster', 'poi-parking'] }).length >= 3""", 60)
+        # campsites and taps start at the 500 m scale (z12.7, D-045): look at z13
+        page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 13 })")
+        diag = """() => { const m = window.__topo3d.map; const q = (l) => m.queryRenderedFeatures({ layers: l }).length;
+            return { z: m.getZoom(), hike: q(['topo-hike-line']), camp: q(['poi-camp']), campC: q(['poi-camp-cluster']), water: q(['poi-water', 'poi-water-cluster']),
+              parking: q(['poi-parking', 'poi-parking-cluster']), osm: window.__topo3d.results.topo.osm, vis: ['poi-camp', 'poi-water', 'poi-parking'].map((id) => m.getLayoutProperty(id, 'visibility')) }; }"""
+        try:
+            wait_js(page, """() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0
+            && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-camp'] }).length > 0
+            && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-water', 'poi-water-cluster'] }).length > 0
+            && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-parking'] }).length > 0""", 60)
+        except TimeoutError:
+            print("POI-DEBUG", page.evaluate(diag), flush=True)
+            raise
         r["osm"] = page.evaluate("""() => { const m = window.__topo3d.map;
             const kinds = (id) => [...new Set(m.queryRenderedFeatures({ layers: [id] }).map((f) => f.properties.kind))].sort();
             const w = (id, kind, z) => { const st = m.getPaintProperty(id, 'line-width').slice(3); let v = st[1];
@@ -282,9 +293,10 @@ def main():
               pathColour: m.getPaintProperty('topo-trails-path', 'line-color'), trackInner: !!m.getLayer('topo-trails-track-inner'),
               baseIconFilter: JSON.stringify(m.getFilter('topo-poi-icon')), iconMinzoom: m.getLayer('poi-parking').minzoom, iconImgs: ['topo-parking', 'topo-spring', 'topo-viewpoint', 'topo-shelter'].every((i) => m.hasImage(i)),
               natW14: w('topo-hike-line', 'national', 14), regW14: w('topo-hike-line', 'regional', 14) }; }""")
+        page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 12 })")
         # Abroad: no Overpass request inside Israel; at Antalya (z12) one request, trail + campsite shown (D-042)
         r["overpassInIsrael"] = len(seen.get("overpass", []))
-        page.evaluate(f"() => window.__topo3d.map.jumpTo({{ center: [{ABROAD[0]}, {ABROAD[1]}], zoom: 12 }})")
+        page.evaluate(f"() => window.__topo3d.map.jumpTo({{ center: [{ABROAD[0]}, {ABROAD[1]}], zoom: 13 }})")
         wait_js(page, "() => window.__topo3d.results.topo.osmLoader.dynamicCells > 0 || window.__topo3d.results.topo.osmLoader.errors > 0", 60)
         wait_js(page, "() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-marked-line'] }).length > 0 && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-camp'] }).length > 0", 60)
         r["abroad"] = page.evaluate("""() => { const m = window.__topo3d.map; return { stats: { ...window.__topo3d.results.topo.osmLoader },
@@ -302,8 +314,11 @@ def main():
         wait_js(page, "() => window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-search', 'poi-search-cluster'] }).length > 0", 60)
         r["catSearch"] = page.evaluate("""() => ({ res: window.__topo3d.results.category, chip: document.querySelector('#cat-chip span').textContent,
             icon: window.__topo3d.map.getLayoutProperty('poi-search', 'icon-image'), nominatim: 0 })""")
+        wait_js(page, "() => !document.getElementById('search-results').hidden", 60)
+        r["catList"] = page.evaluate("() => [...document.querySelectorAll('#search-results li')].map((li) => li.className || (li.querySelector('strong')?.textContent ?? ''))")
         r["catNominatim"] = len(seen.get("nominatim", []))
-        page.evaluate("() => document.querySelector('#cat-chip button').click()")
+        # owner (D-046): emptying the search box ends the category display
+        page.evaluate("() => { const i = document.getElementById('search-q'); i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); }")
         page.wait_for_timeout(500)
         r["catCleared"] = page.evaluate("() => [document.getElementById('cat-chip').hidden, window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-search', 'poi-search-cluster'] }).length]")
         r["campMinzoom"] = page.evaluate("() => [window.__topo3d.map.getLayer('poi-camp').minzoom, window.__topo3d.map.getLayer('poi-water').minzoom, window.__topo3d.map.getLayer('poi-parking').minzoom]")
@@ -371,13 +386,14 @@ def main():
         for g in ("slope", "aspect", "relief"):
             page.evaluate(f"() => document.querySelector('input[data-group={g}]').click()")
         # search: Enter → one request → results → pick the first → map moves there, marker shown
+        n_nom0 = len(seen.get("nominatim", []))
         page.evaluate("() => { document.getElementById('search-q').value = 'הר מירון'; document.getElementById('search').requestSubmit(); }")
         wait_js(page, "() => !document.getElementById('search-results').hidden", 60)
         r["searchList"] = page.evaluate("() => [...document.querySelectorAll('#search-results strong')].map((e) => e.textContent)")
         page.evaluate("() => document.querySelector('#search-results button').click()")
         page.wait_for_timeout(1600)
         r["searchGo"] = page.evaluate("() => ({ res: window.__topo3d.results.search, marker: !!document.querySelector('.maplibregl-marker'), hidden: document.getElementById('search-results').hidden, c: window.__topo3d.map.getCenter() })")
-        r["nominatim"] = list(seen.get("nominatim", []))
+        r["nominatim"] = list(seen.get("nominatim", []))[n_nom0:]
         page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 12, pitch: 0, bearing: 0 })")
 
         # ---- Route editor (Phase 3A). No router configured yet → new segments are free (straight).
@@ -559,7 +575,8 @@ def main():
     expect(r["campMinzoom"] == [12.7, 12.7, 11], f"campsite and tap icons from the 500 m scale, parking unchanged (D-045) {r['campMinzoom']}")
     expect(r["campHiddenFar"] == 0 and cs["res"] and cs["res"]["kind"] == "camp" and cs["res"]["count"] == 1 and cs["icon"] == "topo-tent" and "חניוני לילה" in cs["chip"],
            f"category search shows campsites in view at a far zoom (D-045) {cs} hiddenBefore={r['campHiddenFar']}")
-    expect(r["catNominatim"] == 0 and r["catCleared"] == [True, 0], f"category search makes no Nominatim request; ✕ clears {r['catNominatim']} {r['catCleared']}")
+    expect(r["catList"][:1] == ["cat-line"] and "הר מירון" in r["catList"], f"category first in the list, then places by name (D-046) {r['catList']}")
+    expect(r["catCleared"] == [True, 0], f"emptying the search box clears the category display (D-046) {r['catCleared']}")
     a = r["abroad"]
     expect(r["overpassInIsrael"] == 0, "inside Israel the pre-built extract is used (no Overpass requests)")
     expect(len(r["overpassAbroad"]) == 1 and a["stats"]["dynamicCells"] >= 1 and a["marked"] == ["#d32f2f"] and a["camp"] >= 1 and a["stats"]["errors"] == 0,
@@ -574,8 +591,8 @@ def main():
     expect(o["pathColour"] == "#5a5550" and o["trackInner"], "unmarked paths dark grey dashes, 4x4 tracks double line (owner's example, D-035)")
     expect('"within"' in o["baseIconFilter"], "base-tile campsite/water icons hidden inside Israel (no duplicates with the OSM extract)")
     expect(o["counts"]["trails"] == 3 and o["counts"]["byKind"] == {"camp": 1, "water": 2, "parking": 1}, f"OSM extract loaded; parking far from trails dropped {o['counts']}")
-    expect(o["lines"] == ["int", "regional"] and o["icons"] == ["poi-camp", "poi-parking", "poi-water-cluster:2"],
-           f"routes, tent, parking and a water cluster (2) rendered at the 1 km scale (D-036) {o['lines']} {o['icons']}")
+    expect(o["lines"] == ["int", "regional"] and "poi-camp" in o["icons"] and "poi-parking" in o["icons"] and any(i.startswith("poi-water") for i in o["icons"]),
+           f"routes, tent, parking and water rendered at the 500 m scale (D-036, D-045) {o['lines']} {o['icons']}")
     expect(o["iconImgs"], "parking / spring / viewpoint / shelter icons registered")
     expect('"int","#e3893f"' in o["colour"].replace(" ", ""), "Israel National Trail drawn orange, calmer than the fluorescent route (D-032, D-043)")
     expect(o["labelMinzoom"] == 14.4 and o["iconMinzoom"] <= 11.7, f"route names from ~200 m scale, icons from ~1 km scale {o['labelMinzoom']} {o['iconMinzoom']}")

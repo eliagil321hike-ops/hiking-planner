@@ -482,6 +482,15 @@ with the first real request.
   request to Nominatim for category words. Israel cells in view are loaded as needed; abroad, up to 24
   on-demand cells, otherwise the chip asks to zoom in. New icon category = one entry in poi-categories.js.
 
+## D-046 (2026-11-02) Owner re-answered the category-search details
+- Ending the display: **emptying the search box** (typing it away or the box's own ✕) clears it; the ✕ on
+  the chip still works too.
+- A category word now also searches places by name: the results list starts with the category line
+  ("N חניוני לילה באזור") and then Nominatim places. Replaces "no Nominatim request for category words"
+  in D-045. Grouping with a count and "current view at the moment of the search" stay as in D-045.
+- D-045's first deploy was blocked by CI: the e2e still looked for campsite/tap icons at z12 after they
+  moved to z12.7; the test now looks at z13 (a test expectation, not a site bug).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
