@@ -150,6 +150,8 @@ map.on('load', () => {
     throw e;
   }
   route.addRouteLayers();
+  // Map credits start folded (an ⓘ button), so they never cover the map above the route dock.
+  document.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
   ctx.applyGroupsFromUI(); // remembered layer switches and opacities (prefs.js)
   view.applyTerrain();     // remembered 2D/3D and exaggeration
   background.start();

@@ -334,3 +334,6 @@ body.dock-open .maplibregl-ctrl-bottom-right, body.dock-open .maplibregl-ctrl-bo
   .rd-data { min-width: 0; }
   .color-pop { inset-inline-end: 50%; transform: translateX(50%); }
 }
+
+/* The hidden attribute always wins over a component's display rule (bug: colour picker and pill showed while hidden). */
+[hidden] { display: none !important; }
