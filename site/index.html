@@ -36,11 +36,16 @@
   </form>
   <span class="tb-spacer"></span>
   <span id="plan-badge" class="plan-badge" hidden data-i18n="route.planning">עריכת מסלול</span>
+  <button id="btn-library" class="tool-btn panel-btn" type="button" aria-expanded="false" aria-controls="library" data-i18n-attr="aria-label:lib.title;title:lib.title" aria-label="המסלולים שלי"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h6l2 2h10v10.5H3z"/><path d="M8 15c2-3 4 1 6-2s2.5-1 3-1.5"/></svg><span data-i18n="lib.title">המסלולים שלי</span><svg class="chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
   <button id="new-route" class="fab" type="button" data-i18n-attr="aria-label:route.new;title:route.new" aria-label="מסלול חדש" title="מסלול חדש"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><span data-i18n="route.new">מסלול חדש</span></button>
   <button id="btn-style" class="tool-btn panel-btn" type="button" aria-expanded="false" aria-controls="menu-style" data-i18n-attr="aria-label:menu.style;title:menu.style" aria-label="סגנון מפה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20V6.5Z M9 4v13.5 M15 6.5V20"/></svg><span data-i18n="menu.style">סגנון מפה</span><svg class="chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
 </div>
 
 <p id="status" class="status toast" role="status" aria-live="polite" hidden></p>
+
+<!-- My Routes library (D-056): filled by library.js; opened by the library button, closed like the other menus. -->
+<section id="library" class="library" hidden data-i18n-attr="aria-label:lib.title" aria-label="המסלולים שלי"></section>
+<dialog id="lib-dialog" class="lib-dialog"></dialog>
 <div id="cat-chip" class="cat-chip" role="status" aria-live="polite" hidden><span></span><button type="button" data-i18n-attr="aria-label:search.catClear;title:search.catClear" aria-label="נקה">✕</button></div>
 
 <section id="menu-style" class="popover" hidden>
@@ -164,6 +169,8 @@
      max/min, elevation profile). Hiding the panel leaves the tool bar and a small pill with the key figures. -->
 <div id="route-dock" class="route-dock" hidden>
   <div class="route-tools" role="toolbar" data-i18n-attr="aria-label:menu.route" aria-label="אפשרויות מסלול">
+    <button id="r-save" class="tbtn" type="button" data-i18n-attr="title:lib.saveRoute;aria-label:lib.saveRoute"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4"/><path d="M8 20v-6h8v6"/></svg></button>
+    <span class="tsep" aria-hidden="true"></span>
     <button id="plan" class="tbtn" type="button" data-i18n-attr="title:route.plan;aria-label:route.plan" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg></button>
     <button id="seg-toggle" class="tbtn" type="button" data-i18n-attr="title:route.modeSnap;aria-label:route.modeSnap" aria-pressed="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 17c4-1 1-6 5-7 3-1 3-2 3-3"/></svg></button>
     <select id="seg-mode" hidden aria-hidden="true"><option value="snap" data-i18n="route.modeSnap">צמוד לשבילים</option><option value="free" data-i18n="route.modeFree">קו ישר</option></select>
@@ -182,6 +189,7 @@
         <div class="rd-name">
           <span id="route-name" class="rd-name-text" contenteditable="plaintext-only" spellcheck="false" data-i18n-attr="title:route.rename" title="שינוי שם"></span>
           <button id="route-color" class="color-dot" type="button" data-i18n-attr="title:route.color;aria-label:route.color" aria-label="צבע המסלול"></button>
+          <span id="rd-saved" class="rd-saved" role="status" hidden></span>
         </div>
       </div>
       <div id="stats" class="rd-stats"></div>

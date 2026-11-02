@@ -4,7 +4,7 @@
 
 export function initMenus(ctx) {
   const { $, map } = ctx;
-  const menus = { 'btn-style': 'menu-style' };   // no layers menu (D-052); the route dock is opened by route.js
+  const menus = { 'btn-style': 'menu-style', 'btn-library': 'library' };   // no layers menu (D-052); the route dock is opened by route.js
 
   function setOpen(btnId, open) {
     $(btnId).setAttribute('aria-expanded', String(open));
@@ -17,7 +17,8 @@ export function initMenus(ctx) {
   const closeAll = () => Object.keys(menus).forEach((b) => setOpen(b, false));
 
   for (const b of Object.keys(menus)) $(b).addEventListener('click', () => toggle(b));
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
+  // Escape closes the menus, unless it is closing a dialog or a small menu on top of them (My Routes, D-056)
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !e.defaultPrevented && !document.querySelector('dialog[open]')) closeAll(); });
   map.on('click', () => { if (!ctx.isPlanning?.()) closeAll(); });
 
   return { open: (b) => { closeAll(); setOpen(b, true); }, closeAll };

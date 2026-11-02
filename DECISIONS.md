@@ -592,6 +592,25 @@ raise the right tool bar a little")
   map was busy (e2e caught it); it now redraws directly in the ResizeObserver callback. The fixed graph height
   needed an id selector to beat the older `#profile { height: 100% }`.
 
+## D-056 (2026-11-02) My Routes library (owner approved; published)
+- Owner brief: card view, folders, manual saving only, map preview picture, edit = update original or create copy;
+  every stage shown before it goes live. No server or accounts exist, so the library lives in this browser's
+  IndexedDB ("topo3d-library"; the github.io origin is shared by all the owner's sites) behind a small adapter
+  (library-store.js), with a userId field ("local") so a synced store (e.g. Google) can be added later.
+- A route record keeps everything to restore it exactly: the editor draft (control points, segment modes, routed
+  segment geometries), the whole line, the elevation profile every 20 m, figures, bbox, colour and a JPEG preview
+  captured from the map fitted to the route (editing handles hidden; a drawn sketch if the map cannot be read).
+- The route on the map stays separate: it is linked to a saved record (savedId) and compared with what was saved
+  (savedSig) → "saved / unsaved / changes not saved". Leaving unsaved work (new route, opening another, closing
+  the page) asks first. Saved routes are drawn only when opened. The existing draft auto-recovery is unchanged
+  (owner, 2026-11-02: keep it).
+- Owner approved the design (2026-11-02) and expects small fixes later: the library's sizes live in a few tuning
+  variables at the top of its CSS section (--lib-w, --lib-cols, --lib-gap, --lib-radius, --lib-card-radius,
+  --lib-thumb-ratio, --lib-btn-h, --lib-dlg-w, --lib-title), all texts in i18n.js.
+- Owner approved publishing (2026-11-02 22:33) and asked to keep the site as it was, to undo or edit later:
+  branch snapshot/site-before-my-routes = the live code before My Routes (c42bae9). Undo = merge a revert of the
+  My Routes merge into main (CI tests + redeploys). Saved routes stay in the browser either way.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

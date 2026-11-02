@@ -65,6 +65,11 @@ the e2e test uses the real MapLibre build (from GitHub releases) with fixture st
   Built on wip/a2-redesign: unit 30/30 (incl. new contrast test), smoke all PASS, e2e 87/87 locally.
   Owner approved ("תעלה"); merged to main and deployed (CI test + deploy green, 2026-11-02).
 
+## My Routes (D-056, 2026-11-02)
+- Library of saved routes (cards, folders, manual save, open, edit original or copy, previews), stored in this
+  browser. Owner approved design + publishing. Before merging: unit 38/38, smoke all PASS, e2e 101/101.
+  Restore point: branch snapshot/site-before-my-routes.
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).
