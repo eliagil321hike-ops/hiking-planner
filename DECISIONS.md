@@ -603,7 +603,11 @@ raise the right tool bar a little")
 - The route on the map stays separate: it is linked to a saved record (savedId) and compared with what was saved
   (savedSig) → "saved / unsaved / changes not saved". Leaving unsaved work (new route, opening another, closing
   the page) asks first. Saved routes are drawn only when opened. The existing draft auto-recovery is unchanged
-  (question to the owner).
+  (owner, 2026-11-02: keep it).
+- Owner approved the design (2026-11-02) and expects small fixes later: the library's sizes live in a few tuning
+  variables at the top of its CSS section (--lib-w, --lib-cols, --lib-gap, --lib-radius, --lib-card-radius,
+  --lib-thumb-ratio, --lib-btn-h, --lib-dlg-w, --lib-title), all texts in i18n.js. Publishing still needs the
+  owner's explicit go.
 
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
