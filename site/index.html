@@ -37,15 +37,14 @@
   <span class="tb-spacer"></span>
   <span id="plan-badge" class="plan-badge" hidden data-i18n="route.planning">עריכת מסלול</span>
   <button id="btn-style" class="tool-btn panel-btn" type="button" aria-expanded="false" aria-controls="menu-style" data-i18n-attr="aria-label:menu.style;title:menu.style" aria-label="סגנון מפה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20V6.5Z M9 4v13.5 M15 6.5V20"/></svg><span data-i18n="menu.style">סגנון מפה</span><svg class="chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
-  <button id="btn-layers" class="tool-btn panel-btn" type="button" aria-expanded="false" aria-controls="menu-layers" data-i18n-attr="aria-label:menu.layers;title:menu.layers" aria-label="שכבות"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 8 12 13l9.5-5L12 3Z"/><path d="m2.5 12 9.5 5 9.5-5M2.5 16l9.5 5 9.5-5"/></svg><span data-i18n="menu.layers">שכבות</span><svg class="chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
-  <button id="new-route" class="fab" type="button"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><span data-i18n="route.new">מסלול חדש</span></button>
+  <button id="new-route" class="fab" type="button" data-i18n-attr="aria-label:route.new;title:route.new" aria-label="מסלול חדש" title="מסלול חדש"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><span data-i18n="route.new">מסלול חדש</span></button>
 </div>
 
 <p id="status" class="status toast" role="status" aria-live="polite" hidden></p>
 <div id="cat-chip" class="cat-chip" role="status" aria-live="polite" hidden><span></span><button type="button" data-i18n-attr="aria-label:search.catClear;title:search.catClear" aria-label="נקה">✕</button></div>
 
 <section id="menu-style" class="popover" hidden>
-  <h2 data-i18n="menu.style">סגנון מפה</h2>
+  <header class="popover-head"><strong data-i18n="menu.style">סגנון מפה</strong> <small class="build" title="build">__BUILD__</small></header>
   <div class="style-cards" role="radiogroup" data-i18n-attr="aria-label:bg.group" aria-label="רקע המפה">
     <label class="style-card"><input type="radio" name="base" value="topo" checked><span class="thumb thumb-topo"></span><span data-i18n="bg.topo">טופוגרפי</span></label>
     <label class="style-card"><input type="radio" name="base" value="satellite"><span class="thumb thumb-sat"></span><span data-i18n="bg.satellite">לוויין</span></label>
@@ -54,10 +53,41 @@
   <label class="slider"><span data-i18n="layers.exaggeration">הגבהה</span> <input id="exag" type="range" min="1" max="2" step="0.1" value="1.5" list="exag-marks">
     <datalist id="exag-marks"><option value="1"></option><option value="1.2"></option><option value="1.5"></option><option value="2"></option></datalist> <output id="exag-out">1.5</output></label>
   <p class="hint" data-i18n="layers.exagHint">1.0 = גובה אמיתי. אפשר להגביה כדי לראות הבדלי גובה קטנים.</p>
+  <details class="advanced">
+      <summary data-i18n="layers.advanced">מתקדם</summary>
+      <div id="sat-opts">
+        <label class="stack"><span data-i18n="bg.provider">מקור לוויין</span>
+          <select id="sat-provider"></select>
+        </label>
+        <div id="sat-key-row" hidden>
+          <label class="stack"><span data-i18n="bg.key">מפתח (נשמר רק בדפדפן הזה)</span>
+            <input id="sat-key" type="password" autocomplete="off" spellcheck="false" dir="ltr">
+          </label>
+          <p class="hint" id="sat-key-help"></p>
+          <button id="sat-key-save" class="btn" data-i18n="bg.keySave">שמור מפתח והצג</button>
+        </div>
+      </div>
+    </details>
+  <section id="dev-section" hidden>
+      <h2>Developer tests (?dev=1)</h2>
+      <div class="row">
+        <button id="t-encoding" class="btn">Encoding check</button>
+        <button id="t-probe" class="btn">DEM max zoom</button>
+        <button id="t-perf" class="btn">FPS test</button>
+      </div>
+      <div class="row">
+        <button id="t-features" class="btn">Layer check</button>
+        <button id="t-copy" class="btn">Copy results</button>
+        <button id="t-style" class="btn">Export style</button>
+      </div>
+      <div id="test-out" class="test-out" aria-live="polite"></div>
+    </section>
+
 </section>
 
-<section id="menu-layers" class="popover" hidden>
-  <header class="popover-head"><strong data-i18n="menu.layers">שכבות</strong> <small class="build" title="build">__BUILD__</small></header>
+<!-- D-052 (owner): no layers menu. The map always shows hillshade, contours and every map feature; these
+     switches stay (hidden) as the single place the fixed choice is defined and applied by layers.js. -->
+<section id="menu-layers" class="layer-defaults" hidden aria-hidden="true">
     <section>
       <h2 data-i18n="layers.terrainHeading">שטח</h2>
       <div class="layer-row">
@@ -122,37 +152,10 @@
           <input type="checkbox" class="switch" data-group="landcover" checked></label>
       </div>
     </section>
-    <details class="advanced">
-      <summary data-i18n="layers.advanced">מתקדם</summary>
-      <div id="sat-opts">
-        <label class="stack"><span data-i18n="bg.provider">מקור לוויין</span>
-          <select id="sat-provider"></select>
-        </label>
-        <div id="sat-key-row" hidden>
-          <label class="stack"><span data-i18n="bg.key">מפתח (נשמר רק בדפדפן הזה)</span>
-            <input id="sat-key" type="password" autocomplete="off" spellcheck="false" dir="ltr">
-          </label>
-          <p class="hint" id="sat-key-help"></p>
-          <button id="sat-key-save" class="btn" data-i18n="bg.keySave">שמור מפתח והצג</button>
-        </div>
-      </div>
-    </details>
+
 
     <!-- Developer tools (Phase 0 tests). Shown only with ?dev=1; text stays in English on purpose. -->
-    <section id="dev-section" hidden>
-      <h2>Developer tests (?dev=1)</h2>
-      <div class="row">
-        <button id="t-encoding" class="btn">Encoding check</button>
-        <button id="t-probe" class="btn">DEM max zoom</button>
-        <button id="t-perf" class="btn">FPS test</button>
-      </div>
-      <div class="row">
-        <button id="t-features" class="btn">Layer check</button>
-        <button id="t-copy" class="btn">Copy results</button>
-        <button id="t-style" class="btn">Export style</button>
-      </div>
-      <div id="test-out" class="test-out" aria-live="polite"></div>
-    </section>
+
 </section>
 
 

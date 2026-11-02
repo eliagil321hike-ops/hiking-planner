@@ -556,6 +556,14 @@ with the first real request.
   the left edge under the bar, scale bottom-left; route tools stay on the right. Route line colours and map POI
   icons unchanged.
 
+## D-052 (2026-11-02) No layers menu; icon-only top-left controls (owner)
+- Owner: "remove the layers function; fix the map with all map features, hillshade and contours", and show only
+  icons for the top-left controls. The layers button and menu are gone; the switches stay hidden in the page as the
+  one place the fixed set is defined (hillshade, contours, trails, streams, peaks, parking, water, campsites, POIs,
+  landcover on; slope, aspect, relief off). Old remembered switches are no longer restored.
+- The satellite-provider settings ("מתקדם"), the build stamp and the developer panel moved into the map-style menu.
+- Map style and new route are icon-only (name kept as tooltip and accessible name).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

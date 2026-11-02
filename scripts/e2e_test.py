@@ -246,14 +246,17 @@ def main():
               .filter((id) => !!m.getLayer(id)); }""")
         r["terrain"] = page.evaluate("() => !!window.__topo3d.map.getTerrain()")
         r["fatal"] = page.evaluate("() => document.getElementById('fatal')?.textContent ?? null")
-        # Toolbar menus: closed by default; icon opens, same icon closes; one menu at a time
+        # Toolbar menus: closed by default; the style icon opens, the same icon closes; Escape closes.
+        # No layers menu (D-052): fixed layer set.
         ui = lambda: page.evaluate("""() => ({ layers: !document.getElementById('menu-layers').hidden, route: !document.getElementById('route-dock').hidden, style: !document.getElementById('menu-style').hidden, routeBtn: !!document.getElementById('btn-route'),
-            layersAria: document.getElementById('btn-layers').getAttribute('aria-expanded') })""")
+            layersBtn: !!document.getElementById('btn-layers'), styleAria: document.getElementById('btn-style').getAttribute('aria-expanded'),
+            fixedLayers: ['hillshade','contours','trails','water','peaks','parking','drinking','camp','poi','landcover'].every((g) => document.querySelector(`input[data-group=${g}]`).checked)
+              && !['slope','aspect','relief'].some((g) => document.querySelector(`input[data-group=${g}]`).checked) })""")
         m0 = ui()
-        page.evaluate("() => document.getElementById('btn-layers').click()"); m1 = ui()
+        page.evaluate("() => document.getElementById('btn-style').click()"); m1 = ui()
         page.evaluate("() => document.getElementById('btn-style').click()"); m2 = ui()
-        page.evaluate("() => document.getElementById('btn-style').click()"); m3 = ui()
-        page.evaluate("() => document.getElementById('btn-layers').click()"); page.keyboard.press("Escape"); m4 = ui()
+        page.evaluate("() => document.getElementById('btn-style').click()"); page.keyboard.press("Escape"); m3 = ui()
+        m4 = m3
         r["menus"] = [m0, m1, m2, m3, m4]
         r["newRouteVisible"] = page.evaluate("""() => { const b = document.getElementById('new-route'); const q = b.getBoundingClientRect();
             return q.width > 40 && q.height >= 44 && b.contains(document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2)); }""")
@@ -545,7 +548,7 @@ def main():
         r["centerAfterGeo"] = page.evaluate("() => window.__topo3d.map.getCenter().toArray()")
         r["userDot"] = page.evaluate("() => !!document.querySelector('.maplibregl-user-location-dot')")
 
-        # Remembered settings: switch contours off, change exaggeration, move; reload WITHOUT a hash
+        # Remembered settings: exaggeration and view are remembered; a layer switch is not (fixed set, D-052)
         page.evaluate("() => document.querySelector('input[data-group=contours]').click()")
         page.evaluate("() => { const e = document.getElementById('exag'); e.value = '1.7'; e.dispatchEvent(new Event('input')); e.dispatchEvent(new Event('change')); }")
         page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.3, 32.9], zoom: 12.5, pitch: 30, bearing: 10 })")
@@ -591,12 +594,12 @@ def main():
     expect(r["topo"]["labelFont"] == ["Noto Sans Regular"], "Regular label font chosen over the first (Italic) one")
     expect(len(r["layers"]) == 20, f"Topo3D (incl. streams, POIs) + route layers present {r['layers']}")
     m = r["menus"]
-    expect({k: m[0][k] for k in ("layers", "route", "style", "layersAria")} == {"layers": False, "route": False, "style": False, "layersAria": "false"} and not m[0]["routeBtn"],
+    expect({k: m[0][k] for k in ("layers", "route", "style", "styleAria")} == {"layers": False, "route": False, "style": False, "styleAria": "false"} and not m[0]["routeBtn"],
            f"menus and route dock closed at start; no route-options button (D-049) {m[0]}")
-    expect(m[1]["layers"] and not m[1]["route"] and m[1]["layersAria"] == "true", "layers icon opens the layers menu")
-    expect(m[2]["style"] and not m[2]["layers"], "map-style icon opens its menu and closes the layers menu")
-    expect(not m[3]["style"] and not m[3]["layers"], "pressing the same icon again closes the menu")
-    expect(not m[4]["layers"], "Escape closes the menu")
+    expect(not m[0]["layersBtn"] and m[0]["fixedLayers"], f"no layers menu; hillshade, contours and all features on, slope/aspect/relief off (D-052) {m[0]}")
+    expect(m[1]["style"] and m[1]["styleAria"] == "true", "map-style icon opens its menu")
+    expect(not m[2]["style"], "pressing the same icon again closes the menu")
+    expect(not m[3]["style"], "Escape closes the menu")
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")
@@ -668,7 +671,7 @@ def main():
     expect("Mapterhorn" in r["attribTopo"] and "OpenStreetMap" in r["attribTopo"], "attribution: base map + DEM sources shown")
     expect("Esri" in r["attribSat"], "attribution: Esri shown in satellite mode")
     p_ = r["prefsAfterReload"]
-    expect(p_["contoursBox"] is False and p_["contoursLayer"] == "none", f"layer switch remembered after reload {p_}")
+    expect(p_["contoursBox"] is True and p_["contoursLayer"] == "visible", f"fixed layer set: an old layer switch is not restored after reload (D-052) {p_}")
     expect(p_["exag"] == 1.7, f"exaggeration remembered {p_['exag']}")
     expect(p_["center"] == [35.3, 32.9] and p_["zoom"] == 12.5, f"last view restored when the URL has no camera {p_['center']} z{p_['zoom']}")
     expect(r["geoAfterReload"] == {"get": 0, "watch": 0}, "no location request after reload either")

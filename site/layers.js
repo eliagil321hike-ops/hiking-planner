@@ -53,13 +53,8 @@ export function initLayers(ctx) {
 
   // Restore remembered choices into the controls before the map loads.
   const prefs = loadPrefs();
-  document.querySelectorAll('input[data-group]').forEach((cb) => {
-    if (typeof prefs.groups?.[cb.dataset.group] === 'boolean') cb.checked = prefs.groups[cb.dataset.group];
-  });
-  document.querySelectorAll('input[data-opacity]').forEach((r) => {
-    const v = prefs.opacity?.[r.dataset.opacity];
-    if (v >= 0.1 && v <= 1) r.value = String(v);
-  });
+  // D-052 (owner): the layer set is fixed (hillshade, contours, every map feature), so switches and opacities
+  // remembered from the old layers menu are no longer restored; an old "contours off" must not stick for good.
   const syncRow = (cb) => cb.closest('.layer-row')?.classList.toggle('on', cb.checked);
   document.querySelectorAll('input[data-group]').forEach(syncRow);
   // Default exaggeration became 1.5 (owner, D-043): a value remembered under the old default is reset once.

@@ -4,7 +4,7 @@
 
 export function initMenus(ctx) {
   const { $, map } = ctx;
-  const menus = { 'btn-style': 'menu-style', 'btn-layers': 'menu-layers' };   // the route button opens the route dock (route.js)
+  const menus = { 'btn-style': 'menu-style' };   // no layers menu (D-052); the route dock is opened by route.js
 
   function setOpen(btnId, open) {
     $(btnId).setAttribute('aria-expanded', String(open));
