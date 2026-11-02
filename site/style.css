@@ -689,3 +689,10 @@ body:not(.dock-panel) .route-tools { margin-bottom: calc(var(--top-h) - var(--ed
   .lib-tools { flex-wrap: wrap; }
   .lib-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Review 2026-11-03: messages stay above the library panel; on a phone the library leaves the map-control column free. */
+.toast, .status.toast { z-index: 6; }
+@media (max-width: 600px) {
+  /* RTL: inline-start is the right side, where the map controls are */
+  .library { top: calc(var(--top-h) + 4px); inset-inline-start: calc(var(--edge) + var(--nav) + 8px); inset-inline-end: var(--edge); width: auto; }
+}
