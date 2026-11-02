@@ -551,7 +551,8 @@ with the first real request.
   Dark Text + 3px turquoise bar. tests/contrast.test.mjs checks every pair.
 - Fonts: IBM Plex Sans Hebrew (UI) + IBM Plex Mono (figures), SIL OFL 1.1, served from the site (site/fonts,
   owner: "בתוך האתר"); taken from github.com/IBM/plex (npm registry was blocked here).
-- Layout: one framed command bar across the top (brand, search | style, layers, new route); map controls moved to
+- Layout: top controls float on the map with no bar behind them (owner, after first screenshots): brand + search
+  top-right, style, layers, new route top-left. Corners 7px (buttons) / 10px (panels) (owner: "a bit rounder"). Map controls moved to
   the left edge under the bar, scale bottom-left; route tools stay on the right. Route line colours and map POI
   icons unchanged.
 
