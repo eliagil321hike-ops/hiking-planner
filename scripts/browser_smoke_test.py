@@ -176,6 +176,13 @@ def main():
               out.noMapbox = !prov['mapbox-satellite'];
               out.esriEmbedded = !!prov['esri-world-imagery'].embeddedKey && ov.satellite.default === 'esri-world-imagery';
               out.satMaptiler = satelliteSource(prov['maptiler-satellite'], 'k1')?.url;
+              // hover over the profile: the readout and the map-marker callback must work (bug 2026-11-02: "ev is not a function")
+              const div2 = document.createElement('div'); div2.style.width = '400px'; div2.style.height = '150px'; document.body.append(div2);
+              let hovered = null;
+              renderProfile(div2, [0, 1, 2, 3, 4, 5].map((i) => ({ distance: i * 100, elevation: 300 + i * 10 })), (i) => { hovered = i; });
+              const svg2 = div2.querySelector('svg'), box = svg2.getBoundingClientRect();
+              svg2.dispatchEvent(new PointerEvent('pointermove', { clientX: box.left + box.width * 0.6, clientY: box.top + 60, pointerType: 'mouse', bubbles: true }));
+              out.hover = { index: hovered, readout: div2.querySelector('.profile-readout')?.textContent ?? '' };
               out.profileAreas = div.querySelectorAll('path.profile-area').length;
               out.profileSegs = div.querySelectorAll('line.profile-seg').length;
               out.profileColors = [...new Set([...div.querySelectorAll('line.profile-seg')].map((l) => l.getAttribute('stroke')))];
@@ -208,6 +215,7 @@ def main():
     expect(result["noMapbox"], "Mapbox removed (owner: free only, D-018)")
     expect(result["satMaptiler"] and result["satMaptiler"].endswith("tiles.json?key=k1"), "MapTiler uses its TileJSON URL")
     expect(result["profileAreas"] == 2 and result["profileSegs"] == 2, "profile area and slope line break at missing data (2 runs, 2 segments)")
+    expect(result["hover"]["index"] is not None and "m" in result["hover"]["readout"], f"hovering the profile shows a readout and moves the map marker {result['hover']}")
     expect(len(result["profileColors"]) >= 1, f"slope colours drawn {result['profileColors']}")
     expect(not errors, f"no page errors {errors}")
     sys.exit(0 if ok else 1)

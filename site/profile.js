@@ -145,9 +145,9 @@ export function renderProfile(container, samples, onHover, opts = {}) {
   for (const n of [cursor, dot, readout]) n.style.display = 'none';
   svg.append(cursor, dot, readout);
 
-  function pick(ev) {
+  function pick(pointer) {
     const r = svg.getBoundingClientRect();
-    const px = ((ev.clientX - r.left) / r.width) * W;
+    const px = ((pointer.clientX - r.left) / r.width) * W;
     const dist = Math.max(0, Math.min(maxD, ((px - pad.l) / (W - pad.l - pad.r)) * maxD));
     let best = 0;
     for (let i = 1; i < samples.length; i++) if (Math.abs(samples[i].distance - dist) < Math.abs(samples[best].distance - dist)) best = i;

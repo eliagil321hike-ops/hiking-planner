@@ -533,6 +533,13 @@ with the first real request.
   exists, and disappears when the route is cleared and editing ends. Map controls move above the dock.
 - Fixed on the way: `[hidden]` now always wins over component `display` rules; map credits start folded.
 
+## D-050 (2026-11-02) Bug: hovering the elevation profile threw "ev is not a function"
+- Owner screenshot (live site): red error banner while moving over the profile. Cause: in profile.js the
+  pointer handler's parameter was named `ev`, shadowing the `ev(i)` elevation helper added in D-039.
+  Fixed (parameter renamed). New smoke check hovers a profile and requires the readout, the map-marker
+  callback and no page errors; it fails on the old code and passes on the fix.
+- Lesson: the e2e never hovered the profile; interactive paths need at least one automated pass.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
