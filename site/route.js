@@ -158,6 +158,7 @@ export function initRoute(ctx) {
   editor.onChange(() => {
     if (selected !== null && selected >= editor.state.vertices.length) selected = null;
     render();
+    syncDock();
     saveDraft();
     requestRoutes();
     updateStats();
@@ -186,7 +187,7 @@ export function initRoute(ctx) {
     $('plan').setAttribute('aria-pressed', String(on));
     $('plan').title = t(on ? 'route.finish' : 'route.plan');
     $('plan').setAttribute('aria-label', $('plan').title);
-    if (on) showDock(true);
+    syncDock();
     map.getCanvas().style.cursor = on ? 'crosshair' : '';
     if (!on) selected = null;
     render();
@@ -201,7 +202,7 @@ export function initRoute(ctx) {
     setMeta({ name: '' });
     setPlanning(true);
   }
-  $('new-route').addEventListener('click', () => { newRoute(); showDock(true); });
+  $('new-route').addEventListener('click', () => { newRoute(); if (!expanded) setExpanded(true); });
   ctx.isPlanning = () => planning;
   $('r-undo').addEventListener('click', () => editor.undo());
   $('r-redo').addEventListener('click', () => editor.redo());
@@ -350,29 +351,27 @@ export function initRoute(ctx) {
     if (expanded) renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max, compact: true });
   }
 
-  // Dock visibility: the route button opens/closes it; inside, the panel can be hidden (tool bar + pill stay).
-  // closed until asked for, unless a saved route is being restored (then its figures are shown)
-  let dockOpen = loadPrefs().routeDock ?? (() => { try { return !!JSON.parse(store.get(DRAFT_KEY) ?? 'null')?.state?.vertices?.length; } catch { return false; } })();
+  // Dock visibility (owner, D-049): no route button — the dock is shown while editing or while a route exists
+  // ("מסלול חדש" opens it); inside, the panel can be hidden (tool bar + pill stay).
   let expanded = loadPrefs().profileExpanded !== false;
+  const hasRoute = () => editor.state.vertices.length > 0 || editor.state.waypoints.length > 0;
   function syncDock() {
-    $('route-dock').hidden = !dockOpen;
-    $('btn-route').setAttribute('aria-expanded', String(dockOpen));
+    const open = planning || hasRoute();
+    $('route-dock').hidden = !open;
     $('profile-box').hidden = !expanded;
     $('route-pill').hidden = expanded || editor.geometry().length < 2;
     $('profile-toggle').setAttribute('aria-expanded', String(expanded));
-    document.body.classList.toggle('dock-open', dockOpen);
-    if (!expanded || !dockOpen) { hoverMarker.remove(); $('color-pop').hidden = true; }
-    requestAnimationFrame(() => document.documentElement.style.setProperty('--dock-h', `${dockOpen ? $('route-dock').offsetHeight + 12 : 0}px`));
+    document.body.classList.toggle('dock-open', open);
+    if (!expanded || !open) { hoverMarker.remove(); $('color-pop').hidden = true; }
+    requestAnimationFrame(() => document.documentElement.style.setProperty('--dock-h', `${open ? $('route-dock').offsetHeight + 12 : 0}px`));
   }
-  function showDock(open) { dockOpen = open; savePrefs({ routeDock: open }); syncDock(); }
   function setExpanded(on) {
     expanded = on; savePrefs({ profileExpanded: on }); syncDock();
     if (on && samples.length) updateStats();
   }
-  $('btn-route').addEventListener('click', () => { ctx.menus?.closeAll(); showDock(!dockOpen); });
   $('profile-toggle').addEventListener('click', () => setExpanded(false));
   $('route-pill').addEventListener('click', () => setExpanded(true));
-  ctx.routeDock = { showDock, setExpanded, isOpen: () => dockOpen, isExpanded: () => expanded };
+  ctx.routeDock = { setExpanded, isOpen: () => !$('route-dock').hidden, isExpanded: () => expanded };
 
   // Route name (click to edit) and colour (dots), kept with the draft in this browser.
   function getMeta() { try { return JSON.parse(store.get(META_KEY) ?? '{}') ?? {}; } catch { return {}; } }

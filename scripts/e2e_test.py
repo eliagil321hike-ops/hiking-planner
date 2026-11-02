@@ -247,12 +247,12 @@ def main():
         r["terrain"] = page.evaluate("() => !!window.__topo3d.map.getTerrain()")
         r["fatal"] = page.evaluate("() => document.getElementById('fatal')?.textContent ?? null")
         # Toolbar menus: closed by default; icon opens, same icon closes; one menu at a time
-        ui = lambda: page.evaluate("""() => ({ layers: !document.getElementById('menu-layers').hidden, route: !document.getElementById('route-dock').hidden,
+        ui = lambda: page.evaluate("""() => ({ layers: !document.getElementById('menu-layers').hidden, route: !document.getElementById('route-dock').hidden, style: !document.getElementById('menu-style').hidden, routeBtn: !!document.getElementById('btn-route'),
             layersAria: document.getElementById('btn-layers').getAttribute('aria-expanded') })""")
         m0 = ui()
         page.evaluate("() => document.getElementById('btn-layers').click()"); m1 = ui()
-        page.evaluate("() => document.getElementById('btn-route').click()"); m2 = ui()
-        page.evaluate("() => document.getElementById('btn-route').click()"); m3 = ui()
+        page.evaluate("() => document.getElementById('btn-style').click()"); m2 = ui()
+        page.evaluate("() => document.getElementById('btn-style').click()"); m3 = ui()
         page.evaluate("() => document.getElementById('btn-layers').click()"); page.keyboard.press("Escape"); m4 = ui()
         r["menus"] = [m0, m1, m2, m3, m4]
         r["newRouteVisible"] = page.evaluate("""() => { const b = document.getElementById('new-route'); const q = b.getBoundingClientRect();
@@ -417,7 +417,7 @@ def main():
         # Panel buttons are pressed from inside the page (same handlers): with software WebGL the renderer can be
         # too busy to acknowledge synthetic mouse input in time. Map gestures below stay real mouse input.
         btn = lambda sel: page.evaluate(f"() => document.querySelector('{sel}').click()")
-        btn("#plan")
+        btn("#new-route")          # D-049: "מסלול חדש" starts drawing and opens the route dock
         for x, y in [(800, 300), (900, 380), (1000, 330)]:
             page.mouse.click(x, y)
             page.wait_for_timeout(300)
@@ -458,13 +458,7 @@ def main():
         r["orsCalls"] = len(seen["ors"])
         r["orsUrl"] = seen["ors"][0] if seen["ors"] else ""
         r["attribRoute"] = page.evaluate("() => document.querySelector('.maplibregl-ctrl-attrib-inner')?.textContent ?? ''")
-        # The route button closes the whole dock and opens it again (remembered)
-        btn("#btn-route")
-        r["profileHidden"] = page.evaluate("""() => [document.getElementById('route-dock').hidden, document.getElementById('btn-route').getAttribute('aria-expanded') === 'false',
-            JSON.parse(localStorage.getItem('topo3d.prefs')).routeDock === false]""")
-        btn("#btn-route")
-        wait_js(page, "() => !document.getElementById('route-dock').hidden && !document.getElementById('profile-box').hidden", 60)
-        r["profileShownAgain"] = page.evaluate("() => !document.getElementById('stats').hidden")
+        r["profileHidden"] = [True, True, True]; r["profileShownAgain"] = True   # (route button removed, D-049)
         # Router failure: segment shows an error, stays snap (never silently straight); user can switch it
         ors["fail"] = True
         page.mouse.click(1050, 250)
@@ -524,6 +518,9 @@ def main():
         # Clear (confirmed) → empty; undo brings it back
         btn("#plan"); btn("#r-clear"); page.wait_for_timeout(300)
         r["afterClear"] = (nverts(), page.evaluate(f"() => {ed}.state.waypoints.length"))
+        btn("#plan")               # stop editing: with no route the dock disappears (D-049)
+        r["dockAfterClear"] = page.evaluate("() => document.getElementById('route-dock').hidden")
+        btn("#plan")
         page.keyboard.press("Control+z")
         r["clearUndone"] = page.evaluate(f"() => {ed}.state.waypoints.length") == 1
 
@@ -594,10 +591,11 @@ def main():
     expect(r["topo"]["labelFont"] == ["Noto Sans Regular"], "Regular label font chosen over the first (Italic) one")
     expect(len(r["layers"]) == 20, f"Topo3D (incl. streams, POIs) + route layers present {r['layers']}")
     m = r["menus"]
-    expect(m[0] == {"layers": False, "route": False, "layersAria": "false"}, f"menus closed at start {m[0]}")
+    expect({k: m[0][k] for k in ("layers", "route", "style", "layersAria")} == {"layers": False, "route": False, "style": False, "layersAria": "false"} and not m[0]["routeBtn"],
+           f"menus and route dock closed at start; no route-options button (D-049) {m[0]}")
     expect(m[1]["layers"] and not m[1]["route"] and m[1]["layersAria"] == "true", "layers icon opens the layers menu")
-    expect(m[2]["route"] and not m[2]["layers"], "route icon opens the route dock and closes the layers menu (D-049)")
-    expect(not m[3]["route"] and not m[3]["layers"], "pressing the same icon again closes the menu")
+    expect(m[2]["style"] and not m[2]["layers"], "map-style icon opens its menu and closes the layers menu")
+    expect(not m[3]["style"] and not m[3]["layers"], "pressing the same icon again closes the menu")
     expect(not m[4]["layers"], "Escape closes the menu")
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
@@ -636,7 +634,6 @@ def main():
     expect(r["poiMinzoom"] == 13 and "#2f7fd8" in r["waterColor"] and "#5a9fdc" in r["waterColor"], f"POIs from z13, perennial blue / intermittent light blue {r['poiMinzoom']} {r['waterColor']}")
     expect(r["smallStreamW14"] < o["pathW14"], f"non-perennial streams thinner than unmarked trails (D-034) {r['smallStreamW14']} < {o['pathW14']}")
     expect(r["waterToggle"] == ["none", "visible"], f"streams switch hides/shows the layer {r['waterToggle']}")
-    expect(r["profileHidden"] == [True, True, True] and r["profileShownAgain"], f"route button closes the dock (remembered) and opens it again {r['profileHidden']}")
     expect(r["terrain"], "3D terrain on")
     expect(seen["dem"] > 0, "DEM tiles requested")
     expect(r["satLayer"] and "ibasemaps-api.arcgis.com" in (r["satTiles"] or "") and "token=" in r["satTiles"], "satellite: Esri layer with embedded key")
@@ -691,6 +688,7 @@ def main():
     expect(r["draftRestored"] and r["draftNotice"], "draft restored after reload (exact state), notice shown")
     expect(r["afterClear"] == (0, 0) and r["clearUndone"], f"clear (confirmed) empties the route, and is undoable {r['afterClear']}")
     expect("עלייה" in r["stats"] and "ירידה" in r["stats"], "stats shown")
+    expect(r["dockAfterClear"], "route dock hidden when the route is cleared and editing ends (D-049)")
     P = r["panel"]
     expect(P["dockOpen"] and float(P["dist"]) > 0 and P["labels"] == ["עלייה", "ירידה", "גובה מקסימלי", "גובה מינימלי"] and not P["time"] and P["startFinish"] and 3 <= P["yLevels"] <= 5,
            f"route dock: distance, ascent|descent, max|min, no walking time, start/finish, 3–5 elevation levels (D-049) {P}")
