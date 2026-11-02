@@ -514,3 +514,38 @@ input.switch:checked { background: var(--c-turq); }
   .maplibregl-ctrl-top-left .maplibregl-ctrl { margin-left: 8px; }
   .popover { inset-inline: 8px; }
 }
+
+/* ---------------------------------------------------------------- D-053: floating layout grid (owner)
+   One edge inset (16px) on every side, 8px between stacked controls, 12px between groups, one control height
+   (44px). Left column sits right under the top row and starts where the top-left buttons start; the right tool
+   column ends as far from the bottom as the left column starts from the top (72px) when the panel is hidden;
+   the scale is in the bottom-left corner and only moves up for the full-width route panel. */
+:root { --edge: 16px; --ctl: 44px; --top-h: calc(var(--edge) + var(--ctl) + 12px); }
+.toolbar { top: var(--edge); inset-inline: var(--edge); height: var(--ctl); padding: 0; gap: 8px; }
+.search input { height: var(--ctl); }
+.search-go { top: 4px; }
+.search-results { top: calc(var(--ctl) + 6px); }
+.brand { height: var(--ctl); padding-inline: 0 4px; }
+.toolbar .panel-btn, .toolbar .fab { height: var(--ctl); min-height: var(--ctl); }
+.toolbar .fab { width: var(--ctl); }
+.maplibregl-ctrl-top-left { top: var(--top-h); }
+.maplibregl-ctrl-top-left .maplibregl-ctrl { margin: 0 0 8px var(--edge); }
+.maplibregl-ctrl-group button { width: 42px; height: 42px; }
+.ctrl-3d { width: 42px !important; height: 42px !important; }
+.popover { top: var(--top-h); inset-inline-end: calc(var(--edge) + var(--ctl) + 12px); }
+.cat-chip, .toast { top: var(--top-h); }
+/* scale in the corner, the credits button beside it on the same line */
+.maplibregl-ctrl-bottom-left { display: flex; flex-direction: row; align-items: flex-end; direction: ltr; padding: 0 0 var(--edge) var(--edge); gap: 8px; }
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl { margin: 0 !important; float: none; }
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib { direction: rtl; }
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl { margin: 0 var(--edge) 8px 0; }
+body.dock-open .maplibregl-ctrl-bottom-left { bottom: var(--panel-h, 0px); }
+.route-dock { inset-inline: var(--edge); bottom: var(--edge); gap: 12px; }
+body:not(.dock-panel) .route-tools { margin-bottom: calc(var(--top-h) - var(--edge)); }
+.route-pill { min-height: var(--ctl); }
+@media (max-width: 600px) {
+  :root { --edge: 8px; --top-h: calc(var(--edge) + var(--ctl) * 2 + 8px + 12px); }
+  .toolbar { height: auto; }
+  body:not(.dock-panel) .route-tools { margin-bottom: 0; }
+  body.dock-open .maplibregl-ctrl-bottom-left { bottom: var(--dock-h); }   /* the dock is full width on a phone */
+}

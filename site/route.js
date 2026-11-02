@@ -363,7 +363,13 @@ export function initRoute(ctx) {
     $('profile-toggle').setAttribute('aria-expanded', String(expanded));
     document.body.classList.toggle('dock-open', open);
     if (!expanded || !open) { hoverMarker.remove(); $('color-pop').hidden = true; }
-    requestAnimationFrame(() => document.documentElement.style.setProperty('--dock-h', `${open ? $('route-dock').offsetHeight + 12 : 0}px`));
+    document.body.classList.toggle('dock-panel', open && expanded);
+    requestAnimationFrame(() => {
+      const root = document.documentElement.style;
+      root.setProperty('--dock-h', `${open ? $('route-dock').offsetHeight + 12 : 0}px`);
+      // the bottom-left scale/credits only move up for the full-width data panel, not for the corner tool bar
+      root.setProperty('--panel-h', `${open && expanded ? $('profile-box').offsetHeight + 8 : 0}px`);
+    });
   }
   function setExpanded(on) {
     expanded = on; savePrefs({ profileExpanded: on }); syncDock();

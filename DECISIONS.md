@@ -564,6 +564,16 @@ with the first real request.
 - The satellite-provider settings ("מתקדם"), the build stamp and the developer panel moved into the map-style menu.
 - Map style and new route are icon-only (name kept as tooltip and accessible name).
 
+## D-053 (2026-11-02) Floating layout grid (owner: "scale to the corner, swap + and map, tidy the floating bars,
+raise the right tool bar a little")
+- One edge inset (16px; 8px on phones), one control height (44px), 8px between stacked controls, 12px between
+  groups. Map-style button in the top-left corner, "+" beside it; left control column starts 12px under that row,
+  same left edge. Popovers open beside the column.
+- Scale in the bottom-left corner with the credits button beside it on one line (attribution moved bottom-left);
+  they move up only for the full-width route panel (--panel-h), on phones above the whole dock.
+- Right route tool column: with the panel hidden it ends 72px above the bottom (mirrors the left column's 72px from
+  the top); with the panel open it sits beside the panel.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

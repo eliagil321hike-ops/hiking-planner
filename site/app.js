@@ -94,11 +94,12 @@ const map = new maplibregl.Map({
   locale: mapLocale(),
   maxPitch: cam.maxPitch,
   hash: true, // camera in the URL: a view can be shared and reproduced exactly
-  attributionControl: { compact: true },
+  attributionControl: false, // added bottom-left beside the scale (D-053)
   // ?pr=1 renders fewer pixels on high-DPI screens (performance experiment, D-013)
   ...(Number(params.get('pr')) > 0 ? { pixelRatio: Number(params.get('pr')) } : {}),
 });
 map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-left');
+map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
 map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
 // "Center on me": asks for location permission only when pressed, one fix, no tracking (SPEC 8.1).
 const geolocate = new maplibregl.GeolocateControl({
