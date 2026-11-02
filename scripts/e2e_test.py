@@ -247,7 +247,7 @@ def main():
         r["terrain"] = page.evaluate("() => !!window.__topo3d.map.getTerrain()")
         r["fatal"] = page.evaluate("() => document.getElementById('fatal')?.textContent ?? null")
         # Toolbar menus: closed by default; icon opens, same icon closes; one menu at a time
-        ui = lambda: page.evaluate("""() => ({ layers: !document.getElementById('menu-layers').hidden, route: !document.getElementById('menu-route').hidden,
+        ui = lambda: page.evaluate("""() => ({ layers: !document.getElementById('menu-layers').hidden, route: !document.getElementById('route-dock').hidden,
             layersAria: document.getElementById('btn-layers').getAttribute('aria-expanded') })""")
         m0 = ui()
         page.evaluate("() => document.getElementById('btn-layers').click()"); m1 = ui()
@@ -423,14 +423,34 @@ def main():
             page.wait_for_timeout(300)
         ed = "window.__topo3d.editor"
         nverts = lambda: page.evaluate(f"() => {ed}.state.vertices.length")
-        wait_js(page, "() => document.getElementById('stats').textContent.includes('מרחק')", 60)
+        wait_js(page, "() => document.getElementById('stats').textContent.includes('עלייה')", 60)
         r["stats"] = page.inner_text("#stats")
         r["profileVisible"] = page.evaluate("() => !document.getElementById('profile-box').hidden && !!document.querySelector('#profile svg path.profile-area')")
-        r["panel"] = page.evaluate("""() => ({ big: [...document.querySelectorAll('#stats .rp-main .stat .l')].map((e) => e.textContent),
-            startFinish: !!document.querySelector('#profile .profile-start') && !!document.querySelector('#profile .profile-finish') })""")
+        # D-049 dock: distance big, ascent|descent, max|min, no walking time; start/finish on the profile; 4–5 elevation levels
+        r["panel"] = page.evaluate("""() => ({ dist: document.getElementById('rd-dist').textContent, labels: [...document.querySelectorAll('#stats .rd-st small')].map((e) => e.textContent),
+            time: document.getElementById('profile-box').textContent.includes('זמן'), dockOpen: !document.getElementById('route-dock').hidden,
+            startFinish: !!document.querySelector('#profile .profile-start') && !!document.querySelector('#profile .profile-finish'),
+            yLevels: document.querySelectorAll('#profile line.profile-grid-h').length })""")
+        for name in ("dock-open",):
+            try:
+                page.screenshot(path=str(CACHE / f"e2e-{name}.png"), timeout=120_000, animations="disabled")
+            except Exception as ex:  # noqa: BLE001 - a picture for review only
+                print(f"(screenshot {name} skipped: {type(ex).__name__})")
         page.evaluate("() => document.getElementById('profile-toggle').click()"); page.wait_for_timeout(300)
-        r["panelCollapsed"] = page.evaluate("() => [document.getElementById('profile-box').classList.contains('collapsed'), getComputedStyle(document.getElementById('profile')).display, document.getElementById('profile-toggle').getAttribute('aria-expanded'), getComputedStyle(document.getElementById('stats')).display !== 'none']")
-        page.evaluate("() => document.getElementById('profile-toggle').click()"); page.wait_for_timeout(300)
+        try:
+            page.screenshot(path=str(CACHE / "e2e-dock-hidden.png"), timeout=120_000, animations="disabled")
+        except Exception as ex:  # noqa: BLE001
+            print(f"(screenshot dock-hidden skipped: {type(ex).__name__})")
+        r["panelCollapsed"] = page.evaluate("""() => [document.getElementById('profile-box').hidden, !document.getElementById('route-pill').hidden,
+            !document.querySelector('.route-tools').closest('[hidden]'), document.getElementById('pill-stats').textContent.includes('ק״מ')]""")
+        page.evaluate("() => document.getElementById('route-pill').click()"); page.wait_for_timeout(300)
+        r["panelBack"] = page.evaluate("() => !document.getElementById('profile-box').hidden && document.getElementById('route-pill').hidden")
+        # name (click to edit) and colour (dots)
+        page.evaluate("""() => { const n = document.getElementById('route-name'); n.focus(); n.textContent = 'מכתש רמון'; n.blur();
+            document.getElementById('route-color').click(); document.querySelectorAll('#color-pop .color-dot')[2].click(); }""")
+        r["meta"] = page.evaluate("""() => ({ meta: window.__topo3d.results.routeMeta, paint: window.__topo3d.map.getPaintProperty('route-line', 'line-color'),
+            names: document.querySelectorAll('#color-pop .color-dot').length, popHidden: document.getElementById('color-pop').hidden, text: document.getElementById('color-pop').textContent.trim() })""")
+        page.evaluate("""() => { document.getElementById('route-color').click(); document.querySelectorAll('#color-pop .color-dot')[0].click(); }""")
         r["routePoints"] = nverts()
         r["modes"] = page.evaluate(f"() => {ed}.state.vertices.map(v => v.mode)")
         wait_js(page, f"() => {ed}.segments().every(s => s.status === 'ok')", 60)
@@ -438,12 +458,12 @@ def main():
         r["orsCalls"] = len(seen["ors"])
         r["orsUrl"] = seen["ors"][0] if seen["ors"] else ""
         r["attribRoute"] = page.evaluate("() => document.querySelector('.maplibregl-ctrl-attrib-inner')?.textContent ?? ''")
-        # Hide the profile with ✕ → profile and stats hidden, checkbox off, remembered; show again
-        btn("#profile-close")
-        r["profileHidden"] = page.evaluate("""() => [document.getElementById('profile-box').hidden, document.getElementById('stats').hidden,
-            JSON.parse(localStorage.getItem('topo3d.prefs')).showProfile === false]""")
-        page.evaluate("() => document.getElementById('show-profile').click()")
-        wait_js(page, "() => !document.getElementById('profile-box').hidden", 60)
+        # The route button closes the whole dock and opens it again (remembered)
+        btn("#btn-route")
+        r["profileHidden"] = page.evaluate("""() => [document.getElementById('route-dock').hidden, document.getElementById('btn-route').getAttribute('aria-expanded') === 'false',
+            JSON.parse(localStorage.getItem('topo3d.prefs')).routeDock === false]""")
+        btn("#btn-route")
+        wait_js(page, "() => !document.getElementById('route-dock').hidden && !document.getElementById('profile-box').hidden", 60)
         r["profileShownAgain"] = page.evaluate("() => !document.getElementById('stats').hidden")
         # Router failure: segment shows an error, stays snap (never silently straight); user can switch it
         ors["fail"] = True
@@ -576,7 +596,7 @@ def main():
     m = r["menus"]
     expect(m[0] == {"layers": False, "route": False, "layersAria": "false"}, f"menus closed at start {m[0]}")
     expect(m[1]["layers"] and not m[1]["route"] and m[1]["layersAria"] == "true", "layers icon opens the layers menu")
-    expect(m[2]["route"] and not m[2]["layers"], "route icon opens its menu and closes the other")
+    expect(m[2]["route"] and not m[2]["layers"], "route icon opens the route dock and closes the layers menu (D-049)")
     expect(not m[3]["route"] and not m[3]["layers"], "pressing the same icon again closes the menu")
     expect(not m[4]["layers"], "Escape closes the menu")
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
@@ -616,7 +636,7 @@ def main():
     expect(r["poiMinzoom"] == 13 and "#2f7fd8" in r["waterColor"] and "#5a9fdc" in r["waterColor"], f"POIs from z13, perennial blue / intermittent light blue {r['poiMinzoom']} {r['waterColor']}")
     expect(r["smallStreamW14"] < o["pathW14"], f"non-perennial streams thinner than unmarked trails (D-034) {r['smallStreamW14']} < {o['pathW14']}")
     expect(r["waterToggle"] == ["none", "visible"], f"streams switch hides/shows the layer {r['waterToggle']}")
-    expect(r["profileHidden"] == [True, True, True] and r["profileShownAgain"], f"profile + stats can be hidden (✕), remembered, and shown again {r['profileHidden']}")
+    expect(r["profileHidden"] == [True, True, True] and r["profileShownAgain"], f"route button closes the dock (remembered) and opens it again {r['profileHidden']}")
     expect(r["terrain"], "3D terrain on")
     expect(seen["dem"] > 0, "DEM tiles requested")
     expect(r["satLayer"] and "ibasemaps-api.arcgis.com" in (r["satTiles"] or "") and "token=" in r["satTiles"], "satellite: Esri layer with embedded key")
@@ -670,9 +690,14 @@ def main():
     expect(r["waypoints"] == ["מעיין"], f"right-click adds a named waypoint {r['waypoints']}")
     expect(r["draftRestored"] and r["draftNotice"], "draft restored after reload (exact state), notice shown")
     expect(r["afterClear"] == (0, 0) and r["clearUndone"], f"clear (confirmed) empties the route, and is undoable {r['afterClear']}")
-    expect("מרחק" in r["stats"] and "עלייה" in r["stats"], "stats shown")
-    expect(r["panel"]["big"] == ["מרחק", "עלייה", "ירידה", "זמן (הערכה)"] and r["panel"]["startFinish"], f"route panel: key figures first, start/finish on the profile (D-039) {r['panel']}")
-    expect(r["panelCollapsed"] == [True, "none", "false", True], f"route panel collapses to figures only {r['panelCollapsed']}")
+    expect("עלייה" in r["stats"] and "ירידה" in r["stats"], "stats shown")
+    P = r["panel"]
+    expect(P["dockOpen"] and float(P["dist"]) > 0 and P["labels"] == ["עלייה", "ירידה", "גובה מקסימלי", "גובה מינימלי"] and not P["time"] and P["startFinish"] and 3 <= P["yLevels"] <= 5,
+           f"route dock: distance, ascent|descent, max|min, no walking time, start/finish, 3–5 elevation levels (D-049) {P}")
+    expect(r["panelCollapsed"] == [True, True, True, True] and r["panelBack"], f"hiding the panel keeps the tool bar and a pill with the figures; the pill brings it back {r['panelCollapsed']} {r['panelBack']}")
+    M = r["meta"]
+    expect(M["meta"]["name"] == "מכתש רמון" and M["meta"]["color"] == "#00e5ff" and M["paint"] == "#00e5ff" and M["names"] == 6 and M["popHidden"] and M["text"] == "",
+           f"route name editable, colour chosen from 6 dots without names, route line recoloured (D-049) {M}")
     expect(r["profileVisible"], "elevation profile drawn")
     sys.exit(0 if ok else 1)
 

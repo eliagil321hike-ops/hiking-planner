@@ -35,7 +35,7 @@
   </form>
   <button id="btn-style" class="tool-btn" type="button" aria-expanded="false" aria-controls="menu-style" data-i18n-attr="aria-label:menu.style;title:menu.style" aria-label="סגנון מפה"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20V6.5Z M9 4v13.5 M15 6.5V20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
   <button id="btn-layers" class="tool-btn" type="button" aria-expanded="false" aria-controls="menu-layers" data-i18n-attr="aria-label:menu.layers;title:menu.layers" aria-label="שכבות"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3 2.5 8 12 13l9.5-5L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m2.5 12 9.5 5 9.5-5M2.5 16l9.5 5 9.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
-  <button id="btn-route" class="tool-btn" type="button" aria-expanded="false" aria-controls="menu-route" data-i18n-attr="aria-label:menu.route;title:menu.route" aria-label="אפשרויות מסלול"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="6" cy="18" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="6" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.2 17.2c4-1.2 1.2-5.6 4.8-6.6 2.6-.7 3.4-1.8 3.6-2.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="2.2 2.2"/></svg></button>
+  <button id="btn-route" class="tool-btn" type="button" aria-expanded="false" aria-controls="route-dock" data-i18n-attr="aria-label:menu.route;title:menu.route" aria-label="אפשרויות מסלול"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="6" cy="18" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="6" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.2 17.2c4-1.2 1.2-5.6 4.8-6.6 2.6-.7 3.4-1.8 3.6-2.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="2.2 2.2"/></svg></button>
   <span id="plan-badge" class="plan-badge" hidden data-i18n="route.planning">עריכת מסלול</span>
 </div>
 
@@ -153,45 +153,49 @@
     </section>
 </section>
 
-<section id="menu-route" class="popover" hidden>
-    <section>
-      <h2 data-i18n="route.heading">מסלול</h2>
-      <div class="row">
-        <button id="plan" class="btn btn-primary" aria-pressed="false" data-i18n="route.plan">תכנן מסלול</button>
-        <label class="inline"><span data-i18n="route.mode">קטע חדש</span>
-          <select id="seg-mode">
-            <option value="snap" data-i18n="route.modeSnap">צמוד לשבילים</option>
-            <option value="free" data-i18n="route.modeFree">קו ישר</option>
-          </select>
-        </label>
+
+
+<!-- Route dock (owner, D-049): a tool bar in the corner + a data panel (distance, name, colour, ascent/descent,
+     max/min, elevation profile). Hiding the panel leaves the tool bar and a small pill with the key figures. -->
+<div id="route-dock" class="route-dock" hidden>
+  <div class="route-tools" role="toolbar" data-i18n-attr="aria-label:menu.route" aria-label="אפשרויות מסלול">
+    <button id="plan" class="tbtn" type="button" data-i18n-attr="title:route.plan;aria-label:route.plan" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg></button>
+    <button id="seg-toggle" class="tbtn" type="button" data-i18n-attr="title:route.modeSnap;aria-label:route.modeSnap" aria-pressed="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 17c4-1 1-6 5-7 3-1 3-2 3-3"/></svg></button>
+    <select id="seg-mode" hidden aria-hidden="true"><option value="snap" data-i18n="route.modeSnap">צמוד לשבילים</option><option value="free" data-i18n="route.modeFree">קו ישר</option></select>
+    <span class="tsep" aria-hidden="true"></span>
+    <button id="r-undo" class="tbtn" type="button" data-i18n-attr="title:route.undo;aria-label:route.undo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+    <button id="r-redo" class="tbtn" type="button" data-i18n-attr="title:route.redo;aria-label:route.redo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+    <button id="r-reverse" class="tbtn" type="button" data-i18n-attr="title:route.reverse;aria-label:route.reverse"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg></button>
+    <button id="r-loop" class="tbtn" type="button" data-i18n-attr="title:route.loop;aria-label:route.loop"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></button>
+    <button id="r-delete" class="tbtn" type="button" data-i18n-attr="title:route.deletePoint;aria-label:route.deletePoint"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <button id="r-clear" class="tbtn" type="button" data-i18n-attr="title:route.clear;aria-label:route.clear"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+  </div>
+  <div id="profile-box" class="rd-panel">
+    <div class="rd-data">
+      <div class="rd-top">
+        <div class="rd-dist" data-i18n-attr="title:stats.distance" title="מרחק"><b id="rd-dist">0</b><i data-i18n="unit.km">ק״מ</i></div>
+        <div class="rd-name">
+          <span id="route-name" class="rd-name-text" contenteditable="plaintext-only" spellcheck="false" data-i18n-attr="title:route.rename" title="שינוי שם"></span>
+          <button id="route-color" class="color-dot" type="button" data-i18n-attr="title:route.color;aria-label:route.color" aria-label="צבע המסלול"></button>
+        </div>
       </div>
-      <div class="row">
-        <button id="r-undo" class="btn" data-i18n="route.undo" title="Ctrl+Z">בטל</button>
-        <button id="r-redo" class="btn" data-i18n="route.redo" title="Ctrl+Y">חזור</button>
-        <button id="r-reverse" class="btn" data-i18n="route.reverse">הפוך כיוון</button>
-        <button id="r-loop" class="btn" data-i18n="route.loop">סגור מעגל</button>
-        <button id="r-delete" class="btn" data-i18n="route.deletePoint" title="Delete">מחק נקודה</button>
-        <button id="r-clear" class="btn" data-i18n="route.clear">נקה מסלול</button>
-      </div>
+      <div id="stats" class="rd-stats"></div>
+      <div id="seg-errors"></div>
       <p class="hint" id="draw-hint" data-i18n="route.hint"></p>
       <p class="hint" id="snap-hint" hidden data-i18n="route.snapUnavailable"></p>
-      <div id="seg-errors"></div>
-      <label><input type="checkbox" id="show-profile" checked> <span data-i18n="route.showProfile">הצג גובה ופרופיל</span></label>
-    </section>
-    <p class="safety" data-i18n="safety">מסלולים, גבהים וזמני הליכה הם הערכות ועלולים להיות שגויים. בדוק תמיד את השטח, מזג האוויר והמים לפני ובמהלך הטיול.</p>
-</section>
-
-<!-- Floating route panel (D-039): key figures always; the elevation profile can be collapsed. -->
-<div id="profile-box" class="route-panel" hidden>
-  <div class="rp-head">
-    <div id="stats" class="rp-stats"></div>
-    <div class="rp-actions">
-      <button id="profile-toggle" class="icon-btn" type="button" aria-expanded="true" aria-controls="profile" data-i18n-attr="aria-label:route.toggleProfile;title:route.toggleProfile" aria-label="הצג או כווץ את פרופיל הגובה"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m6 15 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <button id="profile-close" class="icon-btn" type="button" data-i18n-attr="aria-label:route.hideProfile;title:route.hideProfile" aria-label="הסתר פרופיל">✕</button>
+    </div>
+    <div id="profile" class="rd-profile"></div>
+    <div class="rd-side">
+      <button id="profile-toggle" class="tbtn" type="button" data-i18n-attr="title:route.hideProfile;aria-label:route.hideProfile" aria-expanded="true" aria-controls="profile-box"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+      <span class="rd-info" data-i18n-attr="title:safety" title="">ⓘ</span>
     </div>
   </div>
-  <div id="profile" class="rp-profile"></div>
+  <button id="route-pill" class="route-pill" type="button" hidden data-i18n-attr="title:route.showProfile" title="הצג">
+    <span id="pill-stats"></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+  </button>
+  <div id="color-pop" class="color-pop" hidden role="listbox" data-i18n-attr="aria-label:route.color" aria-label="צבע המסלול"></div>
 </div>
+
 </div>
 
 <script type="module" src="app.js"></script>

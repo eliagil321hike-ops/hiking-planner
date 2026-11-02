@@ -135,6 +135,7 @@ if (overlay.routing?.embeddedKey) {
 }
 const route = initRoute(ctx);
 const menus = initMenus(ctx);
+ctx.menus = menus;
 initSearch(ctx);
 
 // Test/debug handle (used by scripts/e2e_test.py).

@@ -26,6 +26,15 @@ function el(name, attrs = {}, text) {
   return n;
 }
 
+/** Round elevation levels inside [lo, hi]: the step (5…1000 m) that gives 3–5 lines. */
+export function elevationTicks(lo, hi) {
+  const span = hi - lo;
+  const step = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000].find((s) => span / s <= 5) ?? 2000;
+  const out = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) out.push(v);
+  return out;
+}
+
 const fmtKm = (m) => `${(m / 1000).toFixed(m < 10_000 ? 2 : 1)} km`;
 
 export function renderProfile(container, samples, onHover, opts = {}) {
@@ -89,9 +98,9 @@ export function renderProfile(container, samples, onHover, opts = {}) {
   svg.append(el('text', { x: endX, y: H - 4, 'text-anchor': 'end', class: 'profile-axis profile-strong' }, fmtKm(maxD)));
   svg.append(el('text', { x: pad.l - 2, y: H - 4, 'text-anchor': 'end', class: 'profile-axis' }, '0'));
 
-  // --- elevation labels (left), highest and lowest only
-  for (const v of [hi, lo]) {
-    svg.append(el('text', { x: pad.l - 6, y: y(v) + 3.5, 'text-anchor': 'end', class: 'profile-axis' }, `${Math.round(v)}`));
+  // --- elevation scale (left): 4–5 round levels (owner, D-049), e.g. every 100 m on a 400 m climb
+  for (const v of elevationTicks(yLo, yHi)) {
+    svg.append(el('text', { x: pad.l - 6, y: y(v) + 3.5, 'text-anchor': 'end', class: 'profile-axis' }, `${v}`));
     svg.append(el('line', { x1: pad.l, x2: W - pad.r, y1: y(v), y2: y(v), class: 'profile-grid profile-grid-h' }));
   }
   svg.append(el('text', { x: pad.l - 6, y: pad.t - 6, 'text-anchor': 'end', class: 'profile-axis' }, 'm'));

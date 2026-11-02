@@ -253,3 +253,84 @@ input.switch:focus-visible { outline: 3px solid #39ff14; outline-offset: 2px; }
 .cat-chip button:hover { background: rgba(42, 36, 29, 0.16); color: var(--fg); }
 @media (max-width: 600px) { .cat-chip { top: 112px; } }
 .search-results .cat-line { padding: 8px 10px; font-weight: 600; color: var(--fg); border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+
+/* ---------------------------------------------------------------- D-049: route dock (tool bar + data panel) */
+:root { --dock-h: 0px; }
+.route-dock { position: fixed; inset-inline: 16px; bottom: 14px; z-index: 2; display: flex; gap: 10px; align-items: flex-end; pointer-events: none; }
+.route-dock > * { pointer-events: auto; }
+.route-dock .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.route-tools {
+  display: flex; flex-direction: column; gap: 2px; padding: 6px; border-radius: 14px;
+  background: var(--glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-line); box-shadow: 0 8px 24px rgba(40, 30, 20, 0.16);
+}
+.tbtn { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 9px; background: transparent; color: var(--fg); cursor: pointer; }
+.tbtn:hover:not(:disabled) { background: rgba(42, 36, 29, 0.07); }
+.tbtn:disabled { opacity: 0.32; cursor: default; }
+.tbtn[aria-pressed="true"]#plan { background: var(--fg); color: #fff; }
+.tbtn#seg-toggle[aria-pressed="false"] .ic { stroke-dasharray: 2.5 2.5; }
+.tbtn:focus-visible { outline: 3px solid #39ff14; outline-offset: 1px; }
+.tsep { height: 1px; background: var(--line); margin: 3px 4px; }
+
+.rd-panel {
+  flex: 1; min-width: 0; height: 150px; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; padding: 10px 12px 6px 6px; border-radius: 14px;
+  background: var(--glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-line); box-shadow: 0 8px 24px rgba(40, 30, 20, 0.16);
+}
+.rd-panel.empty { height: auto; grid-template-columns: 1fr auto; }
+.rd-panel.empty .rd-profile, .rd-panel.empty .rd-top, .rd-panel.empty .rd-stats { display: none; }
+.rd-data { display: grid; gap: 8px; align-content: start; min-width: 250px; }
+.rd-data .hint { margin: 2px 0; max-width: 520px; }
+.rd-top { display: flex; gap: 14px; align-items: flex-start; }
+.rd-dist { white-space: nowrap; }
+.rd-dist b { font: 800 30px/1 var(--font); letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+.rd-dist i { font: normal 13px var(--font); color: var(--muted); margin-inline-start: 3px; }
+.rd-name { border-inline-start: 1px solid var(--line); padding-inline-start: 12px; display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.rd-name-text { font: 600 15px var(--font); color: var(--fg); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; padding: 0 2px; outline: none; cursor: text; }
+.rd-name-text:hover, .rd-name-text:focus { background: rgba(42, 36, 29, 0.06); }
+.rd-name-text.placeholder:not(:focus) { color: var(--muted); font-weight: 500; }
+.color-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1.5px #0a1f0a; background: var(--c, #39ff14); padding: 0; cursor: pointer; }
+.color-dot:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.color-pop {
+  position: fixed; bottom: calc(var(--dock-h) + 2px); inset-inline-end: 330px; display: flex; gap: 10px; padding: 10px 12px; border-radius: 12px; z-index: 4;
+  background: #fff; box-shadow: 0 8px 24px rgba(40, 30, 20, 0.22);
+}
+.color-pop .color-dot { width: 22px; height: 22px; }
+.color-pop .color-dot[aria-selected="true"] { box-shadow: 0 0 0 1.5px #0a1f0a, 0 0 0 4px rgba(42, 36, 29, 0.25); }
+.rd-stats { display: grid; gap: 8px; }
+.rd-pair { display: flex; gap: 22px; }
+.rd-st { display: inline-grid; grid-template-columns: auto auto; column-gap: 3px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.rd-st b { font: 700 17px/1 var(--font); color: var(--fg); }
+.rd-st i { font: normal 11px var(--font); color: var(--muted); }
+.rd-st small { grid-column: 1 / -1; font-size: 10.5px; color: #8a8175; }
+.rd-st.up b::before { content: "▲ "; font-size: 10px; color: #c0612b; }
+.rd-st.down b::before { content: "▼ "; font-size: 10px; color: #3d7fb8; }
+.rd-st.max b::before { content: "↥ "; font-size: 11px; color: #8a8175; }
+.rd-st.min b::before { content: "↧ "; font-size: 11px; color: #8a8175; }
+.rd-warn { font-size: 11.5px; color: var(--bad); }
+.rd-profile { min-width: 0; height: 100%; direction: ltr; }
+.rd-side { display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
+.rd-info { color: var(--muted); font-size: 14px; cursor: help; padding: 4px; }
+
+.route-pill {
+  align-self: flex-end; margin-inline: auto; display: flex; gap: 12px; align-items: center; padding: 6px 10px 6px 14px; border-radius: 999px; border: 1px solid var(--glass-line);
+  background: var(--glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 6px 20px rgba(40, 30, 20, 0.18); cursor: pointer;
+  font: 13px var(--font); color: var(--fg); font-variant-numeric: tabular-nums;
+}
+.route-pill #pill-stats { display: flex; gap: 12px; align-items: baseline; }
+.route-pill b { font-size: 15px; } .route-pill i { font-style: normal; font-size: 11px; color: var(--muted); margin-inline-start: -9px; }
+.route-pill .up::before { content: "▲ "; font-size: 9px; color: #c0612b; }
+.route-pill .down::before { content: "▼ "; font-size: 9px; color: #3d7fb8; }
+
+/* map controls stay above the dock */
+body.dock-open .maplibregl-ctrl-bottom-right, body.dock-open .maplibregl-ctrl-bottom-left { bottom: var(--dock-h); }
+
+@media (max-width: 760px) {
+  .route-dock { inset-inline: 8px; bottom: 8px; flex-direction: column; align-items: stretch; }
+  .route-tools { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+  .tsep { width: 1px; height: auto; margin: 4px 3px; }
+  .rd-panel { height: auto; grid-template-columns: 1fr auto; }
+  .rd-profile { grid-column: 1 / -1; grid-row: 2; height: 96px; }
+  .rd-data { min-width: 0; }
+  .color-pop { inset-inline-end: 50%; transform: translateX(50%); }
+}

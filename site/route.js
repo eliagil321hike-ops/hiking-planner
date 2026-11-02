@@ -15,7 +15,13 @@ import { store } from './satellite.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 
 const DRAFT_KEY = 'topo3d.draft';
-export const ROUTE_COLOR = '#39ff14';   // fluorescent green (owner request)
+export const ROUTE_COLOR = '#39ff14';   // fluorescent green (owner request); the default of the colour choice
+// Route colours to choose from (owner, D-049): shown as dots only.
+export const ROUTE_COLORS = ['#39ff14', '#ff2bd6', '#00e5ff', '#ffe500', '#ff6a00', '#7c4dff'];
+const META_KEY = 'topo3d.routeMeta';   // { name, color } of the route being edited
+function routeColor() {
+  try { const c = JSON.parse(store.get(META_KEY) ?? '{}')?.color; return ROUTE_COLORS.includes(c) ? c : ROUTE_COLOR; } catch { return ROUTE_COLOR; }
+}
 const FC = (features) => ({ type: 'FeatureCollection', features });
 const pt = (c, props = {}) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: c }, properties: props });
 
@@ -43,7 +49,7 @@ export function initRoute(ctx) {
       paint: { 'line-color': '#0a1f0a', 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 6, 10, 8, 12, 11, 14, 15, 16, 21], 'line-opacity': 0.8 } });
     map.addLayer({ id: 'route-line', type: 'line', source: 'route', filter: ['==', ['get', 'status'], 'ok'],
       layout: { 'line-join': 'round' },
-      paint: { 'line-color': ROUTE_COLOR, 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 3.5, 10, 5, 12, 7.5, 14, 11, 16, 16], 'line-dasharray': ['case', ['==', ['get', 'mode'], 'free'], ['literal', [2, 1.2]], ['literal', [1, 0]]] } });
+      paint: { 'line-color': routeColor(), 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 3.5, 10, 5, 12, 7.5, 14, 11, 16, 16], 'line-dasharray': ['case', ['==', ['get', 'mode'], 'free'], ['literal', [2, 1.2]], ['literal', [1, 0]]] } });
     map.addLayer({ id: 'route-provisional', type: 'line', source: 'route', filter: ['!=', ['get', 'status'], 'ok'],
       layout: { 'line-cap': 'round' },
       paint: { 'line-color': ['case', ['==', ['get', 'status'], 'error'], '#ff2d55', '#e8e8e8'], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 8, 16, 11], 'line-dasharray': [0.1, 1.6] } });
@@ -52,7 +58,7 @@ export function initRoute(ctx) {
     map.addLayer({ id: 'route-points', type: 'circle', source: 'route-handles', filter: ['==', ['get', 'kind'], 'vertex'],
       paint: {
         'circle-radius': ['case', ['get', 'selected'], 9, 6.5],
-        'circle-color': ['case', ['get', 'first'], ROUTE_COLOR, '#ffffff'],
+        'circle-color': ['case', ['get', 'first'], routeColor(), '#ffffff'],
         'circle-stroke-color': ['case', ['get', 'selected'], '#ff2d55', '#0a1f0a'],
         'circle-stroke-width': 3,
       } });
@@ -115,7 +121,21 @@ export function initRoute(ctx) {
     opt.disabled = !ok;
     $('seg-mode').value = ok ? 'snap' : 'free';     // SPEC 8.2: snap is the default when routing is available
     $('snap-hint').hidden = ok;
+    $('seg-toggle').disabled = !ok;
+    syncSegToggle();
   }
+  function syncSegToggle() {
+    const snap = $('seg-mode').value === 'snap';
+    $('seg-toggle').setAttribute('aria-pressed', String(snap));
+    $('seg-toggle').title = t(snap ? 'route.modeSnap' : 'route.modeFree');
+    $('seg-toggle').setAttribute('aria-label', $('seg-toggle').title);
+  }
+  // one button: snap to trails ↔ straight line (D-049); the hidden <select> keeps the value
+  $('seg-toggle').addEventListener('click', () => {
+    $('seg-mode').value = $('seg-mode').value === 'snap' ? 'free' : 'snap';
+    $('seg-mode').dispatchEvent(new Event('change'));
+    syncSegToggle();
+  });
   ctx.onRouterChange = () => { syncSnapAvailability(); requestRoutes(); };
   syncSnapAvailability();
   const newMode = () => $('seg-mode').value;
@@ -164,7 +184,9 @@ export function initRoute(ctx) {
     planning = on;
     $('plan-badge').hidden = !on;
     $('plan').setAttribute('aria-pressed', String(on));
-    $('plan').textContent = t(on ? 'route.finish' : 'route.plan');
+    $('plan').title = t(on ? 'route.finish' : 'route.plan');
+    $('plan').setAttribute('aria-label', $('plan').title);
+    if (on) showDock(true);
     map.getCanvas().style.cursor = on ? 'crosshair' : '';
     if (!on) selected = null;
     render();
@@ -176,9 +198,10 @@ export function initRoute(ctx) {
     if ((s.vertices.length || s.waypoints.length) && !confirm(t('route.newConfirm'))) return;
     selected = null;
     if (s.vertices.length || s.waypoints.length) editor.run(clearRoute(editor.state));
+    setMeta({ name: '' });
     setPlanning(true);
   }
-  $('new-route').addEventListener('click', newRoute);
+  $('new-route').addEventListener('click', () => { newRoute(); showDock(true); });
   ctx.isPlanning = () => planning;
   $('r-undo').addEventListener('click', () => editor.undo());
   $('r-redo').addEventListener('click', () => editor.redo());
@@ -283,11 +306,23 @@ export function initRoute(ctx) {
     setTimeout(() => el.name.focus(), 0);
   }
 
-  // ---------------------------------------------------------------- stats + profile (from the full geometry)
+  // ---------------------------------------------------------------- route dock: figures + profile (D-049)
+  const n0 = (v) => (v === null || v === undefined ? '—' : fmtNumber(Math.round(v)));
+  const pair = (a, b) => `<div class="rd-pair">${a}${b}</div>`;
+  const stat = (value, unit, label, cls = '') =>
+    `<span class="rd-st ${cls}"><b>${value}</b><i>${unit}</i><small>${label}</small></span>`;
   async function updateStats() {
     const seq = ++statsSeq;
     const line = editor.geometry();
-    if (line.length < 2) { $('profile-box').hidden = true; $('stats').innerHTML = ''; hoverMarker.remove(); return; }
+    const empty = line.length < 2;
+    $('profile-box').classList.toggle('empty', empty);
+    $('draw-hint').hidden = !empty;
+    if (empty) {
+      samples = [];
+      $('stats').innerHTML = ''; $('rd-dist').textContent = '0'; $('profile').innerHTML = ''; $('pill-stats').innerHTML = '';
+      hoverMarker.remove();
+      return;
+    }
     const t0 = performance.now();
     const pts = resampleLine(line, 20);
     let elevs;
@@ -301,48 +336,81 @@ export function initRoute(ctx) {
     samples = pts.map((s, i) => ({ ...s, elevation: elevs[i] }));
     const st = computeElevationStats(elevs, { stepM: 20 });
     const dist = pts.at(-1).distance;
-    const totalMin = Math.round(naismithSeconds(dist, st.ascent) / 60);
-    const m = (v) => (v === null ? '—' : `${fmtNumber(Math.round(v))} ${t('unit.m')}`);
+    const km = fmtNumber(dist / 1000, { maximumFractionDigits: dist < 10_000 ? 2 : 1 });
     const provisional = editor.segments().some((s) => s.provisional);
-    const stat = (value, unit, label, cls = '') =>
-      `<div class="stat ${cls}"><span class="v">${value}</span>${unit ? `<span class="u">${unit}</span>` : ''}<span class="l">${label}</span></div>`;
-    const n0 = (v) => (v === null ? '—' : fmtNumber(Math.round(v)));
     const warn = [st.incomplete && t('stats.incomplete'), provisional && t('stats.provisional')].filter(Boolean);
-    $('stats').innerHTML = `
-      <div class="rp-main">
-        ${stat(fmtNumber(dist / 1000, { maximumFractionDigits: dist < 10_000 ? 2 : 1 }), t('unit.km'), t('stats.distance'), 'big')}
-        ${stat(n0(st.ascent), t('unit.m'), t('stats.ascent'), 'up')}
-        ${stat(n0(st.descent), t('unit.m'), t('stats.descent'), 'down')}
-        ${stat(`${Math.floor(totalMin / 60)}:${String(totalMin % 60).padStart(2, '0')}`, t('unit.hours'), t('stats.duration'))}
-      </div>
-      <div class="rp-sub"><span>${t('stats.minmax')} ${m(st.min)} / ${m(st.max)}</span>
-        <span class="muted">${t('stats.source')}: ${t('stats.sourceValue', { z: samplingZoom })} · ${ms} ms</span>
-        ${warn.map((w) => `<span class="warn">${t('stats.warning')}: ${w}</span>`).join('')}</div>`;
-    $('profile-box').hidden = !showProfile;
-    renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max, compact: true });
+    $('rd-dist').textContent = km;
+    // owner (D-049): no walking time; ascent | descent, then max | min
+    $('stats').innerHTML =
+      pair(stat(n0(st.ascent), t('unit.m'), t('stats.ascent'), 'up'), stat(n0(st.descent), t('unit.m'), t('stats.descent'), 'down')) +
+      pair(stat(n0(st.max), t('unit.m'), t('stats.max'), 'max'), stat(n0(st.min), t('unit.m'), t('stats.min'), 'min')) +
+      warn.map((w) => `<div class="rd-warn">${t('stats.warning')}: ${w}</div>`).join('');
+    $('stats').title = `${t('stats.source')}: ${t('stats.sourceValue', { z: samplingZoom })} · ${ms} ms`;
+    $('pill-stats').innerHTML = `<b>${km}</b><i>${t('unit.km')}</i><span class="up">${n0(st.ascent)}</span><span class="down">${n0(st.descent)}</span>`;
+    if (expanded) renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max, compact: true });
   }
 
-  // Elevation stats + profile can be hidden (owner request); remembered in prefs.
-  let showProfile = loadPrefs().showProfile !== false;
-  function applyProfileVisibility() {
-    $('show-profile').checked = showProfile;
-    $('stats').hidden = !showProfile;
-    if (!showProfile) { $('profile-box').hidden = true; hoverMarker.remove(); }
-    else if (editor.geometry().length >= 2) updateStats();
-  }
-  $('show-profile').addEventListener('change', (e) => { showProfile = e.target.checked; savePrefs({ showProfile }); applyProfileVisibility(); });
-  $('profile-close').addEventListener('click', () => { showProfile = false; savePrefs({ showProfile }); applyProfileVisibility(); });
-  // Compact (figures only) ↔ expanded (figures + profile); remembered.
+  // Dock visibility: the route button opens/closes it; inside, the panel can be hidden (tool bar + pill stay).
+  // closed until asked for, unless a saved route is being restored (then its figures are shown)
+  let dockOpen = loadPrefs().routeDock ?? (() => { try { return !!JSON.parse(store.get(DRAFT_KEY) ?? 'null')?.state?.vertices?.length; } catch { return false; } })();
   let expanded = loadPrefs().profileExpanded !== false;
-  function applyExpanded() {
-    $('profile-box').classList.toggle('collapsed', !expanded);
+  function syncDock() {
+    $('route-dock').hidden = !dockOpen;
+    $('btn-route').setAttribute('aria-expanded', String(dockOpen));
+    $('profile-box').hidden = !expanded;
+    $('route-pill').hidden = expanded || editor.geometry().length < 2;
     $('profile-toggle').setAttribute('aria-expanded', String(expanded));
-    if (!expanded) hoverMarker.remove();
-    else if (!$('profile-box').hidden && samples.length) requestAnimationFrame(() => updateStats());
+    document.body.classList.toggle('dock-open', dockOpen);
+    if (!expanded || !dockOpen) { hoverMarker.remove(); $('color-pop').hidden = true; }
+    requestAnimationFrame(() => document.documentElement.style.setProperty('--dock-h', `${dockOpen ? $('route-dock').offsetHeight + 12 : 0}px`));
   }
-  $('profile-toggle').addEventListener('click', () => { expanded = !expanded; savePrefs({ profileExpanded: expanded }); applyExpanded(); });
-  applyExpanded();
-  applyProfileVisibility();
+  function showDock(open) { dockOpen = open; savePrefs({ routeDock: open }); syncDock(); }
+  function setExpanded(on) {
+    expanded = on; savePrefs({ profileExpanded: on }); syncDock();
+    if (on && samples.length) updateStats();
+  }
+  $('btn-route').addEventListener('click', () => { ctx.menus?.closeAll(); showDock(!dockOpen); });
+  $('profile-toggle').addEventListener('click', () => setExpanded(false));
+  $('route-pill').addEventListener('click', () => setExpanded(true));
+  ctx.routeDock = { showDock, setExpanded, isOpen: () => dockOpen, isExpanded: () => expanded };
+
+  // Route name (click to edit) and colour (dots), kept with the draft in this browser.
+  function getMeta() { try { return JSON.parse(store.get(META_KEY) ?? '{}') ?? {}; } catch { return {}; } }
+  function setMeta(patch) {
+    const m = { ...getMeta(), ...patch };
+    store.set(META_KEY, JSON.stringify(m));
+    applyMeta();
+  }
+  function applyMeta() {
+    const m = getMeta();
+    const name = $('route-name');
+    if (document.activeElement !== name) name.textContent = m.name || t('route.defaultName');
+    name.classList.toggle('placeholder', !m.name);
+    const c = routeColor();
+    $('route-color').style.setProperty('--c', c);
+    if (map.getLayer('route-line')) {
+      map.setPaintProperty('route-line', 'line-color', c);
+      map.setPaintProperty('route-points', 'circle-color', ['case', ['get', 'first'], c, '#ffffff']);
+    }
+    $('color-pop').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.color === c)));
+    ctx.results.routeMeta = { name: m.name ?? '', color: c };
+  }
+  const nameEl = $('route-name');
+  nameEl.addEventListener('focus', () => { if (!getMeta().name) nameEl.textContent = ''; });
+  nameEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); nameEl.blur(); } if (e.key === 'Escape') { nameEl.textContent = getMeta().name ?? ''; nameEl.blur(); } });
+  nameEl.addEventListener('blur', () => setMeta({ name: nameEl.textContent.trim().slice(0, 80) }));
+  for (const c of ROUTE_COLORS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'color-dot'; b.dataset.color = c; b.style.setProperty('--c', c); b.setAttribute('role', 'option');
+    b.addEventListener('click', () => { setMeta({ color: c }); $('color-pop').hidden = true; });
+    $('color-pop').append(b);
+  }
+  $('route-color').addEventListener('click', (e) => { e.stopPropagation(); $('color-pop').hidden = !$('color-pop').hidden; });
+  document.addEventListener('click', (e) => { if (!$('color-pop').contains(e.target)) $('color-pop').hidden = true; });
+
+  syncDock();
+  applyMeta();
+  updateStats();
 
   restoreDraft();
   globalThis.__topo3d && (globalThis.__topo3d.editor = editor);
