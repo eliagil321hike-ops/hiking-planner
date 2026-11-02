@@ -70,6 +70,41 @@ the e2e test uses the real MapLibre build (from GitHub releases) with fixture st
   browser. Owner approved design + publishing. Before merging: unit 38/38, smoke all PASS, e2e 101/101.
   Restore point: branch snapshot/site-before-my-routes.
 
+## Review of the 2026-11-02 work (done 2026-11-03)
+**State checked.** main = fe56cd2 = the live site (CI test + deploy green 2026-11-02 21:06 UTC; the deploy log lists
+library*.js, thumbnail.js and the fonts). The live URL itself is not reachable from the agent workspace: the owner's
+look on the real map and on a phone is still the final check.
+**Tests on main, fresh run:** unit 38/38, packages geo 31/31 + editor 18/18, smoke 17/17, e2e 101/101.
+
+**Found and fixed on branch wip/review-fixes (not merged, owner to approve):**
+1. Saving a route moved the user's view: the preview picture fits the map to the route (flat, north up) and never
+   put the view back. Now the centre, zoom, tilt and bearing come back; new e2e check (fails on the old code path).
+2. The "route saved" message was hidden behind the library panel → messages above it.
+3. On a phone the library covered the map-control column (top right) → it leaves that column free.
+
+**Performance (branch wip/perf, on top of the fixes, not merged):** MapLibre scripts deferred + early connections
+to unpkg / OpenFreeMap / Mapterhorn (the page paints before ~800 kB of JS is parsed); DEM tile cache bounded to
+64 tiles (it kept every tile ever touched, ~1 MB each) and a failed tile download is retried instead of failing for
+the rest of the visit; the handle hover test runs at most every 50 ms instead of on every mouse event. Unit tests
+for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102/102.
+
+**Not fixed, to decide:**
+- OSM data on the live site is still from 2026-07-15: the weekly refresh (2026-11-02 02:56 UTC) hit Overpass
+  502/504 and its time budget, and kept the old files rather than deploy a partial set (by design). Next weekly
+  run 2026-11-09. Proposal: refresh area by area over several runs and keep each fresh part.
+- style.css has grown in layers (D-038 → D-055 each overriding the last; some rules for the old top-left controls
+  are dead). A cleanup pass would make later small fixes safer.
+- Number display (owner, 2026-11-03): sketch sent (proportional figures without the wide mono comma; larger
+  ascent/descent icons; peak/valley icons for max/min), waiting for approval.
+
+**Lessons (how the work is done):**
+- Never edit files that a running e2e serves: one e2e run was spoiled that way → separate git worktrees per branch.
+- Software WebGL starves in-page timing (requestAnimationFrame, Playwright's "stable" check), worst in a tilted 3D
+  view: tests wait by polling from Python and keep the view flat; app code that must run (graph redraw) does not
+  depend on requestAnimationFrame.
+- Context was lost twice during long turns; work was recovered from git and the session log. Commit each step.
+- A git tag push is refused by the proxy here; restore points are branches (snapshot/site-before-my-routes).
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).
