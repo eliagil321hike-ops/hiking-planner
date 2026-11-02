@@ -78,7 +78,8 @@ look on the real map and on a phone is still the final check.
 
 **Found and fixed on branch wip/review-fixes (not merged, owner to approve):**
 1. Saving a route moved the user's view: the preview picture fits the map to the route (flat, north up) and never
-   put the view back. Now the centre, zoom, tilt and bearing come back; new e2e check (fails on the old code path).
+   put the view back. Now the centre, zoom, tilt and bearing come back; new e2e check (not run against the old
+   code; there the view after saving is flat and fitted to the route, so it should fail).
 2. The "route saved" message was hidden behind the library panel → messages above it.
 3. On a phone the library covered the map-control column (top right) → it leaves that column free.
 
