@@ -19,6 +19,7 @@ import { initMenus } from './menus.js';
 import { createOrsRouter } from './router.js';
 import { initView3d } from './view3d.js';
 import { initSearch } from './search.js';
+import { initLibrary } from './library.js';
 
 const BUILD = '__BUILD__'; // replaced by CI (scripts/stamp_build.sh) with the commit id
 const perf = createPerf();
@@ -137,6 +138,7 @@ if (overlay.routing?.embeddedKey) {
 const route = initRoute(ctx);
 const menus = initMenus(ctx);
 ctx.menus = menus;
+initLibrary(ctx);   // My Routes (D-056)
 initSearch(ctx);
 
 // Test/debug handle (used by scripts/e2e_test.py).

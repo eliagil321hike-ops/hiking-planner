@@ -34,6 +34,8 @@ export function initRoute(ctx) {
   let statsSeq = 0;
   let samples = [];
   let drawProfile = null, lastSize = '';   // redraw of the elevation graph at its current size (D-054)
+  // My Routes (D-056): figures of the current line for saving; resolves when the figures are up to date.
+  let lastFigures = null;
   const hoverMarker = new maplibregl.Marker({ color: '#2a241d', scale: 0.7 });
 
   // ---------------------------------------------------------------- layers
@@ -195,15 +197,17 @@ export function initRoute(ctx) {
   }
   $('plan').addEventListener('click', () => setPlanning(!planning));
   // "New route" (always visible): clear the current route as one undoable command and start drawing.
-  function newRoute() {
+  // A saved, unchanged route is simply closed; unsaved work asks first (save / continue without saving / cancel).
+  async function newRoute() {
     const s = editor.state;
-    if ((s.vertices.length || s.waypoints.length) && !confirm(t('route.newConfirm'))) return;
+    if (!(await guardUnsaved())) return false;
     selected = null;
     if (s.vertices.length || s.waypoints.length) editor.run(clearRoute(editor.state));
-    setMeta({ name: '' });
+    setMeta({ name: '', savedId: null, savedSig: null });
     setPlanning(true);
+    return true;
   }
-  $('new-route').addEventListener('click', () => { newRoute(); if (!expanded) setExpanded(true); });
+  $('new-route').addEventListener('click', async () => { if (await newRoute() && !expanded) setExpanded(true); });
   ctx.isPlanning = () => planning;
   $('r-undo').addEventListener('click', () => editor.undo());
   $('r-redo').addEventListener('click', () => editor.redo());
@@ -320,6 +324,7 @@ export function initRoute(ctx) {
     $('profile-box').classList.toggle('empty', empty);
     $('draw-hint').hidden = !empty;
     if (empty) {
+      lastFigures = null;
       samples = [];
       $('stats').innerHTML = ''; $('rd-dist').textContent = '0'; $('profile').innerHTML = ''; $('pill-stats').innerHTML = '';
       hoverMarker.remove();
@@ -348,6 +353,8 @@ export function initRoute(ctx) {
       pair(stat(n0(st.max), t('unit.m'), t('stats.max'), 'max'), stat(n0(st.min), t('unit.m'), t('stats.min'), 'min')) +
       warn.map((w) => `<div class="rd-warn">${t('stats.warning')}: ${w}</div>`).join('');
     $('stats').title = `${t('stats.source')}: ${t('stats.sourceValue', { z: samplingZoom })} · ${ms} ms`;
+    lastFigures = { seq, line, distance: dist, ascent: st.ascent, descent: st.descent, min: st.min, max: st.max,
+      profile: samples.map((p) => [p.point[0], p.point[1], Math.round(p.distance * 10) / 10, p.elevation === null ? null : Math.round(p.elevation * 10) / 10]) };
     $('pill-stats').innerHTML = `<b>${km}</b><i>${t('unit.km')}</i><span class="up">${n0(st.ascent)}</span><span class="down">${n0(st.descent)}</span>`;
     drawProfile = () => renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max, compact: true });
     if (expanded) drawProfile();
@@ -397,6 +404,7 @@ export function initRoute(ctx) {
     applyMeta();
   }
   function applyMeta() {
+    syncSaved();
     const m = getMeta();
     const name = $('route-name');
     if (document.activeElement !== name) name.textContent = m.name || t('route.defaultName');
@@ -422,6 +430,55 @@ export function initRoute(ctx) {
   }
   $('route-color').addEventListener('click', (e) => { e.stopPropagation(); $('color-pop').hidden = !$('color-pop').hidden; });
   document.addEventListener('click', (e) => { if (!$('color-pop').contains(e.target)) $('color-pop').hidden = true; });
+
+  // ---------------------------------------------------------------- My Routes link (D-056)
+  // The route on the map may be linked to a saved route (savedId). "Saved" means: the editor state, name and
+  // colour are exactly what was last saved (savedSig). Nothing is saved automatically.
+  const signature = () => JSON.stringify([editor.state, getMeta().name ?? '', routeColor()]);
+  const isDirty = () => hasRoute() && getMeta().savedSig !== signature();
+  function syncSaved() {
+    const m = getMeta(), chip = $('rd-saved');
+    if (!chip) return;
+    const state = !hasRoute() ? 'none' : isDirty() ? (m.savedId ? 'changed' : 'unsaved') : 'saved';
+    chip.dataset.state = state;
+    chip.textContent = state === 'none' ? '' : t(`lib.state.${state}`);
+    chip.hidden = state === 'none';
+    $('r-save').classList.toggle('attn', state === 'unsaved' || state === 'changed');
+    ctx.results.savedState = state;
+  }
+  editor.onChange(syncSaved);
+  async function guardUnsaved() {
+    if (!isDirty()) return true;
+    return ctx.library ? ctx.library.confirmUnsaved() : confirm(t('route.newConfirm'));
+  }
+  addEventListener('beforeunload', (e) => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
+  async function snapshot() {
+    if (editor.geometry().length < 2) return null;
+    // wait until the figures belong to the current line (elevation sampling is asynchronous)
+    for (let i = 0; i < 150 && lastFigures?.seq !== statsSeq; i++) await new Promise((ok) => setTimeout(ok, 100));
+    const f = lastFigures, d = editor.toDraft();
+    if (!f || f.seq !== statsSeq) throw new Error('figures-not-ready');
+    return { name: getMeta().name || '', color: routeColor(), editor: d, geometry: editor.geometry().map((p) => [p[0], p[1]]),
+      profile: f.profile, stats: { distance: f.distance, ascent: f.ascent, descent: f.descent, min: f.min, max: f.max } };
+  }
+  function markSaved(rec) {
+    setMeta({ name: rec.name, savedId: rec.id });
+    setMeta({ savedSig: signature() });
+  }
+  /** Show a saved route (never shown automatically): load it into the editor, fit the view, show the panel. */
+  function openSaved(rec, { edit = false } = {}) {
+    selected = null;
+    editor.load({ vertices: rec.editor.state.vertices, waypoints: rec.editor.state.waypoints ?? [] }, rec.editor.cache ?? {});
+    setMeta({ name: rec.name, color: ROUTE_COLORS.includes(rec.color) ? rec.color : ROUTE_COLOR, savedId: rec.id });
+    setMeta({ savedSig: signature() });
+    setPlanning(edit);
+    if (!expanded) setExpanded(true);
+    const b = rec.bbox;
+    if (b) map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: { top: 90, bottom: 240, left: 80, right: 90 }, maxZoom: 15, duration: 900 });
+  }
+  ctx.routeLib = { hasRoute, isDirty, snapshot, markSaved, openSaved, guardUnsaved, linkedId: () => getMeta().savedId ?? null,
+    unlink: () => setMeta({ savedId: null, savedSig: null }),
+    color: routeColor, setPlanning };
 
   syncDock();
   applyMeta();

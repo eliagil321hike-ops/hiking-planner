@@ -592,6 +592,19 @@ raise the right tool bar a little")
   map was busy (e2e caught it); it now redraws directly in the ResizeObserver callback. The fixed graph height
   needed an id selector to beat the older `#profile { height: 100% }`.
 
+## D-056 (2026-11-02, branch wip/my-routes — NOT approved for the live site yet) My Routes library
+- Owner brief: card view, folders, manual saving only, map preview picture, edit = update original or create copy;
+  every stage shown before it goes live. No server or accounts exist, so the library lives in this browser's
+  IndexedDB ("topo3d-library"; the github.io origin is shared by all the owner's sites) behind a small adapter
+  (library-store.js), with a userId field ("local") so a synced store (e.g. Google) can be added later.
+- A route record keeps everything to restore it exactly: the editor draft (control points, segment modes, routed
+  segment geometries), the whole line, the elevation profile every 20 m, figures, bbox, colour and a JPEG preview
+  captured from the map fitted to the route (editing handles hidden; a drawn sketch if the map cannot be read).
+- The route on the map stays separate: it is linked to a saved record (savedId) and compared with what was saved
+  (savedSig) → "saved / unsaved / changes not saved". Leaving unsaved work (new route, opening another, closing
+  the page) asks first. Saved routes are drawn only when opened. The existing draft auto-recovery is unchanged
+  (question to the owner).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
