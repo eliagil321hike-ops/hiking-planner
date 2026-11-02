@@ -597,6 +597,8 @@ def main():
         wait_js(page, "() => !!window.__topo3d.results.lastSaved", 120)
         sid = page.evaluate("() => window.__topo3d.results.lastSaved.id")
         page.wait_for_timeout(500); r["libCamera"] = [cam_before, page.evaluate(cam_js)]
+        # back to flat: a tilted 3D view keeps software WebGL so busy that Playwright's "stable" checks never finish
+        page.evaluate("() => window.__topo3d.map.jumpTo({ pitch: 0, bearing: 0 })"); page.wait_for_timeout(500)
         r["libSaved"] = page.evaluate(f"""() => {L}.getRoute({sid!r}).then((x) => ({{ name: x.name, folder: !!x.folderId, vertices: x.editor.state.vertices.length,
             geomSame: JSON.stringify(x.geometry) === JSON.stringify({ed}.geometry().map((p) => [p[0], p[1]])), profile: x.profile.length,
             elevOk: x.profile.every((p) => p.length === 4), thumb: (x.thumb || '').slice(0, 11), state: window.__topo3d.results.savedState }}))""")
