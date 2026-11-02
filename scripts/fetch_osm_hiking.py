@@ -46,29 +46,46 @@ MARK_COLOURS = {"red": "#d32f2f", "blue": "#1e63c4", "green": "#2e9b3e", "black"
 SKIP_ROLES = {"alternative", "excursion", "approach", "connection"}
 
 
+# A total time budget for all queries, and per-server health: a server that keeps failing is tried last, so
+# one dead server cannot cost ~4 minutes per query (2026-11-02: a refresh spent 50+ min that way). D-044.
+BUDGET_S = float(os.environ.get("OSM_BUDGET_MIN", "25")) * 60
+REQUEST_TIMEOUT_S = 150
+_T0 = time.time()
+_fails = {u: 0 for u in ENDPOINTS}
+
+
+def _endpoints():
+    return sorted(ENDPOINTS, key=lambda u: (_fails[u] >= 2, ENDPOINTS.index(u)))
+
+
 def run_query(q, bbox):
     s_, w, n, e = bbox
     body = urllib.parse.urlencode({"data": q.format(s=s_, w=w, n=n, e=e)}).encode()
     last, stale = None, None
     for attempt in range(3):
-        for url in ENDPOINTS:
+        for url in _endpoints():
+            left = BUDGET_S - (time.time() - _T0)
+            if left < 20:
+                raise RuntimeError("time budget used up")
             try:
                 req = urllib.request.Request(url, data=body, headers={"User-Agent": "Topo3D hiking planner (personal, build-time extract; github.com/eliagil321hike-ops/hiking-planner)"})
-                with urllib.request.urlopen(req, timeout=240) as r:
+                with urllib.request.urlopen(req, timeout=min(REQUEST_TIMEOUT_S, left)) as r:
                     d = json.load(r)
+                _fails[url] = 0
                 age = stale_days(d)
-                if age > MAX_AGE_DAYS and url != ENDPOINTS[-1]:
-                    print(f"overpass {url}: data {age:.0f} days old, trying another server", file=sys.stderr)
+                if age > MAX_AGE_DAYS:
+                    print(f"overpass {url}: data {age:.0f} days old", file=sys.stderr)
                     stale = d
                     continue
                 return d
             except Exception as ex:  # noqa: BLE001 - report and try the next endpoint
                 last = ex
+                _fails[url] += 1
                 print(f"overpass {url} attempt {attempt + 1} failed: {ex}", file=sys.stderr)
         if stale is not None:      # only out-of-date servers answered: better old data than none
             print("WARNING: using out-of-date Overpass data", file=sys.stderr)
             return stale
-        time.sleep(30 * (attempt + 1))
+        time.sleep(min(30 * (attempt + 1), max(0, BUDGET_S - (time.time() - _T0) - 20)))
     raise RuntimeError(f"all Overpass endpoints failed: {last}")
 
 
@@ -354,6 +371,14 @@ def main():
         sys.exit(0 if soft or kept else 1)
     trails, pois, seen = build(data)
     stamp = data.get("osm3s", {}).get("timestamp_osm_base", "")
+    olds = [previous(n) for n in ("osm-trails.geojson", "osm-pois.geojson")] if prev else [None, None]
+    if all(olds) and all(o.get("osm_base", "") > stamp for o in olds) and stamp:
+        print(f"new extract (OSM base {stamp}) is older than the live one ({olds[0].get('osm_base')}): keeping the live data")
+        for n, o in zip(("osm-trails.geojson", "osm-pois.geojson"), olds):
+            with open(os.path.join(out, n), "w", encoding="utf-8") as f:
+                json.dump(o, f, ensure_ascii=False, separators=(",", ":"))
+        split_from_files(out)
+        return
     for name, feats in (("osm-trails.geojson", trails), ("osm-pois.geojson", pois)):
         old = previous(name) if prev and data.get("incomplete") else None
         if old and len(old["features"]) > len(feats):  # partial run: the previous complete file is better

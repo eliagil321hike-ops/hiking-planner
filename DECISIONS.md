@@ -463,6 +463,15 @@ with the first real request.
   polish (not yet saved routes / GPX).
 - Owner check of the live site: icons fine, looks good, "a bit sluggish but not disturbing", snapping great.
 
+## D-044 (2026-11-02) Data refresh must not hang on a dead Overpass server
+- Seen: a manual refresh spent 50+ minutes because overpass-api.de timed out (240 s) on each of ~20
+  queries before the backup answered (with data from July).
+- Now: a total time budget (25 min, `OSM_BUDGET_MIN`); per-request timeout 150 s; a server that failed
+  twice is tried last; parts not done in time keep the live data. A new extract older than the live one is
+  never deployed (the live files are kept).
+- e2e: every wait is polled from Python (in-page polling starved on the busy software-WebGL page and made
+  CI flaky, blocking a deploy).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
