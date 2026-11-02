@@ -341,7 +341,12 @@ def main():
 
         # Background switch → satellite (Esri default, embedded key)
         page.evaluate("() => document.querySelector('input[name=base][value=satellite]').click()")
-        page.wait_for_timeout(1500)
+        # wait for the layer, its attribution and the first tile request (fixed 1.5 s was too short in CI)
+        wait_js(page, "() => !!window.__topo3d.map.getLayer('satellite') && (document.querySelector('.maplibregl-ctrl-attrib-inner')?.textContent ?? '').includes('Esri')", 60)
+        import time as _t
+        _end = _t.time() + 60
+        while not seen["satellite"] and _t.time() < _end:
+            page.wait_for_timeout(300)
         r["satLayer"] = page.evaluate("() => !!window.__topo3d.map.getLayer('satellite')")
         r["satTiles"] = page.evaluate("() => window.__topo3d.map.getStyle().sources.satellite?.tiles?.[0] ?? null")
         r["landcoverInSat"] = page.evaluate("() => window.__topo3d.map.getLayoutProperty('topo-landcover','visibility')")
