@@ -519,6 +519,20 @@ with the first real request.
 - e2e: the z13 points check is slow in software WebGL (all icons were in fact drawn — diagnostics showed
   water 1, camp 1, parking 1 just after the 60 s limit); limit raised to 150 s.
 
+## D-049 (2026-11-02) Owner: one route dock instead of the route-options menu + stats panel
+- Owner chose sketch ג (side tool bar + data panel) from three, with changes, after two sketch rounds.
+- Tool bar (bottom corner, icons + tooltips): edit, snap↔straight (one toggle; the hidden `<select>` keeps
+  the value), undo, redo, reverse, close loop, delete point, clear.
+- Data panel: distance large; route name beside it (click to edit, saved in this browser); a dot in the
+  route colour opens six colour dots (no names; owner) — fluorescent green (default), pink, cyan, yellow,
+  orange, purple — and recolours the route line; ascent | descent; max | min; no walking time (owner);
+  warnings in red; elevation source as a tooltip; safety note behind ⓘ. Profile with 3–5 round elevation
+  levels (`elevationTicks`), start/finish markers.
+- Hide (arrow): tool bar stays in the corner + a pill (distance, ascent, descent); the pill restores it.
+- No route-options button (owner): "מסלול חדש" opens the dock; it is shown while editing or while a route
+  exists, and disappears when the route is cleared and editing ends. Map controls move above the dock.
+- Fixed on the way: `[hidden]` now always wins over component `display` rules; map credits start folded.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
