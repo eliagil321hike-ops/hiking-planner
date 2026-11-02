@@ -61,7 +61,8 @@ the e2e test uses the real MapLibre build (from GitHub releases) with fixture st
 
 ## Design A2 (D-051, 2026-11-02)
 - Owner picked sketch A, darker variant A2 (text/icons Dark Text, 1.9px icons, clear frames, Deep Blue panel
-  toggles). Built on wip/a2-redesign: unit 30/30 (incl. new contrast test), smoke all PASS, e2e 87/87 locally.
+  toggles), then owner tweaks: no top bar, rounder corners, icon-only top-left, no layers menu (D-052).
+  Built on wip/a2-redesign: unit 30/30 (incl. new contrast test), smoke all PASS, e2e 87/87 locally.
   Waiting for the owner's look at the screenshots before merging to main.
 
 ## Next task
