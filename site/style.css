@@ -549,3 +549,35 @@ body:not(.dock-panel) .route-tools { margin-bottom: calc(var(--top-h) - var(--ed
   body:not(.dock-panel) .route-tools { margin-bottom: 0; }
   body.dock-open .maplibregl-ctrl-bottom-left { bottom: var(--dock-h); }   /* the dock is full width on a phone */
 }
+
+/* D-054: elevation graph fits its panel (owner screenshot: graph cut at the bottom, empty band on the right).
+   Fixed graph height, the figures column has a width limit (a long warning wraps instead of widening it). */
+.rd-panel { height: auto; min-height: 160px; align-items: stretch; }
+.rd-data { max-width: 340px; }
+.rd-warn { font-size: 11px; line-height: 1.35; }
+#profile.rd-profile { height: 136px; align-self: center; overflow: hidden; }
+@media (max-width: 760px) { .rd-data { max-width: none; } #profile.rd-profile { height: 110px; } }
+
+/* ---------------------------------------------------------------- D-055 (owner): small map controls in the top-right
+   corner; search box, map controls and route tool bar styled as before A2 (soft floating cards: no frame, soft
+   shadow, rounder corners), in the A2 colours. The search row moves left by the control column's width. */
+:root { --nav: 29px; }
+.maplibregl-ctrl-top-right { top: var(--edge); }
+.maplibregl-ctrl-top-right .maplibregl-ctrl { margin: 0 var(--edge) 8px 0; }
+.maplibregl-ctrl-group { border: 0; border-radius: 8px !important; box-shadow: 0 2px 10px rgba(32, 52, 73, 0.18) !important; }
+.maplibregl-ctrl-group button { width: var(--nav); height: var(--nav); }
+.maplibregl-ctrl-group button + button { border-top: 1px solid var(--c-light); }
+.ctrl-3d { width: var(--nav) !important; height: var(--nav) !important; font: 600 11px var(--mono) !important; }
+.toolbar { inset-inline-start: calc(var(--edge) + var(--nav) + 12px); }
+.search input { height: 40px; border: 0; border-radius: 12px; box-shadow: 0 2px 10px rgba(32, 52, 73, 0.16); }
+.search input:focus { box-shadow: 0 0 0 2px var(--c-turq), 0 2px 10px rgba(32, 52, 73, 0.16); }
+.search-go { top: 2px; }
+.search-results { top: 46px; border: 0; border-radius: 12px; box-shadow: 0 10px 30px rgba(32, 52, 73, 0.18); overflow: hidden; }
+.popover { inset-inline-end: var(--edge); }
+.route-tools { border: 0; border-radius: 14px; padding: 6px; box-shadow: 0 8px 24px rgba(32, 52, 73, 0.16); }
+.tbtn { width: 34px; height: 34px; border-radius: 9px; }
+.tbtn[aria-pressed="true"]#plan { background: var(--c-dark); color: #fff; }
+.tbtn#seg-toggle[aria-pressed="true"] { background: transparent; }
+@media (max-width: 600px) {
+  .toolbar { inset-inline-start: calc(var(--edge) + var(--nav) + 8px); }
+}

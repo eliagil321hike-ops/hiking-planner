@@ -98,7 +98,7 @@ const map = new maplibregl.Map({
   // ?pr=1 renders fewer pixels on high-DPI screens (performance experiment, D-013)
   ...(Number(params.get('pr')) > 0 ? { pixelRatio: Number(params.get('pr')) } : {}),
 });
-map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-left');
+map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
 map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
 map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
 // "Center on me": asks for location permission only when pressed, one fix, no tracking (SPEC 8.1).
@@ -108,7 +108,7 @@ const geolocate = new maplibregl.GeolocateControl({
   showAccuracyCircle: true,
   fitBoundsOptions: { maxZoom: 14 },
 });
-map.addControl(geolocate, 'top-left');
+map.addControl(geolocate, 'top-right');
 geolocate.on('error', () => notify(t('error.location')));
 geolocate.on('geolocate', () => notify(null));
 // Remember the last view (saved after each move; a URL hash still overrides it).
@@ -127,7 +127,7 @@ const ctx = {
 Object.assign(ctx, layerHelpers(ctx));
 initLayers(ctx);
 const view = initView3d(ctx);
-map.addControl(view.control, 'top-left');
+map.addControl(view.control, 'top-right');
 const background = initBackground(ctx);
 ctx.applyBackground = background.applyBackground;
 // Routing (snap to trails): openrouteservice with the owner's embedded key (D-027).

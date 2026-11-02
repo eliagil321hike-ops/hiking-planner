@@ -434,6 +434,15 @@ def main():
             time: document.getElementById('profile-box').textContent.includes('זמן'), dockOpen: !document.getElementById('route-dock').hidden,
             startFinish: !!document.querySelector('#profile .profile-start') && !!document.querySelector('#profile .profile-finish'),
             yLevels: document.querySelectorAll('#profile line.profile-grid-h').length })""")
+        # D-054: the graph fills its box and stays inside the panel, also after the window changes size
+        fit_js = """() => { const p = document.getElementById('profile'), svg = p.querySelector('svg'), box = document.getElementById('profile-box');
+            const vb = svg.viewBox.baseVal, rs = svg.getBoundingClientRect(), rb = box.getBoundingClientRect();
+            return { w: Math.abs(vb.width - p.clientWidth) <= 2, h: Math.abs(vb.height - p.clientHeight) <= 2, inside: rs.bottom <= rb.bottom + 0.5, vbw: vb.width, cw: p.clientWidth }; }"""
+        fit1 = page.evaluate(fit_js)
+        page.set_viewport_size({"width": 1500, "height": 800}); page.wait_for_timeout(1500)
+        fit2 = page.evaluate(fit_js)
+        page.set_viewport_size({"width": 1280, "height": 800}); page.wait_for_timeout(1500)
+        r["profileFit"] = [fit1, fit2]
         for name in ("dock-open",):
             try:
                 page.screenshot(path=str(CACHE / f"e2e-{name}.png"), timeout=120_000, animations="disabled")
@@ -600,6 +609,7 @@ def main():
     expect(m[1]["style"] and m[1]["styleAria"] == "true", "map-style icon opens its menu")
     expect(not m[2]["style"], "pressing the same icon again closes the menu")
     expect(not m[3]["style"], "Escape closes the menu")
+    expect(all(f["w"] and f["h"] and f["inside"] for f in r["profileFit"]), f"elevation graph fills its box and stays inside the panel, also after a resize (D-054) {r['profileFit']}")
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")

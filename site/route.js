@@ -33,6 +33,7 @@ export function initRoute(ctx) {
   let drag = null;               // { kind: 'vertex'|'mid', index, lngLat }
   let statsSeq = 0;
   let samples = [];
+  let drawProfile = null, lastSize = '';   // redraw of the elevation graph at its current size (D-054)
   const hoverMarker = new maplibregl.Marker({ color: '#2a241d', scale: 0.7 });
 
   // ---------------------------------------------------------------- layers
@@ -348,8 +349,17 @@ export function initRoute(ctx) {
       warn.map((w) => `<div class="rd-warn">${t('stats.warning')}: ${w}</div>`).join('');
     $('stats').title = `${t('stats.source')}: ${t('stats.sourceValue', { z: samplingZoom })} · ${ms} ms`;
     $('pill-stats').innerHTML = `<b>${km}</b><i>${t('unit.km')}</i><span class="up">${n0(st.ascent)}</span><span class="down">${n0(st.descent)}</span>`;
-    if (expanded) renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max, compact: true });
+    drawProfile = () => renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max, compact: true });
+    if (expanded) drawProfile();
   }
+  // The graph is drawn for the size of its box; redraw whenever that box changes (panel shown, window resized,
+  // the figures column grows), otherwise an old drawing is stretched or cut (owner screenshot, 2026-11-02).
+  new ResizeObserver(() => {
+    const p = $('profile'), size = `${p.clientWidth}x${p.clientHeight}`;
+    if (size === lastSize || !p.clientWidth) return;
+    lastSize = size;
+    if (expanded && drawProfile) drawProfile();   // directly: a rAF can starve while the map renders
+  }).observe($('profile'));
 
   // Dock visibility (owner, D-049): no route button — the dock is shown while editing or while a route exists
   // ("מסלול חדש" opens it); inside, the panel can be hidden (tool bar + pill stay).

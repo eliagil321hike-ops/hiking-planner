@@ -574,6 +574,24 @@ raise the right tool bar a little")
 - Right route tool column: with the panel hidden it ends 72px above the bottom (mirrors the left column's 72px from
   the top); with the panel open it sits beside the panel.
 
+## D-054 (2026-11-02) Bug: elevation graph cut at the bottom and narrower than its box (owner screenshot)
+- The graph is drawn for the size its box had at that moment and was never redrawn, so a later change (panel
+  shown, window resized, a long warning widening the figures column) left it stretched short or cut off; the
+  panel had a fixed height, so a warning line pushed the graph below its bottom edge.
+- Fix: redraw on every size change of the graph box (ResizeObserver); fixed graph height (136 px), panel grows
+  instead of clipping; the figures column has a max width so a warning wraps. New e2e check: the drawing matches
+  its box and stays inside the panel, before and after a window resize.
+
+## D-055 (2026-11-02) Small map controls top-right; soft cards for search, controls and route tools (owner)
+- Owner: make the whole map-control menu smaller and put it in the top-right corner; style the search box, the
+  map controls and the route tool bar as they were before A2 (owner screenshot of the earlier version).
+- Map controls (zoom, compass, location, 2D/3D) back to MapLibre's 29 px, top-right corner, white cards with a
+  soft shadow and no frame; the search row moved left by the column's width. Search box and route tool bar:
+  no frame, soft shadow, rounder corners (12 / 14 px); active route tool in Dark Text (as in the screenshot).
+- D-054 follow-up: the redraw on resize used requestAnimationFrame, which never ran while the software-rendered
+  map was busy (e2e caught it); it now redraws directly in the ResizeObserver callback. The fixed graph height
+  needed an id selector to beat the older `#profile { height: 100% }`.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
