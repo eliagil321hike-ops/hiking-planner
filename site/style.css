@@ -244,3 +244,11 @@ input.switch:focus-visible { outline: 3px solid #39ff14; outline-offset: 2px; }
   .popover { top: auto; bottom: 8px; inset-inline: 8px; width: auto; max-height: 68vh; border-radius: 16px; z-index: 4; }
 }
 @media (max-width: 600px) { .maplibregl-ctrl-top-right { top: 112px; } }
+
+/* D-045: category search chip */
+.cat-chip { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; align-items: center; gap: 6px;
+  padding: 4px 6px 4px 14px; border-radius: 999px; background: var(--glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-line); box-shadow: 0 4px 16px rgba(40, 30, 20, 0.16); font: 600 13px var(--font); color: var(--fg); }
+.cat-chip button { width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(42, 36, 29, 0.08); cursor: pointer; color: var(--muted); }
+.cat-chip button:hover { background: rgba(42, 36, 29, 0.16); color: var(--fg); }
+@media (max-width: 600px) { .cat-chip { top: 112px; } }

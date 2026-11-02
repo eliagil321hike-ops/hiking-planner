@@ -472,6 +472,16 @@ with the first real request.
 - e2e: every wait is polled from Python (in-page polling starved on the busy software-WebGL page and made
   CI flaky, blocking a deploy).
 
+## D-045 (2026-11-02) Owner: campsites/taps from 500 m; category search in the search box
+- Campsite (tent) and drinking-water (tap) icons from z12.7 (≈ 500 m scale bar); parking unchanged (z11).
+  Owner clarified "חניונים" = campsites.
+- Search box: a category word ("חניון לילה", "ברז", "מים", "חניה", "מעיין", "תצפית", "מחסה", English too;
+  site/poi-categories.js) shows every point of that category **in the current view at the moment of the
+  search** (owner's choice: not following later map moves), at any zoom, grouped with a count when crowded
+  (owner's choice), other icons unchanged (owner's choice). A chip shows the count with ✕ to clear. No
+  request to Nominatim for category words. Israel cells in view are loaded as needed; abroad, up to 24
+  on-demand cells, otherwise the chip asks to zoom in. New icon category = one entry in poi-categories.js.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

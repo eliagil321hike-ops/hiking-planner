@@ -293,6 +293,22 @@ def main():
         r["overpassAbroad"] = list(seen.get("overpass", []))
         page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 12 })")
         wait_js(page, "() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0", 60)
+        # Category search (D-045): zoom far out, search "חניון לילה" → every campsite in view, grouped; ✕ clears
+        page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 9 })")
+        page.wait_for_timeout(500)
+        r["campHiddenFar"] = page.evaluate("() => window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-camp', 'poi-camp-cluster'] }).length")
+        page.evaluate("() => { document.getElementById('search-q').value = 'חניון לילה'; document.getElementById('search').requestSubmit(); }")
+        wait_js(page, "() => !document.getElementById('cat-chip').hidden", 60)
+        wait_js(page, "() => window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-search', 'poi-search-cluster'] }).length > 0", 60)
+        r["catSearch"] = page.evaluate("""() => ({ res: window.__topo3d.results.category, chip: document.querySelector('#cat-chip span').textContent,
+            icon: window.__topo3d.map.getLayoutProperty('poi-search', 'icon-image'), nominatim: 0 })""")
+        r["catNominatim"] = len(seen.get("nominatim", []))
+        page.evaluate("() => document.querySelector('#cat-chip button').click()")
+        page.wait_for_timeout(500)
+        r["catCleared"] = page.evaluate("() => [document.getElementById('cat-chip').hidden, window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-search', 'poi-search-cluster'] }).length]")
+        r["campMinzoom"] = page.evaluate("() => [window.__topo3d.map.getLayer('poi-camp').minzoom, window.__topo3d.map.getLayer('poi-water').minzoom, window.__topo3d.map.getLayer('poi-parking').minzoom]")
+        page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 12 })")
+        page.wait_for_timeout(500)
         r["poiIcons"] = page.evaluate("""() => { const m = window.__topo3d.map; return [m.hasImage('topo-tent'), m.hasImage('topo-tap'),
             m.getLayer('topo-poi-icon')?.minzoom, JSON.stringify(m.getLayoutProperty('topo-poi-icon', 'icon-image'))]; }""")
         r["waterColor"] = page.evaluate("() => JSON.stringify(window.__topo3d.map.getPaintProperty('topo-waterway', 'line-color'))")
@@ -539,6 +555,11 @@ def main():
     expect(r["poiIcons"][:3] == [True, True, 13] and "topo-tent" in r["poiIcons"][3] and "topo-tap" in r["poiIcons"][3],
            f"tent and tap icons registered, icon layer from z13 (D-031) {r['poiIcons'][:3]}")
     o = r["osm"]
+    cs = r["catSearch"]
+    expect(r["campMinzoom"] == [12.7, 12.7, 11], f"campsite and tap icons from the 500 m scale, parking unchanged (D-045) {r['campMinzoom']}")
+    expect(r["campHiddenFar"] == 0 and cs["res"] and cs["res"]["kind"] == "camp" and cs["res"]["count"] == 1 and cs["icon"] == "topo-tent" and "חניוני לילה" in cs["chip"],
+           f"category search shows campsites in view at a far zoom (D-045) {cs} hiddenBefore={r['campHiddenFar']}")
+    expect(r["catNominatim"] == 0 and r["catCleared"] == [True, 0], f"category search makes no Nominatim request; ✕ clears {r['catNominatim']} {r['catCleared']}")
     a = r["abroad"]
     expect(r["overpassInIsrael"] == 0, "inside Israel the pre-built extract is used (no Overpass requests)")
     expect(len(r["overpassAbroad"]) == 1 and a["stats"]["dynamicCells"] >= 1 and a["marked"] == ["#d32f2f"] and a["camp"] >= 1 and a["stats"]["errors"] == 0,

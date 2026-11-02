@@ -1,12 +1,15 @@
-// Place search (D-038) with the public Nominatim service (OpenStreetMap data, free, no key).
+// Place search (D-038) with the public Nominatim service (OpenStreetMap data, free, no key), and category
+// search (D-045): a category word shows all its points in the current view, without any request to Nominatim.
 // Usage policy: no search-as-you-type, at most one request per second, OpenStreetMap attribution. So a search
 // runs only when the user presses Enter or the button, and requests are spaced ≥ 1.1 s apart.
+
+import { categoryFor } from './poi-categories.js';
 
 const ENDPOINT = 'https://nominatim.openstreetmap.org/search';
 const MIN_GAP_MS = 1100;
 
 export function initSearch(ctx, { fetchImpl = (...a) => fetch(...a) } = {}) {
-  const { map, $, t, notify } = ctx;
+  const { map, $, t, notify, fmtNumber } = ctx;
   const form = $('search'), input = $('search-q'), list = $('search-results');
   let last = 0, marker = null, seq = 0;
 
@@ -42,10 +45,42 @@ export function initSearch(ctx, { fetchImpl = (...a) => fetch(...a) } = {}) {
     ctx.results.search = { name: r.display_name, lon, lat };
   }
 
+  // ---- category search (D-045): "חניון לילה", "ברז", … → all of them in the current view, any zoom
+  const chip = $('cat-chip');
+  function clearCategory() {
+    map.getSource('poi-search')?.setData({ type: 'FeatureCollection', features: [] });
+    chip.hidden = true;
+    ctx.results.category = null;
+  }
+  chip.querySelector('button').addEventListener('click', () => { clearCategory(); input.value = ''; });
+
+  async function showCategory(cat) {
+    close();
+    const api = ctx.results.topo?.osmApi;
+    if (!api) return;
+    const b = map.getBounds();
+    form.classList.add('busy');
+    try {
+      const { features, tooLargeAbroad } = await api.collect(cat.kind, [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+      for (const id of ['poi-search-cluster', 'poi-search']) map.setLayoutProperty(id, 'icon-image', cat.icon);
+      map.getSource('poi-search').setData({ type: 'FeatureCollection', features });
+      chip.querySelector('span').textContent = features.length
+        ? t('search.catFound', { n: fmtNumber(features.length), label: cat.label }) + (tooLargeAbroad ? ` · ${t('search.catZoomAbroad')}` : '')
+        : t(tooLargeAbroad ? 'search.catZoomAbroad' : 'search.catNone', { label: cat.label });
+      chip.hidden = false;
+      ctx.results.category = { kind: cat.kind, count: features.length, tooLargeAbroad };
+    } finally {
+      form.classList.remove('busy');
+    }
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const q = input.value.trim();
     if (q.length < 2) return;
+    const cat = categoryFor(q);
+    if (cat) { await showCategory(cat); return; }
+    clearCategory();
     const wait = last + MIN_GAP_MS - Date.now();
     if (wait > 0) await new Promise((res) => setTimeout(res, wait));
     last = Date.now();

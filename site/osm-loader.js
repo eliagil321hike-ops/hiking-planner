@@ -123,5 +123,44 @@ export function createOsmLoader(map, cfg, { onUpdate, fetchImpl = (...a) => fetc
     map.on('moveend', schedule);
     await update();
   }
-  return { start, stats, update };
+  /**
+   * Category search (D-045): every point of `kind` inside `bounds` ([w, s, e, n]), at any zoom. Israel cells
+   * in view are loaded first if needed; outside Israel the on-demand cells are loaded when the area is small
+   * enough for a light Overpass request (otherwise `tooLargeAbroad` is set and only what is loaded counts).
+   */
+  async function collect(kind, [w, s, e, n]) {
+    let tooLargeAbroad = false;
+    const cellsOf = (size, prefix) => {
+      const out = [];
+      for (let i = Math.floor(s / size); i <= Math.floor(n / size); i++) for (let j = Math.floor(w / size); j <= Math.floor(e / size); j++) {
+        out.push({ key: `${prefix}${i}_${j}`, s: i * size, w: j * size, n: (i + 1) * size, e: (j + 1) * size });
+      }
+      return out;
+    };
+    if (index) {
+      const stat = cellsOf(index.cell, '').filter((c) => c.n > index.coverage[1] && c.s < index.coverage[3] && c.e > index.coverage[0] && c.w < index.coverage[2]);
+      await Promise.all(stat.filter((c) => !loaded.has(c.key)).map((c) => loadStatic(c).catch((err) => { stats.errors++; stats.lastError = err.message; })));
+      if (cfg.dynamic?.enabled) {
+        const dyn = cellsOf(cfg.dynamic.cell, 'd').filter((c) => !(inCoverage(c.w, c.s) && inCoverage(c.e, c.n)));
+        const missing = dyn.filter((c) => !loaded.has(c.key));
+        if (missing.length > cfg.dynamic.maxCellsPerSearch) tooLargeAbroad = true;
+        else if (missing.length) {
+          for (let k = 0; k < missing.length; k += cfg.dynamic.maxCellsPerRequest) {
+            try { await loadDynamic(missing.slice(k, k + cfg.dynamic.maxCellsPerRequest)); } catch (err) { stats.errors++; stats.lastError = err.message; tooLargeAbroad = true; break; }
+          }
+        }
+      }
+      publish();
+    }
+    const seen = new Set(), features = [];
+    for (const c of loaded.values()) for (const f of c.pois) {
+      const [lon, lat] = f.geometry.coordinates;
+      if (f.properties.kind !== kind || lon < w || lon > e || lat < s || lat > n) continue;
+      const id = `${lon},${lat}`;
+      if (!seen.has(id)) { seen.add(id); features.push(f); }
+    }
+    return { features, tooLargeAbroad };
+  }
+
+  return { start, stats, update, collect };
 }

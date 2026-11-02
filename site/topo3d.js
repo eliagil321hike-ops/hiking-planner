@@ -86,6 +86,8 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
     map.addSource(`poi-${kind}`, { type: 'geojson', data: empty, cluster: true, clusterMaxZoom: 13, clusterRadius: 36 });
   }
   map.addSource('poi-other', { type: 'geojson', data: empty });
+  // Category search results (D-045): a snapshot of the view, at any zoom, grouped with a count.
+  map.addSource('poi-search', { type: 'geojson', data: empty, cluster: true, clusterMaxZoom: 13, clusterRadius: 40 });
   // Data for what is on screen: Israel from the per-cell extract, elsewhere on demand (D-042).
   report.osm = { trails: null, pois: null };
   const loader = createOsmLoader(map, osm.loader, {
@@ -99,6 +101,7 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
     },
   });
   report.osmLoader = loader.stats;
+  Object.defineProperty(report, 'osmApi', { value: loader, enumerable: false });   // category search (search.js)
   loader.start();
 
   // 6. Layer order: landcover tint + hillshade go under roads/buildings (so roads stay crisp);
