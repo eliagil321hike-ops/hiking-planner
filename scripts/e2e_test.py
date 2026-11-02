@@ -612,7 +612,7 @@ def main():
            f"routes, tent, parking and water rendered at the 500 m scale (D-036, D-045) {o['lines']} {o['icons']}")
     expect(o["iconImgs"], "parking / spring / viewpoint / shelter icons registered")
     expect('"int","#e3893f"' in o["colour"].replace(" ", ""), "Israel National Trail drawn orange, calmer than the fluorescent route (D-032, D-043)")
-    expect(o["labelMinzoom"] == 14.4 and o["iconMinzoom"] <= 11.7, f"route names from ~200 m scale, icons from ~1 km scale {o['labelMinzoom']} {o['iconMinzoom']}")
+    expect(o["labelMinzoom"] == 14.4 and o["iconMinzoom"] == 12.7, f"route names from ~200 m scale, parking icons only from the 500 m scale (D-048) {o['labelMinzoom']} {o['iconMinzoom']}")
     expect(r["poiMinzoom"] == 13 and "#2f7fd8" in r["waterColor"] and "#5a9fdc" in r["waterColor"], f"POIs from z13, perennial blue / intermittent light blue {r['poiMinzoom']} {r['waterColor']}")
     expect(r["smallStreamW14"] < o["pathW14"], f"non-perennial streams thinner than unmarked trails (D-034) {r['smallStreamW14']} < {o['pathW14']}")
     expect(r["waterToggle"] == ["none", "visible"], f"streams switch hides/shows the layer {r['waterToggle']}")
