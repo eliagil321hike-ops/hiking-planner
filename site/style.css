@@ -1,14 +1,20 @@
 :root {
-  --bg: #fbfaf7;
-  --fg: #2a241d;
-  --muted: #6b6257;
-  --line: #e2ddd4;
-  --accent: #b5502a;
+  /* D-051 (owner: design A2 "Precision Minimal, dark"). Only the brand palette; see DECISIONS. */
+  --c-turq: #258F91; --c-blue: #3269A0; --c-deep: #24476B; --c-mblue: #5686B2; --c-light: #E3EDF5;
+  --c-page: #F3F6F8; --c-white: #FFFFFF; --c-dark: #203449; --c-body: #3E5265; --c-sec: #657789; --c-gold: #C69A50;
+  --frame: #848F9B;              /* panel and button frames: 3.3:1 on white (WCAG non-text) */
+  --divider: #C9D6E2;            /* thin separators inside a panel */
+  --bg: var(--c-white);
+  --fg: var(--c-dark);
+  --muted: var(--c-body);
+  --line: var(--divider);
+  --accent: var(--c-turq);
   --accent-fg: #ffffff;
   --ok: #2e7d32;
   --bad: #c62828;
-  --panel-shadow: 0 6px 24px rgba(40, 30, 20, 0.18);
-  --font: system-ui, "Segoe UI", "Noto Sans Hebrew", Arial, sans-serif;
+  --panel-shadow: 0 1px 2px rgba(32, 52, 73, 0.08);
+  --font: "IBM Plex Sans Hebrew", system-ui, "Segoe UI", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
 }
 :root:not([data-theme="light"]) { color-scheme: light; }
 
@@ -337,3 +343,163 @@ body.dock-open .maplibregl-ctrl-bottom-right, body.dock-open .maplibregl-ctrl-bo
 
 /* The hidden attribute always wins over a component's display rule (bug: colour picker and pill showed while hidden). */
 [hidden] { display: none !important; }
+
+
+/* ================================================================ D-051: design A2 — Precision Minimal, dark
+   White panels with clear frames, Dark Text for text and key icons (1.9px), turquoise for the main action and
+   active states, Deep Blue for every button that opens or closes a panel. Overrides the earlier sections. */
+@font-face { font-family: "IBM Plex Sans Hebrew"; font-weight: 400; font-display: swap; src: url(fonts/IBMPlexSansHebrew-Regular.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Sans Hebrew"; font-weight: 500; font-display: swap; src: url(fonts/IBMPlexSansHebrew-Medium.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Sans Hebrew"; font-weight: 600; font-display: swap; src: url(fonts/IBMPlexSansHebrew-SemiBold.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Sans Hebrew"; font-weight: 700; font-display: swap; src: url(fonts/IBMPlexSansHebrew-Bold.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 500; font-display: swap; src: url(fonts/IBMPlexMono-Medium-Latin1.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 600; font-display: swap; src: url(fonts/IBMPlexMono-SemiBold-Latin1.woff2) format("woff2"); }
+:root { --glass: var(--c-white); --glass-line: var(--frame); --top-h: 84px; }
+html, body { background: var(--c-page); font: 500 14px/1.45 var(--font); color: var(--fg); }
+.tool-btn, .popover, .search input, .search-results, .profile, .maplibregl-ctrl-group, .route-tools, .rd-panel, .route-pill, .cat-chip {
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.fab:focus-visible, .tool-btn:focus-visible, .tbtn:focus-visible, .panel-btn:focus-visible, input.switch:focus-visible,
+.search input:focus-visible, .maplibregl-ctrl-group button:focus-visible { outline: 2px solid var(--c-turq); outline-offset: 2px; }
+
+/* command bar */
+.toolbar {
+  inset-inline: 16px; top: 16px; height: 56px; gap: 12px; padding: 0 8px; background: var(--c-white);
+  border: 1px solid var(--frame); border-radius: 6px; box-shadow: var(--panel-shadow);
+}
+.brand { display: flex; align-items: center; gap: 8px; padding-inline: 4px 14px; border-inline-end: 1px solid var(--divider); height: 32px; font: 600 16px var(--font); color: var(--c-dark); white-space: nowrap; }
+.tb-spacer { flex: 1; }
+.search input {
+  width: 380px; height: 38px; padding: 0 12px 0 40px; border: 1px solid var(--frame); border-radius: 4px; background: var(--c-white);
+  font: 500 14px var(--font); color: var(--c-dark); box-shadow: none;
+}
+.search input::placeholder { color: var(--c-body); opacity: 1; }
+.search input:focus { border-color: var(--c-turq); box-shadow: 0 0 0 1px var(--c-turq); }
+.search-go { top: 1px; color: var(--c-dark); border-radius: 4px; }
+.search-go svg { width: 20px; height: 20px; }
+.fab {
+  min-height: 44px; padding: 0 16px 0 14px; border-radius: 4px; background: var(--c-turq); color: #fff;
+  font: 700 19px var(--font); box-shadow: none;
+}
+.fab:hover { filter: none; background: #1f7e80; }
+.plan-badge { border-radius: 4px; box-shadow: none; }
+
+/* buttons that open or close a panel: Deep Blue, white text, a chevron; open = darker + turquoise bar */
+.panel-btn, .tool-btn.panel-btn {
+  display: inline-flex; align-items: center; gap: 7px; width: auto; height: 38px; padding: 0 12px; border: 0; border-radius: 4px;
+  background: var(--c-deep); color: #fff; font: 600 14px var(--font); cursor: pointer; box-shadow: none; white-space: nowrap;
+}
+.panel-btn:hover { background: #1d3b5a; }
+.panel-btn[aria-expanded="true"], .tool-btn.panel-btn[aria-expanded="true"] { background: var(--c-dark); color: #fff; box-shadow: inset 0 -3px 0 var(--c-turq); font-weight: 700; }
+.panel-btn .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linejoin: miter; }
+.panel-btn .chev, .panel-btn .ic { flex: none; }
+.panel-btn .chev { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; transform-origin: 50% 50%; transition: transform 0.15s; }
+.panel-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+/* search results and category chip */
+.search-results { top: 46px; width: 380px; padding: 0; background: var(--c-white); border: 1px solid var(--frame); border-radius: 6px; box-shadow: 0 6px 18px rgba(32, 52, 73, 0.16); }
+.search-results button { border-radius: 0; padding: 9px 12px; border-bottom: 1px solid var(--c-page); font-weight: 600; color: var(--c-dark); }
+.search-results button:hover, .search-results button:focus-visible { background: var(--c-light); }
+.search-results small { color: var(--c-body); font-weight: 500; }
+.search-results .cat-line { background: var(--c-light); color: var(--c-dark); border-bottom: 1px solid var(--divider); margin: 0; padding: 10px 12px; }
+.search-results .empty, .search-results .credit { color: var(--c-body); }
+.cat-chip, .toast { top: calc(var(--top-h) + 8px); }
+.cat-chip { border: 1px solid var(--frame); border-radius: 4px; background: var(--c-white); box-shadow: var(--panel-shadow); color: var(--c-dark); }
+.cat-chip button { border-radius: 4px; background: var(--c-light); color: var(--c-dark); }
+.cat-chip button:hover { background: var(--divider); }
+
+/* menus */
+.popover {
+  top: calc(var(--top-h) + 6px); inset-inline-end: 72px; background: var(--c-white); border: 1px solid var(--frame); border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(32, 52, 73, 0.16); color: var(--c-dark);
+}
+.popover-head { border-bottom-color: var(--divider); }
+.popover-head strong { font: 600 15px var(--font); }
+.popover h2 { color: var(--c-deep); font: 600 12px var(--font); letter-spacing: 0.04em; }
+.build { color: var(--c-body); font-family: var(--mono); }
+.hint, .safety { color: var(--c-body); }
+input.switch { background: var(--frame); }
+input.switch:checked { background: var(--c-turq); }
+.popover .style-card { border-radius: 4px; border-width: 2px; }
+.style-card:has(input:checked) { border-color: var(--c-turq); background: var(--c-light); }
+.style-card:has(input:focus-visible) { outline: 2px solid var(--c-turq); }
+.thumb { border-radius: 4px; box-shadow: inset 0 0 0 1px var(--frame); }
+.slider input, .layer-row.on .opacity { accent-color: var(--c-turq); }
+#exag-out { font: 600 13px var(--mono); }
+.layer-row.on .legend, .advanced summary { color: var(--c-body); }
+.btn { border: 1px solid var(--frame); border-radius: 4px; color: var(--c-dark); }
+.btn:hover { border-color: var(--c-turq); }
+.btn[aria-pressed="true"], .btn-primary { background: var(--c-turq); border-color: var(--c-turq); color: #fff; }
+.popover select, .popover input[type="password"] { border: 1px solid var(--frame); border-radius: 4px; color: var(--c-dark); }
+
+/* map controls: left edge, under the command bar */
+.maplibregl-ctrl-top-left { top: calc(var(--top-h) - 6px); }
+.maplibregl-ctrl-top-left .maplibregl-ctrl { margin: 0 0 8px 16px; }
+.maplibregl-ctrl-group { border-radius: 6px !important; border: 1px solid var(--frame); box-shadow: none !important; background: var(--c-white); overflow: hidden; }
+.maplibregl-ctrl-group button { width: 40px; height: 40px; }
+.maplibregl-ctrl-group button + button { border-top: 1px solid var(--divider); }
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: brightness(0.55); }
+.ctrl-3d { width: 40px !important; height: 40px !important; font: 600 13px var(--mono) !important; color: var(--c-dark); }
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl { margin: 0 0 10px 16px; }
+.maplibregl-ctrl-scale { border-color: var(--c-dark); color: var(--c-dark); background: rgba(255, 255, 255, 0.92); font: 600 11px var(--mono); }
+
+/* route dock */
+.route-tools { padding: 4px; gap: 2px; border-radius: 6px; background: var(--c-white); border: 1px solid var(--frame); box-shadow: var(--panel-shadow); }
+.route-dock .ic { stroke-width: 1.9; stroke-linecap: square; stroke-linejoin: miter; }
+.tbtn { width: 36px; height: 36px; border-radius: 4px; color: var(--c-dark); }
+.tbtn:hover:not(:disabled) { background: var(--c-light); }
+.tbtn:disabled { opacity: 0.35; }
+.tbtn[aria-pressed="true"]#plan { background: var(--c-turq); color: #fff; }
+.tbtn#seg-toggle[aria-pressed="true"] { background: var(--c-light); }
+.tsep { background: var(--divider); }
+.rd-panel { height: 160px; border-radius: 6px; background: var(--c-white); border: 1px solid var(--frame); box-shadow: var(--panel-shadow); padding: 12px 14px 8px 8px; }
+.rd-dist b { font: 600 34px/1 var(--mono); letter-spacing: -1px; color: var(--c-dark); }
+.rd-dist i { font: 500 13px var(--font); color: var(--c-body); }
+.rd-name { border-inline-start-color: var(--divider); }
+.rd-name-text { font: 600 15px var(--font); color: var(--c-dark); }
+.rd-name-text:hover, .rd-name-text:focus { background: var(--c-light); }
+.rd-name-text.placeholder:not(:focus) { color: var(--c-body); }
+.rd-st b { font: 600 17px/1 var(--mono); color: var(--c-dark); }
+.rd-st i { font: 500 11px var(--font); color: var(--c-body); }
+.rd-st small { font-size: 11px; color: var(--c-body); font-weight: 500; }
+.rd-st.up b::before, .route-pill .up::before { color: var(--c-turq); }
+.rd-st.down b::before, .route-pill .down::before { color: var(--c-mblue); }
+.rd-st.max b::before, .rd-st.min b::before { color: var(--c-body); }
+.rd-info { color: var(--c-body); }
+.rd-side { gap: 8px; }
+.hide-btn { height: 30px; padding: 0 10px; font-size: 13px; }
+.route-pill { border: 0; border-radius: 6px; background: var(--c-deep); color: #fff; box-shadow: 0 4px 12px rgba(32, 52, 73, 0.25); font: 500 13px var(--mono); }
+.route-pill:hover { background: #1d3b5a; }
+.route-pill i { color: var(--c-light); font-family: var(--font); }
+.route-pill .ic { stroke: #fff; }
+.color-pop { border: 1px solid var(--frame); border-radius: 6px; box-shadow: 0 6px 18px rgba(32, 52, 73, 0.16); }
+.color-dot:focus-visible { outline-color: var(--c-turq); }
+
+/* elevation profile */
+.profile-area { fill: rgba(227, 237, 245, 0.85); }
+.profile-grid { stroke: var(--divider); }
+.profile-axis { font: 500 10px var(--mono); fill: var(--c-body); }
+.profile-info, .profile-legend { font: 500 10.5px var(--font); fill: var(--c-body); }
+.profile-strong { fill: var(--c-dark); }
+.profile-readout { font: 600 11px var(--mono); fill: var(--c-dark); stroke: rgba(255, 255, 255, 0.95); }
+.profile-cursor { stroke: var(--c-dark); opacity: 0.8; }
+.profile-dot { fill: var(--c-dark); }
+.profile-hover { stroke: var(--c-dark); }
+.profile-end { stroke: rgba(32, 52, 73, 0.6); }
+.profile-start { fill: var(--c-turq); }
+.profile-finish { fill: var(--c-dark); }
+
+@media (max-width: 1100px) { .search input, .search-results { width: 260px; } }
+@media (max-width: 900px) {
+  .brand span, .panel-btn > span:not(.chev) { display: none; }
+  .brand { padding-inline-end: 10px; }
+  .panel-btn { padding: 0 10px; }
+}
+@media (max-width: 600px) {
+  :root { --top-h: 124px; }
+  .toolbar { height: auto; flex-wrap: wrap; padding: 8px; inset-inline: 8px; top: 8px; row-gap: 8px; }
+  .search { order: 5; width: 100%; }
+  .search input, .search-results { width: 100%; }
+  .maplibregl-ctrl-top-left .maplibregl-ctrl { margin-left: 8px; }
+  .popover { inset-inline: 8px; }
+}

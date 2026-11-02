@@ -540,6 +540,21 @@ with the first real request.
   callback and no page errors; it fails on the old code and passes on the fix.
 - Lesson: the e2e never hovered the profile; interactive paths need at least one automated pass.
 
+## D-051 (2026-11-02) Design A2 "Precision Minimal, dark" (owner chose it from sketches A/B/C)
+- Owner brief: three directions (A Precision Minimal, B Modern Tech, C Professional Navigation) in the fixed brand
+  palette, WCAG first. Owner liked A and asked for darker text, key icons and frames, and for buttons that open or
+  close a panel to stand out from other buttons → variant A2, approved after a written plan.
+- Palette tokens only (--c-*), plus --frame #848F9B (frames 3.3:1 on white) and --divider #C9D6E2 (inner lines).
+  Text Dark Text #203449 (12.7:1), secondary Body Text #3E5265 (8.1:1). Turquoise only for the main action,
+  active states and switches; white text on it only large and bold (19px "מסלול חדש", 3.9:1).
+- Panel toggles (map style, layers, hide route panel) and the "show" pill: Deep Blue, white text, chevron; open =
+  Dark Text + 3px turquoise bar. tests/contrast.test.mjs checks every pair.
+- Fonts: IBM Plex Sans Hebrew (UI) + IBM Plex Mono (figures), SIL OFL 1.1, served from the site (site/fonts,
+  owner: "בתוך האתר"); taken from github.com/IBM/plex (npm registry was blocked here).
+- Layout: one framed command bar across the top (brand, search | style, layers, new route); map controls moved to
+  the left edge under the bar, scale bottom-left; route tools stay on the right. Route line colours and map POI
+  icons unchanged.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

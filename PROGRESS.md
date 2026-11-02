@@ -59,6 +59,11 @@ node --test "tests/*.test.mjs"                              # 13/13 (router, slo
 Cannot reach unpkg, OpenFreeMap, Mapterhorn or Esri: real tiles/rendering are verified by the owner;
 the e2e test uses the real MapLibre build (from GitHub releases) with fixture style and synthetic DEM.
 
+## Design A2 (D-051, 2026-11-02)
+- Owner picked sketch A, darker variant A2 (text/icons Dark Text, 1.9px icons, clear frames, Deep Blue panel
+  toggles). Built on wip/a2-redesign: unit 30/30 (incl. new contrast test), smoke all PASS, e2e 87/87 locally.
+  Waiting for the owner's look at the screenshots before merging to main.
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).

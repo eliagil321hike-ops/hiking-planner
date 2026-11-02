@@ -75,6 +75,7 @@ const STRINGS = {
     'route.toFree': 'העבר לקו ישר',
     'route.showProfile': 'הצג את חלונית המסלול',
     'route.hideProfile': 'הסתר את החלונית',
+    'route.hide': 'הסתר',
     'route.toggleProfile': 'הצג או כווץ את פרופיל הגובה',
     'route.rename': 'לחץ כדי לשנות את שם המסלול',
     'route.defaultName': 'מסלול ללא שם',
