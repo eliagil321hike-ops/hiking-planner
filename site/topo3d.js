@@ -6,7 +6,9 @@ import { addPoiIcons } from './poi-icons.js';
 import { createOsmLoader } from './osm-loader.js';
 import { registerDeriveProtocol, deriveStats } from './terrain-derive.js';
 
-const CLUSTERED = ['camp', 'water', 'parking'];
+const CLUSTERED = ['water', 'parking'];
+// Campsites: own source, not grouped — from the 5 km scale, overlapping symbols hide each other (owner, D-047).
+const OWN_SOURCE = ['camp', ...CLUSTERED];
 
 export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   const style = map.getStyle();
@@ -79,12 +81,13 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   const empty = { type: 'FeatureCollection', features: [] };
   const osm = overlay.osmExtract;
   map.addSource('osm-trails', { type: 'geojson', data: empty, attribution: osm.attribution });
-  // Points of interest: one source per category (D-036). Campsites, water and parking are clustered at
+  // Points of interest: one source per category (D-036, D-047). Water and parking are clustered at
   // distant zooms (a cluster shows the category icon + a count, and splits as you zoom in); springs,
   // viewpoints and shelters share one unclustered source.
   for (const kind of CLUSTERED) {
     map.addSource(`poi-${kind}`, { type: 'geojson', data: empty, cluster: true, clusterMaxZoom: 13, clusterRadius: 36 });
   }
+  map.addSource('poi-camp', { type: 'geojson', data: empty });
   map.addSource('poi-other', { type: 'geojson', data: empty });
   // Category search results (D-045): a snapshot of the view, at any zoom, grouped with a count.
   map.addSource('poi-search', { type: 'geojson', data: empty, cluster: true, clusterMaxZoom: 13, clusterRadius: 40 });
@@ -93,8 +96,8 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   const loader = createOsmLoader(map, osm.loader, {
     onUpdate: ({ trails, pois }) => {
       map.getSource('osm-trails')?.setData({ type: 'FeatureCollection', features: trails });
-      for (const kind of CLUSTERED) map.getSource(`poi-${kind}`)?.setData({ type: 'FeatureCollection', features: pois.filter((f) => f.properties.kind === kind) });
-      map.getSource('poi-other')?.setData({ type: 'FeatureCollection', features: pois.filter((f) => !CLUSTERED.includes(f.properties.kind)) });
+      for (const kind of OWN_SOURCE) map.getSource(`poi-${kind}`)?.setData({ type: 'FeatureCollection', features: pois.filter((f) => f.properties.kind === kind) });
+      map.getSource('poi-other')?.setData({ type: 'FeatureCollection', features: pois.filter((f) => !OWN_SOURCE.includes(f.properties.kind)) });
       report.osm.trails = trails.length;
       report.osm.pois = pois.length;
       report.osm.byKind = Object.fromEntries([...new Set(pois.map((f) => f.properties.kind))].map((k) => [k, pois.filter((f) => f.properties.kind === k).length]));

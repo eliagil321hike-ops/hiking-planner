@@ -1796,14 +1796,16 @@
           [
             "zoom"
           ],
-          13,
-          1,
+          12,
+          0.72,
+          14,
+          0.86,
           16,
-          1.3
+          1.0
         ],
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
-        "icon-anchor": "bottom"
+        "icon-anchor": "center"
       }
     },
     {
@@ -2049,7 +2051,7 @@
       "id": "poi-camp-cluster",
       "type": "symbol",
       "source": "poi-camp",
-      "minzoom": 12.7,
+      "minzoom": 9.4,
       "filter": [
         "has",
         "point_count"
@@ -2064,14 +2066,16 @@
           [
             "zoom"
           ],
-          12.7,
-          0.9,
+          9.4,
+          0.62,
+          12,
+          0.72,
           14,
-          1,
+          0.86,
           16,
-          1.25
+          1.0
         ],
-        "icon-anchor": "bottom",
+        "icon-anchor": "center",
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
         "text-field": [
@@ -2082,8 +2086,8 @@
         "text-size": 10.5,
         "text-anchor": "bottom-left",
         "text-offset": [
-          0.55,
-          -1.25
+          0.45,
+          -0.35
         ],
         "text-allow-overlap": true,
         "text-ignore-placement": true
@@ -2098,7 +2102,7 @@
       "id": "poi-camp",
       "type": "symbol",
       "source": "poi-camp",
-      "minzoom": 12.7,
+      "minzoom": 9.4,
       "filter": [
         "!",
         [
@@ -2116,16 +2120,18 @@
           [
             "zoom"
           ],
-          12.7,
-          0.9,
+          9.4,
+          0.62,
+          12,
+          0.72,
           14,
-          1,
+          0.86,
           16,
-          1.25
+          1.0
         ],
-        "icon-anchor": "bottom",
-        "icon-allow-overlap": true,
-        "icon-ignore-placement": true,
+        "icon-anchor": "center",
+        "icon-allow-overlap": false,
+        "icon-ignore-placement": false,
         "text-field": [
           "step",
           [
@@ -2147,17 +2153,19 @@
         "text-anchor": "top",
         "text-offset": [
           0,
-          0.45
+          0.85
         ],
         "text-max-width": 8,
         "text-optional": true,
-        "symbol-sort-key": 1
+        "symbol-sort-key": 1,
+        "icon-padding": 1
       },
       "paint": {
         "text-color": "#3b2a1a",
         "text-halo-color": "rgba(255,255,255,0.95)",
         "text-halo-width": 1.5
-      }
+      },
+      "$comment": "Campsites from the 5 km scale (z9.4), small square badge; overlapping badges hide each other and appear when zooming in (owner, D-047)."
     },
     {
       "id": "poi-water-cluster",
@@ -2178,14 +2186,14 @@
           [
             "zoom"
           ],
-          12.7,
-          0.9,
+          12,
+          0.72,
           14,
-          1,
+          0.86,
           16,
-          1.25
+          1.0
         ],
-        "icon-anchor": "bottom",
+        "icon-anchor": "center",
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
         "text-field": [
@@ -2196,8 +2204,8 @@
         "text-size": 10.5,
         "text-anchor": "bottom-left",
         "text-offset": [
-          0.55,
-          -1.25
+          0.45,
+          -0.35
         ],
         "text-allow-overlap": true,
         "text-ignore-placement": true
@@ -2230,14 +2238,14 @@
           [
             "zoom"
           ],
-          12.7,
-          0.9,
+          12,
+          0.72,
           14,
-          1,
+          0.86,
           16,
-          1.25
+          1.0
         ],
-        "icon-anchor": "bottom",
+        "icon-anchor": "center",
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
         "text-field": [
@@ -2261,7 +2269,7 @@
         "text-anchor": "top",
         "text-offset": [
           0,
-          0.45
+          0.85
         ],
         "text-max-width": 8,
         "text-optional": true,
@@ -2277,7 +2285,7 @@
       "id": "poi-parking-cluster",
       "type": "symbol",
       "source": "poi-parking",
-      "minzoom": 11,
+      "minzoom": 12.7,
       "filter": [
         "has",
         "point_count"
@@ -2292,14 +2300,14 @@
           [
             "zoom"
           ],
-          11,
-          0.8,
-          13,
-          1,
+          12,
+          0.72,
+          14,
+          0.86,
           16,
-          1.25
+          1.0
         ],
-        "icon-anchor": "bottom",
+        "icon-anchor": "center",
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
         "text-field": [
@@ -2310,8 +2318,8 @@
         "text-size": 10.5,
         "text-anchor": "bottom-left",
         "text-offset": [
-          0.55,
-          -1.25
+          0.45,
+          -0.35
         ],
         "text-allow-overlap": true,
         "text-ignore-placement": true
@@ -2326,7 +2334,7 @@
       "id": "poi-parking",
       "type": "symbol",
       "source": "poi-parking",
-      "minzoom": 11,
+      "minzoom": 12.7,
       "filter": [
         "!",
         [
@@ -2344,14 +2352,14 @@
           [
             "zoom"
           ],
-          11,
-          0.8,
-          13,
-          1,
+          12,
+          0.72,
+          14,
+          0.86,
           16,
-          1.25
+          1.0
         ],
-        "icon-anchor": "bottom",
+        "icon-anchor": "center",
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
         "text-field": [
@@ -2375,7 +2383,7 @@
         "text-anchor": "top",
         "text-offset": [
           0,
-          0.45
+          0.85
         ],
         "text-max-width": 8,
         "text-optional": true,
@@ -2388,29 +2396,11 @@
       }
     },
     {
-      "$comment": "Springs (from ~500 m scale), viewpoints and shelters (from ~300 m); icons keep their place, names only when there is room.",
+      "$comment": "Springs, viewpoints and shelters from the 500 m scale (D-047); names only when there is room.",
       "id": "poi-other",
       "type": "symbol",
       "source": "poi-other",
       "minzoom": 12.7,
-      "filter": [
-        "any",
-        [
-          "==",
-          [
-            "get",
-            "kind"
-          ],
-          "spring"
-        ],
-        [
-          ">=",
-          [
-            "zoom"
-          ],
-          14
-        ]
-      ],
       "layout": {
         "icon-image": [
           "match",
@@ -2434,12 +2424,14 @@
           [
             "zoom"
           ],
-          12.7,
-          0.85,
+          12,
+          0.72,
+          14,
+          0.86,
           16,
-          1.2
+          1.0
         ],
-        "icon-anchor": "bottom",
+        "icon-anchor": "center",
         "icon-allow-overlap": true,
         "text-field": [
           "step",
@@ -2462,7 +2454,7 @@
         "text-anchor": "top",
         "text-offset": [
           0,
-          0.45
+          0.85
         ],
         "text-max-width": 8,
         "text-optional": true
@@ -2493,8 +2485,24 @@
       ],
       "layout": {
         "icon-image": "topo-tent",
-        "icon-size": 1,
-        "icon-anchor": "bottom",
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9.4,
+          0.62,
+          12,
+          0.72,
+          14,
+          0.86,
+          16,
+          1.0
+        ],
+        "icon-anchor": "center",
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
         "text-field": [
@@ -2505,8 +2513,8 @@
         "text-size": 10.5,
         "text-anchor": "bottom-left",
         "text-offset": [
-          0.55,
-          -1.25
+          0.45,
+          -0.35
         ],
         "text-allow-overlap": true,
         "text-ignore-placement": true
@@ -2530,8 +2538,24 @@
       ],
       "layout": {
         "icon-image": "topo-tent",
-        "icon-size": 1,
-        "icon-anchor": "bottom",
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9.4,
+          0.62,
+          12,
+          0.72,
+          14,
+          0.86,
+          16,
+          1.0
+        ],
+        "icon-anchor": "center",
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
         "text-field": [
@@ -2555,7 +2579,7 @@
         "text-anchor": "top",
         "text-offset": [
           0,
-          0.45
+          0.85
         ],
         "text-max-width": 8,
         "text-optional": true

@@ -1,50 +1,73 @@
-// Map icon set drawn in code (D-031, D-036): one 24-unit grid, one white outline, similar visual weight, a
-// distinct colour per category. Tent (brown) and tap (blue) follow the owner's examples; no third-party image
-// is copied. Drawn synchronously with Path2D so the images exist before the layers that use them render.
+// Map icon set drawn in code (D-031, D-036, D-047). Points of interest: a small rounded square in the
+// category colour with a white symbol (owner: "like Gaia" — our own drawings, nothing copied), one size and
+// weight for all. Peaks and saddles stay plain symbols. Drawn synchronously with Path2D so the images exist
+// before the layers that use them render.
 
 const SIZE = 24;     // design grid (viewBox 0 0 24 24)
 const RATIO = 2;     // drawn at 2x for sharp edges
 
-// Each icon: parts drawn in order; a part has a path `d`, a `fill` colour (even-odd) or a `stroke` colour.
+// Square badges: `bg` colour, `glyph` parts drawn in white (fill even-odd, or stroke) inside the square.
+export const BADGES = {
+  'topo-tent': { bg: '#4d4a45', glyph: [
+    { d: 'M12 6.2 L6 17.4 H18 Z M12 11.6 L9.7 17.4 H14.3 Z', fill: true },
+    { d: 'M10.6 4.6 L12.6 7.4 M13.4 4.6 L11.4 7.4', stroke: 1.3 },
+  ] },
+  'topo-tap': { bg: '#1f7fc0', glyph: [
+    { d: 'M8.6 5.6 H15.4 V6.8 H8.6 Z M11.3 6.8 H12.7 V8.4 H11.3 Z M10.2 8.4 H13.8 V9.6 H10.2 Z', fill: true },
+    { d: 'M10.6 9.6 H13.4 V10.8 H16.8 V13.8 H9.8 V16.6 H6.8 V13.6 Q6.8 10.8 9.6 10.8 H10.6 Z', fill: true },
+    { d: 'M8.3 18.4 a1 1.3 0 1 0 0.01 0', fill: true },
+  ] },
+  'topo-parking': { bg: '#2c4f86', glyph: [
+    { d: 'M9 6 H13.2 A3.6 3.6 0 0 1 13.2 13.2 H11.4 V18 H9 Z M11.4 8.2 V11 H13 A1.4 1.4 0 0 0 13 8.2 Z', fill: true },
+  ] },
+  'topo-spring': { bg: '#13897f', glyph: [
+    { d: 'M12 5 C10.8 7 7.4 10.6 7.4 13.6 A4.6 4.6 0 0 0 16.6 13.6 C16.6 10.6 13.2 7 12 5 Z', fill: true },
+    { d: 'M9.6 14 Q10.8 13 12 14 T14.4 14', stroke: 1.2, color: '#13897f' },
+  ] },
+  'topo-viewpoint': { bg: '#8c3b1c', glyph: [
+    { d: 'M7.4 12.6 L8.8 7 H11 L11.3 11.6 Z M16.6 12.6 L15.2 7 H13 L12.7 11.6 Z M10.8 11.2 H13.2 V13.2 H10.8 Z', fill: true },
+    { d: 'M6.6 14.4 a2.7 2.7 0 1 0 5.4 0 a2.7 2.7 0 1 0 -5.4 0 Z M8.2 14.4 a1.1 1.1 0 1 0 2.2 0 a1.1 1.1 0 1 0 -2.2 0 Z', fill: true },
+    { d: 'M12 14.4 a2.7 2.7 0 1 0 5.4 0 a2.7 2.7 0 1 0 -5.4 0 Z M13.6 14.4 a1.1 1.1 0 1 0 2.2 0 a1.1 1.1 0 1 0 -2.2 0 Z', fill: true },
+  ] },
+  'topo-shelter': { bg: '#56616b', glyph: [
+    { d: 'M12 5.6 L5.6 11 H7.4 V17.6 H16.6 V11 H18.4 Z M10.7 17.6 V13.8 H13.3 V17.6 Z', fill: true },
+  ] },
+};
+
+// Plain symbols (not badges): peaks and saddles.
 const ICONS = {
-  'topo-tent': [
-    { d: 'M12 5.4 L3.6 19.8 H20.4 Z M12 12.2 L8.6 19.8 H15.4 Z', fill: '#45260a' },
-    { d: 'M2.2 19.6 H21.8 V21.4 H2.2 Z', fill: '#45260a' },
-    { d: 'M10.2 2.4 L12.6 5.8 M13.8 2.4 L11.4 5.8', stroke: '#45260a', width: 1.6 },
-  ],
-  'topo-tap': [
-    { d: 'M7.6 3.5 H16.4 V4.9 H7.6 Z', fill: '#0a86c9' },
-    { d: 'M6.2 4.2 m-1.6 0 a1.6 1.6 0 1 0 3.2 0 a1.6 1.6 0 1 0 -3.2 0', fill: '#0a86c9' },
-    { d: 'M17.8 4.2 m-1.6 0 a1.6 1.6 0 1 0 3.2 0 a1.6 1.6 0 1 0 -3.2 0', fill: '#0a86c9' },
-    { d: 'M12 4.1 m-1.7 0 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0', fill: '#0a86c9' },
-    { d: 'M11.1 5 H12.9 V7 H11.1 Z M9.4 7 H14.6 V8.6 H9.4 Z', fill: '#0a86c9' },
-    { d: 'M10.2 8.6 H13.8 V10.2 H18.2 V14 H8.8 V17.6 H4.8 V13.8 Q4.8 10.2 8.4 10.2 H10.2 Z', fill: '#0a86c9' },
-    { d: 'M18.6 9.6 H20.4 V14.6 H18.6 Z M4.2 18 H9.4 V19.6 H4.2 Z', fill: '#0a86c9' },
-  ],
-  'topo-parking': [
-    { d: 'M6 3 H18 Q21 3 21 6 V18 Q21 21 18 21 H6 Q3 21 3 18 V6 Q3 3 6 3 Z', fill: '#1d5fa8' },
-    { d: 'M8.6 6.5 H13.2 A3.9 3.9 0 0 1 13.2 14.3 H11.2 V17.6 H8.6 Z M11.2 8.8 V12 H13 A1.6 1.6 0 0 0 13 8.8 Z', fill: '#ffffff' },
-  ],
-  'topo-spring': [
-    { d: 'M12 2.8 C10.4 5.4 5.4 10.6 5.4 14.6 A6.6 6.6 0 0 0 18.6 14.6 C18.6 10.6 13.6 5.4 12 2.8 Z', fill: '#12938a' },
-    { d: 'M8.4 15 Q10.2 13.6 12 15 T15.6 15', stroke: '#ffffff', width: 1.4 },
-  ],
-  'topo-viewpoint': [
-    { d: 'M5.2 13.4 L7.2 5.6 H10.4 L10.8 12.2 Z M18.8 13.4 L16.8 5.6 H13.6 L13.2 12.2 Z', fill: '#8c3b1c' },
-    { d: 'M9.6 11.6 H14.4 V14.4 H9.6 Z', fill: '#8c3b1c' },
-    { d: 'M3.8 16 a3.9 3.9 0 1 0 7.8 0 a3.9 3.9 0 1 0 -7.8 0 Z M6 16 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0 Z', fill: '#8c3b1c' },
-    { d: 'M12.4 16 a3.9 3.9 0 1 0 7.8 0 a3.9 3.9 0 1 0 -7.8 0 Z M14.6 16 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0 Z', fill: '#8c3b1c' },
-  ],
   'topo-peak': [
     { d: 'M12 5 L20.5 19 H3.5 Z', fill: '#4a3727' },
   ],
   'topo-saddle': [
     { d: 'M5 5 Q11 12 5 19 M19 5 Q13 12 19 19', stroke: '#4a3727', width: 2.2 },
   ],
-  'topo-shelter': [
-    { d: 'M12 3.4 L2.4 11.6 H5.2 V20.4 H18.8 V11.6 H21.6 Z M10 20.4 V14.6 H14 V20.4 Z', fill: '#4e5b66' },
-  ],
 };
+
+function canvas2d() {
+  const px = SIZE * RATIO;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = px;
+  const c = canvas.getContext('2d');
+  c.scale(RATIO, RATIO);
+  c.lineJoin = 'round'; c.lineCap = 'round';
+  return c;
+}
+
+function drawBadge({ bg, glyph }) {
+  const c = canvas2d();
+  const sq = new Path2D('M6.2 2.6 H17.8 Q21.4 2.6 21.4 6.2 V17.8 Q21.4 21.4 17.8 21.4 H6.2 Q2.6 21.4 2.6 17.8 V6.2 Q2.6 2.6 6.2 2.6 Z');
+  c.shadowColor = 'rgba(0,0,0,0.28)'; c.shadowBlur = 1.6; c.shadowOffsetY = 0.5;
+  c.fillStyle = bg; c.fill(sq);
+  c.shadowColor = 'transparent';
+  c.strokeStyle = 'rgba(255,255,255,0.95)'; c.lineWidth = 1.2; c.stroke(sq);   // reads on dark imagery too
+  for (const p of glyph) {
+    const path = new Path2D(p.d);
+    if (p.fill) { c.fillStyle = p.color ?? '#ffffff'; c.fill(path, 'evenodd'); }
+    if (p.stroke) { c.strokeStyle = p.color ?? '#ffffff'; c.lineWidth = p.stroke; c.stroke(path); }
+  }
+  return c.getImageData(0, 0, SIZE * RATIO, SIZE * RATIO);
+}
 
 function draw(parts) {
   const px = SIZE * RATIO;
@@ -76,7 +99,12 @@ export function addPoiIcons(map) {
     map.addImage(id, draw(parts), { pixelRatio: RATIO });
     added.push(id);
   }
+  for (const [id, badge] of Object.entries(BADGES)) {
+    if (map.hasImage(id)) continue;
+    map.addImage(id, drawBadge(badge), { pixelRatio: RATIO });
+    added.push(id);
+  }
   return added;
 }
 
-export const POI_ICON_IDS = Object.keys(ICONS);
+export const POI_ICON_IDS = [...Object.keys(BADGES), ...Object.keys(ICONS)];

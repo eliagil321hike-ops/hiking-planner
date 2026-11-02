@@ -266,7 +266,11 @@ def main():
         page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 13 })")
         diag = """() => { const m = window.__topo3d.map; const q = (l) => m.queryRenderedFeatures({ layers: l }).length;
             return { z: m.getZoom(), hike: q(['topo-hike-line']), camp: q(['poi-camp']), campC: q(['poi-camp-cluster']), water: q(['poi-water', 'poi-water-cluster']),
-              parking: q(['poi-parking', 'poi-parking-cluster']), osm: window.__topo3d.results.topo.osm, vis: ['poi-camp', 'poi-water', 'poi-parking'].map((id) => m.getLayoutProperty(id, 'visibility')) }; }"""
+              parking: q(['poi-parking', 'poi-parking-cluster']), osm: window.__topo3d.results.topo.osm,
+              srcWater: m.querySourceFeatures('poi-water').map((f) => [f.properties.point_count ?? 1, f.geometry.coordinates.map((c) => +c.toFixed(4))]),
+              srcCamp: m.querySourceFeatures('poi-camp').length, pitch: m.getPitch(), bounds: m.getBounds().toArray().flat().map((c) => +c.toFixed(3)),
+              waterLayer: JSON.stringify(m.getStyle().layers.find((l) => l.id === 'poi-water-cluster')).slice(0, 300),
+              images: ['topo-tap', 'topo-tent'].map((i) => m.hasImage(i)), vis: ['poi-camp', 'poi-water', 'poi-parking'].map((id) => m.getLayoutProperty(id, 'visibility')) }; }"""
         try:
             wait_js(page, """() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0
             && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-camp'] }).length > 0
@@ -305,6 +309,12 @@ def main():
         r["overpassAbroad"] = list(seen.get("overpass", []))
         page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 12 })")
         wait_js(page, "() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0", 60)
+        # D-047: at the 5 km scale (z10) campsites show as small badges, taps only from 500 m
+        page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 10 })")
+        wait_js(page, "() => window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-camp'] }).length > 0", 60)
+        r["at5km"] = page.evaluate("""() => { const m = window.__topo3d.map; return { camp: m.queryRenderedFeatures({ layers: ['poi-camp'] }).length,
+            water: m.queryRenderedFeatures({ layers: ['poi-water', 'poi-water-cluster'] }).length,
+            overlap: m.getLayoutProperty('poi-camp', 'icon-allow-overlap'), img: m.getLayoutProperty('poi-camp', 'icon-image') }; }""")
         # Category search (D-045): zoom far out, search "חניון לילה" → every campsite in view, grouped; ✕ clears
         page.evaluate("() => window.__topo3d.map.jumpTo({ center: [35.4167, 33.0], zoom: 9 })")
         page.wait_for_timeout(500)
@@ -577,7 +587,9 @@ def main():
            f"tent and tap icons registered, icon layer from z13 (D-031) {r['poiIcons'][:3]}")
     o = r["osm"]
     cs = r["catSearch"]
-    expect(r["campMinzoom"] == [12.7, 12.7, 11], f"campsite and tap icons from the 500 m scale, parking unchanged (D-045) {r['campMinzoom']}")
+    expect(r["campMinzoom"] == [9.4, 12.7, 12.7], f"campsites from the 5 km scale, taps and parking from 500 m (D-047) {r['campMinzoom']}")
+    expect(r["at5km"]["camp"] > 0 and r["at5km"]["water"] == 0 and r["at5km"]["overlap"] is False and r["at5km"]["img"] == "topo-tent",
+           f"at the 5 km scale: campsite badges shown (overlaps hide), taps not yet (D-047) {r['at5km']}")
     expect(r["campHiddenFar"] == 0 and cs["res"] and cs["res"]["kind"] == "camp" and cs["res"]["count"] == 1 and cs["icon"] == "topo-tent" and "חניוני לילה" in cs["chip"],
            f"category search shows campsites in view at a far zoom (D-045) {cs} hiddenBefore={r['campHiddenFar']}")
     expect(r["catList"][:1] == ["cat-line"] and "הר מירון" in r["catList"], f"category first in the list, then places by name (D-046) {r['catList']}")

@@ -491,6 +491,19 @@ with the first real request.
 - D-045's first deploy was blocked by CI: the e2e still looked for campsite/tap icons at z12 after they
   moved to z12.7; the test now looks at z13 (a test expectation, not a site bug).
 
+## D-047 (2026-11-02) Owner: campsites from the 5 km scale, Gaia-like square icons for all
+- Owner's example: Gaia GPS (small dark-grey square with a white tent). Owner chose: that style for every
+  point-of-interest icon; campsites from the 5 km scale; overlapping campsite symbols hide each other.
+- Icons (poi-icons.js): rounded square in the category colour, white symbol, thin white edge and a soft
+  shadow — campsite #4d4a45, tap #1f7fc0, parking #2c4f86, spring #13897f, viewpoint #8c3b1c, shelter
+  #56616b. Our own drawings (nothing copied from Gaia). Peaks and saddles stay plain symbols.
+- Campsites: from **z9.4** (MapLibre's scale bar first shows "5 km" there at Israel's latitude), own
+  unclustered source, `icon-allow-overlap: false` (a hidden badge appears when zooming in). Size ≈ 15 px at
+  z9.4 → 24 px at z16.
+- Taps, parking, springs, viewpoints, shelters: from **z12.7** (500 m). Parking moved from z11 to z12.7.
+  Taps and parking keep grouping with a count (the overlap choice was asked for campsites only).
+- Abroad, campsites still appear only from z11 (on-demand loading starts there, D-042).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
