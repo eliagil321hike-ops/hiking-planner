@@ -275,7 +275,7 @@ def main():
             wait_js(page, """() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-hike-line'] }).length > 0
             && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-camp'] }).length > 0
             && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-water', 'poi-water-cluster'] }).length > 0
-            && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-parking'] }).length > 0""", 60)
+            && window.__topo3d.map.queryRenderedFeatures({ layers: ['poi-parking'] }).length > 0""", 150)
         except TimeoutError:
             print("POI-DEBUG", page.evaluate(diag), flush=True)
             raise

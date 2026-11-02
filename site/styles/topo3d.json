@@ -1,6 +1,6 @@
 {
   "$comment": "Topo3D overlay (SPEC P10.3). Applied on top of the OpenFreeMap Liberty style at runtime by site/topo3d.js. Values starting with $ are filled at runtime: $contourTiles (maplibre-contour protocol URL), $labelFont (font of the base style's labels, so glyphs exist), $nameExpr (Hebrew-first name). The page can export the fully merged style JSON.",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "base": "https://tiles.openfreemap.org/styles/liberty",
   "dem": {
     "tiles": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
@@ -1413,119 +1413,6 @@
         [
           "all",
           [
-            "any",
-            [
-              "match",
-              [
-                "get",
-                "class"
-              ],
-              [
-                "parking",
-                "campsite",
-                "camp_site",
-                "picnic_site",
-                "drinking_water",
-                "water_point",
-                "spring",
-                "viewpoint",
-                "shelter",
-                "alpine_hut",
-                "wilderness_hut",
-                "information",
-                "toilets",
-                "attraction",
-                "ruins",
-                "archaeological_site",
-                "place_of_worship",
-                "monument",
-                "memorial",
-                "water_tap"
-              ],
-              true,
-              false
-            ],
-            [
-              "match",
-              [
-                "get",
-                "subclass"
-              ],
-              [
-                "parking",
-                "campsite",
-                "camp_site",
-                "picnic_site",
-                "drinking_water",
-                "water_point",
-                "spring",
-                "viewpoint",
-                "shelter",
-                "alpine_hut",
-                "wilderness_hut",
-                "information",
-                "toilets",
-                "attraction",
-                "ruins",
-                "archaeological_site",
-                "place_of_worship",
-                "monument",
-                "memorial",
-                "water_tap"
-              ],
-              true,
-              false
-            ]
-          ],
-          [
-            "!",
-            [
-              "match",
-              [
-                "coalesce",
-                [
-                  "get",
-                  "subclass"
-                ],
-                [
-                  "get",
-                  "class"
-                ]
-              ],
-              [
-                "campsite",
-                "camp_site",
-                "drinking_water",
-                "water_point",
-                "water_tap"
-              ],
-              true,
-              false
-            ]
-          ],
-          [
-            "!",
-            [
-              "match",
-              [
-                "get",
-                "class"
-              ],
-              [
-                "campsite",
-                "camp_site",
-                "drinking_water",
-                "water_point",
-                "water_tap"
-              ],
-              true,
-              false
-            ]
-          ]
-        ],
-        [
-          "!",
-          [
             "all",
             [
               "any",
@@ -1536,17 +1423,26 @@
                   "class"
                 ],
                 [
+                  "parking",
                   "campsite",
                   "camp_site",
+                  "picnic_site",
                   "drinking_water",
                   "water_point",
-                  "water_tap",
-                  "parking",
                   "spring",
                   "viewpoint",
                   "shelter",
                   "alpine_hut",
-                  "wilderness_hut"
+                  "wilderness_hut",
+                  "information",
+                  "toilets",
+                  "attraction",
+                  "ruins",
+                  "archaeological_site",
+                  "place_of_worship",
+                  "monument",
+                  "memorial",
+                  "water_tap"
                 ],
                 true,
                 false
@@ -1558,51 +1454,180 @@
                   "subclass"
                 ],
                 [
+                  "parking",
                   "campsite",
                   "camp_site",
+                  "picnic_site",
                   "drinking_water",
                   "water_point",
-                  "water_tap",
-                  "parking",
                   "spring",
                   "viewpoint",
                   "shelter",
                   "alpine_hut",
-                  "wilderness_hut"
+                  "wilderness_hut",
+                  "information",
+                  "toilets",
+                  "attraction",
+                  "ruins",
+                  "archaeological_site",
+                  "place_of_worship",
+                  "monument",
+                  "memorial",
+                  "water_tap"
                 ],
                 true,
                 false
               ]
             ],
             [
-              "within",
-              {
-                "type": "Polygon",
-                "coordinates": [
+              "!",
+              [
+                "match",
+                [
+                  "coalesce",
                   [
+                    "get",
+                    "subclass"
+                  ],
+                  [
+                    "get",
+                    "class"
+                  ]
+                ],
+                [
+                  "campsite",
+                  "camp_site",
+                  "drinking_water",
+                  "water_point",
+                  "water_tap"
+                ],
+                true,
+                false
+              ]
+            ],
+            [
+              "!",
+              [
+                "match",
+                [
+                  "get",
+                  "class"
+                ],
+                [
+                  "campsite",
+                  "camp_site",
+                  "drinking_water",
+                  "water_point",
+                  "water_tap"
+                ],
+                true,
+                false
+              ]
+            ]
+          ],
+          [
+            "!",
+            [
+              "all",
+              [
+                "any",
+                [
+                  "match",
+                  [
+                    "get",
+                    "class"
+                  ],
+                  [
+                    "campsite",
+                    "camp_site",
+                    "drinking_water",
+                    "water_point",
+                    "water_tap",
+                    "parking",
+                    "spring",
+                    "viewpoint",
+                    "shelter",
+                    "alpine_hut",
+                    "wilderness_hut"
+                  ],
+                  true,
+                  false
+                ],
+                [
+                  "match",
+                  [
+                    "get",
+                    "subclass"
+                  ],
+                  [
+                    "campsite",
+                    "camp_site",
+                    "drinking_water",
+                    "water_point",
+                    "water_tap",
+                    "parking",
+                    "spring",
+                    "viewpoint",
+                    "shelter",
+                    "alpine_hut",
+                    "wilderness_hut"
+                  ],
+                  true,
+                  false
+                ]
+              ],
+              [
+                "within",
+                {
+                  "type": "Polygon",
+                  "coordinates": [
                     [
-                      34.2,
-                      29.45
-                    ],
-                    [
-                      35.95,
-                      29.45
-                    ],
-                    [
-                      35.95,
-                      33.45
-                    ],
-                    [
-                      34.2,
-                      33.45
-                    ],
-                    [
-                      34.2,
-                      29.45
+                      [
+                        34.2,
+                        29.45
+                      ],
+                      [
+                        35.95,
+                        29.45
+                      ],
+                      [
+                        35.95,
+                        33.45
+                      ],
+                      [
+                        34.2,
+                        33.45
+                      ],
+                      [
+                        34.2,
+                        29.45
+                      ]
                     ]
                   ]
-                ]
-              }
+                }
+              ]
+            ]
+          ]
+        ],
+        [
+          "!",
+          [
+            "any",
+            [
+              "==",
+              [
+                "get",
+                "class"
+              ],
+              "picnic_site"
+            ],
+            [
+              "==",
+              [
+                "get",
+                "subclass"
+              ],
+              "picnic_site"
             ]
           ]
         ]
@@ -1651,79 +1676,121 @@
       "source-layer": "poi",
       "minzoom": 13,
       "filter": [
-        "all",
+        "any",
+        [
+          "all",
+          [
+            "any",
+            [
+              "match",
+              [
+                "get",
+                "class"
+              ],
+              [
+                "campsite",
+                "camp_site",
+                "drinking_water",
+                "water_point",
+                "water_tap"
+              ],
+              true,
+              false
+            ],
+            [
+              "match",
+              [
+                "get",
+                "subclass"
+              ],
+              [
+                "campsite",
+                "camp_site",
+                "drinking_water",
+                "water_point",
+                "water_tap"
+              ],
+              true,
+              false
+            ]
+          ],
+          [
+            "!",
+            [
+              "within",
+              {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      34.2,
+                      29.45
+                    ],
+                    [
+                      35.95,
+                      29.45
+                    ],
+                    [
+                      35.95,
+                      33.45
+                    ],
+                    [
+                      34.2,
+                      33.45
+                    ],
+                    [
+                      34.2,
+                      29.45
+                    ]
+                  ]
+                ]
+              }
+            ]
+          ]
+        ],
         [
           "any",
           [
-            "match",
+            "==",
             [
               "get",
               "class"
             ],
-            [
-              "campsite",
-              "camp_site",
-              "drinking_water",
-              "water_point",
-              "water_tap"
-            ],
-            true,
-            false
+            "picnic_site"
           ],
           [
-            "match",
+            "==",
             [
               "get",
               "subclass"
             ],
-            [
-              "campsite",
-              "camp_site",
-              "drinking_water",
-              "water_point",
-              "water_tap"
-            ],
-            true,
-            false
-          ]
-        ],
-        [
-          "!",
-          [
-            "within",
-            {
-              "type": "Polygon",
-              "coordinates": [
-                [
-                  [
-                    34.2,
-                    29.45
-                  ],
-                  [
-                    35.95,
-                    29.45
-                  ],
-                  [
-                    35.95,
-                    33.45
-                  ],
-                  [
-                    34.2,
-                    33.45
-                  ],
-                  [
-                    34.2,
-                    29.45
-                  ]
-                ]
-              ]
-            }
+            "picnic_site"
           ]
         ]
       ],
       "layout": {
         "icon-image": [
           "case",
+          [
+            "any",
+            [
+              "==",
+              [
+                "get",
+                "class"
+              ],
+              "picnic_site"
+            ],
+            [
+              "==",
+              [
+                "get",
+                "subclass"
+              ],
+              "picnic_site"
+            ]
+          ],
+          "topo-picnic",
           [
             "any",
             [
@@ -1796,12 +1863,12 @@
           [
             "zoom"
           ],
-          12,
-          0.72,
+          12.7,
+          0.7,
           14,
-          0.86,
+          0.8,
           16,
-          1.0
+          0.95
         ],
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
@@ -1999,7 +2066,7 @@
             "parking",
             "חניון",
             "picnic_site",
-            "חניון",
+            "חניון יום",
             "campsite",
             "חניון לילה",
             "camp_site",
@@ -2066,14 +2133,12 @@
           [
             "zoom"
           ],
-          9.4,
-          0.62,
-          12,
-          0.72,
+          12.7,
+          0.7,
           14,
-          0.86,
+          0.8,
           16,
-          1.0
+          0.95
         ],
         "icon-anchor": "center",
         "icon-allow-overlap": true,
@@ -2121,13 +2186,13 @@
             "zoom"
           ],
           9.4,
-          0.62,
-          12,
-          0.72,
+          0.58,
+          12.7,
+          0.7,
           14,
-          0.86,
+          0.8,
           16,
-          1.0
+          0.95
         ],
         "icon-anchor": "center",
         "icon-allow-overlap": false,
@@ -2153,7 +2218,7 @@
         "text-anchor": "top",
         "text-offset": [
           0,
-          0.85
+          0.7
         ],
         "text-max-width": 8,
         "text-optional": true,
@@ -2186,12 +2251,12 @@
           [
             "zoom"
           ],
-          12,
-          0.72,
+          12.7,
+          0.7,
           14,
-          0.86,
+          0.8,
           16,
-          1.0
+          0.95
         ],
         "icon-anchor": "center",
         "icon-allow-overlap": true,
@@ -2238,12 +2303,12 @@
           [
             "zoom"
           ],
-          12,
-          0.72,
+          12.7,
+          0.7,
           14,
-          0.86,
+          0.8,
           16,
-          1.0
+          0.95
         ],
         "icon-anchor": "center",
         "icon-allow-overlap": true,
@@ -2269,7 +2334,7 @@
         "text-anchor": "top",
         "text-offset": [
           0,
-          0.85
+          0.7
         ],
         "text-max-width": 8,
         "text-optional": true,
@@ -2300,12 +2365,12 @@
           [
             "zoom"
           ],
-          12,
-          0.72,
+          12.7,
+          0.7,
           14,
-          0.86,
+          0.8,
           16,
-          1.0
+          0.95
         ],
         "icon-anchor": "center",
         "icon-allow-overlap": true,
@@ -2352,12 +2417,12 @@
           [
             "zoom"
           ],
-          12,
-          0.72,
+          12.7,
+          0.7,
           14,
-          0.86,
+          0.8,
           16,
-          1.0
+          0.95
         ],
         "icon-anchor": "center",
         "icon-allow-overlap": true,
@@ -2383,7 +2448,7 @@
         "text-anchor": "top",
         "text-offset": [
           0,
-          0.85
+          0.7
         ],
         "text-max-width": 8,
         "text-optional": true,
@@ -2424,12 +2489,12 @@
           [
             "zoom"
           ],
-          12,
-          0.72,
+          12.7,
+          0.7,
           14,
-          0.86,
+          0.8,
           16,
-          1.0
+          0.95
         ],
         "icon-anchor": "center",
         "icon-allow-overlap": true,
@@ -2454,7 +2519,7 @@
         "text-anchor": "top",
         "text-offset": [
           0,
-          0.85
+          0.7
         ],
         "text-max-width": 8,
         "text-optional": true
@@ -2493,14 +2558,14 @@
           [
             "zoom"
           ],
-          9.4,
-          0.62,
-          12,
-          0.72,
+          8,
+          0.6,
+          12.7,
+          0.7,
           14,
-          0.86,
+          0.8,
           16,
-          1.0
+          0.95
         ],
         "icon-anchor": "center",
         "icon-allow-overlap": true,
@@ -2546,14 +2611,14 @@
           [
             "zoom"
           ],
-          9.4,
-          0.62,
-          12,
-          0.72,
+          8,
+          0.6,
+          12.7,
+          0.7,
           14,
-          0.86,
+          0.8,
           16,
-          1.0
+          0.95
         ],
         "icon-anchor": "center",
         "icon-allow-overlap": true,
@@ -2579,7 +2644,7 @@
         "text-anchor": "top",
         "text-offset": [
           0,
-          0.85
+          0.7
         ],
         "text-max-width": 8,
         "text-optional": true

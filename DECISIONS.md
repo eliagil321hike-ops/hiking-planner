@@ -504,6 +504,21 @@ with the first real request.
   Taps and parking keep grouping with a count (the overlap choice was asked for campsites only).
 - Abroad, campsites still appear only from z11 (on-demand loading starts there, D-042).
 
+## D-048 (2026-11-02) Owner: proportions, smaller icons, everything from 500 m except campsites
+- Owner's rules: one uniform line, pleasant colours, a size that does not take over the layers, clearly
+  visible. Owner chose direction א (coloured square, Gaia-like) from four sketches (coloured square, earth-
+  tone circle, white with coloured edge, uniform dark ink).
+- Every badge: square 3.5–20.5 of the 24-unit grid, every symbol drawn at 80 % around the centre (same
+  proportion for all), one 1-unit white edge, faint shadow. Softer colours: campsite #59544d, tap #3a85bf,
+  parking #4a6690, spring #2f8f86, viewpoint #a65f42, shelter #6c7782, new **picnic site** #5e8a52.
+- Size on the map: icon-size 0.7 at z12.7 → 0.95 at z16 (square ≈ 12 → 16 px); campsites 0.58 at z9.4.
+- Every point symbol only from **z12.7** (500 m), campsites from z9.4 (5 km) — owner repeated this. Category
+  search results still show at any zoom (D-045).
+- "חניוני יום" = day-use picnic sites (OSM `picnic_site`, base tiles): picnic-table badge instead of a dot,
+  label "חניון יום". Peaks keep their own (plain triangle) symbol from z10.
+- e2e: the z13 points check is slow in software WebGL (all icons were in fact drawn — diagnostics showed
+  water 1, camp 1, parking 1 just after the 60 s limit); limit raised to 150 s.
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
