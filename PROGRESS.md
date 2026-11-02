@@ -63,7 +63,7 @@ the e2e test uses the real MapLibre build (from GitHub releases) with fixture st
 - Owner picked sketch A, darker variant A2 (text/icons Dark Text, 1.9px icons, clear frames, Deep Blue panel
   toggles), then owner tweaks: no top bar, rounder corners, icon-only top-left, no layers menu (D-052).
   Built on wip/a2-redesign: unit 30/30 (incl. new contrast test), smoke all PASS, e2e 87/87 locally.
-  Waiting for the owner's look at the screenshots before merging to main.
+  Owner approved ("תעלה"); merged to main and deployed (CI test + deploy green, 2026-11-02).
 
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
