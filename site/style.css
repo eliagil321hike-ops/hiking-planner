@@ -672,7 +672,8 @@ body.marking .maplibregl-canvas { cursor: crosshair; }
 .mk-row .lib-btn.icon { margin: 0; }
 .mk-foot { display: flex; justify-content: flex-end; margin-top: 12px; }
 @media (max-width: 600px) {
-  .mk-row { grid-template-columns: auto 1fr auto; }
-  .mk-row [data-act="edit"] { display: none; }
+  .mk-row { gap: 8px; }
+  .mk-row .lib-btn { padding-inline: 8px; }
+  .mk-menu { bottom: auto; max-height: calc(100vh - var(--top-h) - 16px); }   /* only as tall as its three rows */
   .mark-banner { font-size: 13px; }
 }
