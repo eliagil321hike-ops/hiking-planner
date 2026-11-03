@@ -695,6 +695,28 @@ raise the right tool bar a little")
   trails at every zoom (D-043): line z12/14/16 6.8/10/15.6 px (was 7.5/11/16), casing 9.8/13/18.6 (was 11/15/21);
   national 6/9/15, casing 8.5/11.5/17.5. Before/after preview sent to the owner. e2e checks the order and widths.
 
+## D-063 (2026-11-03) Owner: waypoints rebuilt as marked points (personal points + route marks)
+- Owner sketches approved ("עיצוב נהדר"), with two changes: marking-mode icon replaced (crosshair) and the layer
+  button icon replaced (map pin); peak and parking allowed as symbols.
+- Two kinds. Personal points: crimson #D0435B (same lightness as the site colours, apart from the map colours),
+  white frame and symbol; saved in the library (IndexedDB `points` store, DB version 2), shown on their own layer
+  with a remembered on/off switch ("pointsLayer"). Route marks: the route's colour, dark navy frame + white ring,
+  dark or white symbol by contrast; saved with the route, shown only while that route is open. The route does not
+  pass through marks; they sit beside it. The pin is a rounded square with a pointer and a white dot on the spot.
+- Marking: map-pin button → menu (layer switch + count, "mark points" mode, "my points"). The route toolbar has its
+  own marking tool (crosshair), never on together with drawing. Right-click marks too: inside route building a route
+  mark, otherwise a personal point. Phone: tap marks, drag pans. Tapping a personal point in route marking adds it to
+  the route. Tapping a map point (spring, campsite, …) takes its name and symbol and hides its small icon under the pin
+  (own-source point layers only; base-map icons/peaks stay visible – known limit). An empty spot → "general location".
+- After each mark a dialog: name only + symbol (12: general, viewpoint, spring, tap, waterfall, pool, tent, picnic,
+  shelter, ruins, parking, peak), elevation shown, save/cancel/delete; leaving with changes asks first (like routes).
+  No dragging: delete and mark again.
+- "My points" panel: search, symbol filter, show on map, edit, GPX of all personal points. Library card menu:
+  "download GPX" = the route track (with elevations) + its marks.
+- The old waypoints (no symbol) are removed completely, also inside saved routes (one-time, keeps updatedAt).
+- Tests: tests/points-gpx.test.mjs; e2e covers personal points, POI marking, layer memory, my points, route marks,
+  route GPX.
+
 ## D-007 (2026-11-01) Owner answers
 - First region: **Upper Galilee** (initial camera around Har Meron; encoding test peak is in this region).
 - Owner computer: **Windows**. Local server = `start-windows.bat` → `serve.ps1` (built-in PowerShell

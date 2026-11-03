@@ -3,10 +3,12 @@
 // user input to commands, renders the editor state, keeps the draft, and shows stats + profile.
 //
 // Map interaction while planning: click = add point · drag a point = move · drag a small mid-segment handle =
-// insert · click a point then Delete = remove · right-click = waypoint · Ctrl+Z / Ctrl+Y = undo / redo.
+// insert · click a point then Delete = remove · Ctrl+Z / Ctrl+Y = undo / redo. Marked points (route marks, D-063)
+// are the editor's waypoints with a symbol; they are created through markers.js.
 
 import { renderProfile } from './profile.js';
 import { statIcon } from './stat-icons.js';
+import { pinImageId, isMarkIcon, PIN } from './marker-icons.js';
 import { resampleLine, computeElevationStats, naismithSeconds } from './vendor/geo/index.js';
 import {
   RouteEditor, addPoint, movePoint, insertPoint, deletePoint, setSegmentMode, reverseRoute, closeLoop,
@@ -70,9 +72,11 @@ export function initRoute(ctx) {
         'circle-stroke-color': ['case', ['get', 'selected'], '#ff2d55', '#0a1f0a'],
         'circle-stroke-width': 3,
       } });
-    map.addLayer({ id: 'route-waypoints', type: 'symbol', source: 'route-waypoints',
-      layout: { 'text-field': ['concat', '◆ ', ['get', 'name']], 'text-font': font, 'text-size': 13, 'text-anchor': 'left', 'text-offset': [0.2, 0], 'text-allow-overlap': true },
-      paint: { 'text-color': '#1d4e89', 'text-halo-color': '#ffffff', 'text-halo-width': 2 } });
+    // Route marks (D-063): pins in the route colour with a dark frame + white ring, the pointer on the exact spot,
+    // the body above the line; on top of everything so a line never hides them.
+    map.addLayer({ id: 'route-marks', type: 'symbol', source: 'route-waypoints',
+      layout: { 'icon-image': ['get', 'image'], 'icon-anchor': 'bottom', 'icon-offset': [0, (PIN.h - PIN.tipY - 1) * PIN.cssWidth / PIN.w],
+        'icon-allow-overlap': true, 'icon-ignore-placement': true, 'symbol-sort-key': ['get', 'order'] } });
     render();
   }
 
@@ -92,7 +96,9 @@ export function initRoute(ctx) {
       }
     }
     map.getSource('route-handles').setData(FC(handles));
-    map.getSource('route-waypoints').setData(FC(s.waypoints.map((w) => pt([w.lon, w.lat], { id: w.id, name: w.name || t('wp.default') }))));
+    const c = routeColor();
+    map.getSource('route-waypoints').setData(FC(s.waypoints.filter((w) => w.icon).map((w, i) => pt([w.lon, w.lat],
+      { id: w.id, name: w.name, icon: w.icon, image: pinImageId(isMarkIcon(w.icon) ? w.icon : 'general', c), order: i }))));
     renderErrors(segs);
     updateButtons();
   }
@@ -180,7 +186,7 @@ export function initRoute(ctx) {
     try {
       const d = JSON.parse(store.get(DRAFT_KEY) ?? 'null');
       if (d?.version === 1 && Array.isArray(d.state?.vertices) && (d.state.vertices.length || d.state.waypoints?.length)) {
-        editor.load({ vertices: d.state.vertices, waypoints: d.state.waypoints ?? [] }, d.cache ?? {});
+        editor.load({ vertices: d.state.vertices, waypoints: (d.state.waypoints ?? []).filter((w) => w.icon) }, d.cache ?? {});
         notify(t('route.draftRestored'));
         ctx.results.draftRestored = true;
         setTimeout(() => { if ($('status').textContent === t('route.draftRestored')) notify(null); }, 6000);
@@ -191,6 +197,7 @@ export function initRoute(ctx) {
   // ---------------------------------------------------------------- planning mode + buttons
   function setPlanning(on) {
     planning = on;
+    if (on) ctx.markers?.setMode(null);
     $('plan-badge').hidden = !on;
     $('plan').setAttribute('aria-pressed', String(on));
     $('plan').title = t(on ? 'route.finish' : 'route.plan');
@@ -286,42 +293,10 @@ export function initRoute(ctx) {
   map.on('click', (e) => {
     if (swallowClick) { swallowClick = false; return; }
     if (!planning) return;
-    if (hit(e, ['route-points', 'route-mid', 'route-waypoints'])) return;
+    if (hit(e, ['route-points', 'route-mid', 'route-marks'])) return;
     selected = null;
     editor.run(addPoint([e.lngLat.lng, e.lngLat.lat], newMode()));
   });
-
-  // Waypoints: right-click on the map (desktop equivalent of a long press), click a waypoint to edit.
-  map.on('contextmenu', (e) => {
-    if (!planning) return;
-    e.preventDefault();
-    const id = `w${Date.now().toString(36)}`;
-    editor.run(addWaypoint({ id, lon: e.lngLat.lng, lat: e.lngLat.lat, name: '', note: '' }));
-    openWaypointForm(id);
-  });
-  map.on('click', 'route-waypoints', (e) => { e.preventDefault?.(); openWaypointForm(e.features[0].properties.id); swallowClick = true; });
-
-  let popup = null;
-  function openWaypointForm(id) {
-    const w = editor.state.waypoints.find((x) => x.id === id);
-    if (!w) return;
-    popup?.remove();
-    const el = document.createElement('form');
-    el.className = 'wp-form';
-    el.innerHTML = `<label>${t('wp.name')} <input name="name" maxlength="60"></label>
-      <label>${t('wp.note')} <input name="note" maxlength="200"></label>
-      <div class="row"><button class="btn btn-primary" type="submit">${t('wp.save')}</button>
-      <button class="btn" type="button" data-act="delete">${t('wp.delete')}</button></div>`;
-    el.name.value = w.name; el.note.value = w.note;
-    el.addEventListener('submit', (ev) => {
-      ev.preventDefault();
-      editor.run(editWaypoint(id, { name: el.name.value.trim(), note: el.note.value.trim() }, editor.state));
-      popup.remove();
-    });
-    el.querySelector('[data-act=delete]').addEventListener('click', () => { editor.run(deleteWaypoint(id, editor.state)); popup.remove(); });
-    popup = new maplibregl.Popup({ closeOnClick: true, maxWidth: '260px' }).setLngLat([w.lon, w.lat]).setDOMContent(el).addTo(map);
-    setTimeout(() => el.name.focus(), 0);
-  }
 
   // ---------------------------------------------------------------- route dock: figures + profile (D-049)
   const n0 = (v) => (v === null || v === undefined ? '—' : fmtNumber(Math.round(v)));
@@ -390,6 +365,7 @@ export function initRoute(ctx) {
     $('route-pill').hidden = expanded || editor.geometry().length < 2;
     $('profile-toggle').setAttribute('aria-expanded', String(expanded));
     document.body.classList.toggle('dock-open', open);
+    if (!open && ctx.markers?.mode() === 'route') ctx.markers.setMode(null);   // route marking needs a route (D-063)
     if (!expanded || !open) { hoverMarker.remove(); $('color-pop').hidden = true; }
     document.body.classList.toggle('dock-panel', open && expanded);
     requestAnimationFrame(() => {
@@ -425,6 +401,7 @@ export function initRoute(ctx) {
     if (map.getLayer('route-line')) {
       map.setPaintProperty('route-line', 'line-color', c);
       map.setPaintProperty('route-points', 'circle-color', ['case', ['get', 'first'], c, '#ffffff']);
+      render();   // route marks take the new colour
     }
     $('color-pop').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.color === c)));
     ctx.results.routeMeta = { name: m.name ?? '', color: c };
@@ -479,7 +456,7 @@ export function initRoute(ctx) {
   /** Show a saved route (never shown automatically): load it into the editor, fit the view, show the panel. */
   function openSaved(rec, { edit = false } = {}) {
     selected = null;
-    editor.load({ vertices: rec.editor.state.vertices, waypoints: rec.editor.state.waypoints ?? [] }, rec.editor.cache ?? {});
+    editor.load({ vertices: rec.editor.state.vertices, waypoints: (rec.editor.state.waypoints ?? []).filter((w) => w.icon) }, rec.editor.cache ?? {});
     setMeta({ name: rec.name, color: ROUTE_COLORS.includes(rec.color) ? rec.color : ROUTE_COLOR, savedId: rec.id });
     setMeta({ savedSig: signature() });
     setPlanning(edit);
@@ -489,7 +466,12 @@ export function initRoute(ctx) {
   }
   ctx.routeLib = { hasRoute, isDirty, snapshot, markSaved, openSaved, guardUnsaved, linkedId: () => getMeta().savedId ?? null,
     unlink: () => setMeta({ savedId: null, savedSig: null }),
-    color: routeColor, setPlanning };
+    color: routeColor, setPlanning, isPlanning: () => planning, dockOpen: () => !$('route-dock').hidden,
+    routeMarks: () => editor.state.waypoints.filter((w) => w.icon),
+    addRouteMark: (w) => editor.run(addWaypoint({ note: '', ...w })),
+    editRouteMark: (id, patch) => editor.run(editWaypoint(id, patch, editor.state)),
+    deleteRouteMark: (id) => editor.run(deleteWaypoint(id, editor.state)),
+    startRoute: () => { if (!planning && !hasRoute()) setPlanning(true); } };
 
   syncDock();
   applyMeta();

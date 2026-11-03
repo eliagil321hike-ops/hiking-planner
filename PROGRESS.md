@@ -130,6 +130,10 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   D-057/58/59 → D-060/61/62 (main had used D-057/D-058). Restore point: branch snapshot/site-before-osm-regions.
   The push changes EXTRACT_VERSION (3 → 4), so the deploy fetches fresh data itself (no manual run needed).
 
+## Marked points (D-063, 2026-11-03, branch wip/markers – waiting for owner approval)
+- Built from the approved sketches on wip/markers; not on the site. Unit 53/53, editor 18/18, smoke pass; e2e below.
+- Before publishing: save a restore branch (removing old waypoints from saved routes cannot be undone).
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).
