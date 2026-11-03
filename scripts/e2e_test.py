@@ -715,8 +715,9 @@ def main():
         if dialog_open(): jsclick("#lib-dialog button[value=discard]")
         if page.evaluate("() => window.__topo3d.ctx.routeLib.isPlanning()"): jsclick("#plan")
         wait_js(page, "() => document.getElementById('route-dock').hidden", 60)
-        page.evaluate(f"() => {M}.jumpTo({{ center: [35.4167, 33.0], zoom: 14, pitch: 0, bearing: 0 }})"); page.wait_for_timeout(1500)
-        wait_js(page, f"() => {M}.queryRenderedFeatures({{ layers: ['poi-camp'] }}).length > 0", 60)
+        # the fixture campsite (35.40, 33.006) a little right of the centre, clear of the panels
+        page.evaluate(f"() => {M}.jumpTo({{ center: [35.397, 33.004], zoom: 14, pitch: 0, bearing: 0 }})")
+        wait_js(page, f"() => !{M}.isMoving() && {M}.queryRenderedFeatures({{ layers: ['poi-camp'] }}).some((f) => {{ const p = {M}.project(f.geometry.coordinates); return p.x > 100 && p.y > 150 && p.x < innerWidth - 100 && p.y < innerHeight - 150; }})", 60)
         jsclick("#btn-points")
         r["mkMenu"] = page.evaluate("() => [!document.getElementById('menu-points').hidden, document.getElementById('mk-show').checked, document.getElementById('btn-points').getAttribute('aria-expanded')]")
         jsclick("#mk-mode")
