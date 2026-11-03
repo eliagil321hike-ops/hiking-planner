@@ -9,16 +9,21 @@
 
 import { decodeRgbaTile, elevationInTile, tileForLonLat } from './vendor/geo/index.js';
 
-export function createDemSampler({ urlTemplate, encoding, tileSize, zoom, fallbackMinZoom = zoom }) {
+export function createDemSampler({ urlTemplate, encoding, tileSize, zoom, fallbackMinZoom = zoom, maxTiles = 64 }) {
   if (!encoding) throw new Error('DEM encoding must be explicit');
   if (!tileSize) throw new Error('DEM tileSize must be explicit');
+  // Decoded tiles, least recently used first (perf review 2026-11-03): a long route or a long session no longer
+  // keeps every tile it ever touched in memory (~1 MB each); a failed download is retried next time.
   const cache = new Map();
   const zoomUsed = new Map(); // how often each zoom actually served a sample (for the report)
 
   async function loadTile(id) {
     const key = `${id.z}/${id.x}/${id.y}`;
-    if (!cache.has(key)) {
-      cache.set(key, (async () => {
+    if (cache.has(key)) {                       // refresh its place in the LRU order
+      const hit = cache.get(key); cache.delete(key); cache.set(key, hit); return hit;
+    }
+    {
+      const job = (async () => {
         const url = urlTemplate.replace('{z}', id.z).replace('{x}', id.x).replace('{y}', id.y);
         const res = await fetch(url);
         if (res.status === 404 || res.status === 204) return null; // no data at this zoom
@@ -32,9 +37,12 @@ export function createDemSampler({ urlTemplate, encoding, tileSize, zoom, fallba
         ctx.drawImage(bmp, 0, 0);
         const rgba = ctx.getImageData(0, 0, tileSize, tileSize).data;
         return decodeRgbaTile(rgba, tileSize, encoding);
-      })());
+      })();
+      cache.set(key, job);
+      job.catch(() => { if (cache.get(key) === job) cache.delete(key); });
+      while (cache.size > maxTiles) cache.delete(cache.keys().next().value);
+      return job;
     }
-    return cache.get(key);
   }
 
   /** Elevation (m) at [lon, lat], or null if no data at any allowed zoom. */
@@ -54,5 +62,5 @@ export function createDemSampler({ urlTemplate, encoding, tileSize, zoom, fallba
     return Promise.all(points.map((p) => elevationAt(p)));
   }
 
-  return { elevationAt, elevations, zoom, fallbackMinZoom, encoding, tileSize, zoomUsed };
+  return { elevationAt, elevations, zoom, fallbackMinZoom, encoding, tileSize, zoomUsed, cacheSize: () => cache.size };
 }

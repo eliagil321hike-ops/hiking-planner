@@ -245,8 +245,14 @@ export function initRoute(ctx) {
     drag = { kind: f.properties.kind, index: f.properties.index, start: e.lngLat, moved: false };
     map.getCanvas().style.cursor = 'grabbing';
   });
+  // Hover: the handle hit-test (a feature query on the GPU frame) runs at most every 50 ms, not on every mouse
+  // event (perf review 2026-11-03); dragging always follows the mouse.
+  let lastHover = 0;
   map.on('mousemove', (e) => {
-    if (planning && !drag) map.getCanvas().style.cursor = hit(e, ['route-points', 'route-mid']) ? 'grab' : 'crosshair';
+    if (planning && !drag) {
+      const now = performance.now();
+      if (now - lastHover > 50) { lastHover = now; map.getCanvas().style.cursor = hit(e, ['route-points', 'route-mid']) ? 'grab' : 'crosshair'; }
+    }
     if (!drag) return;
     drag.moved = true;
     drag.lngLat = e.lngLat;

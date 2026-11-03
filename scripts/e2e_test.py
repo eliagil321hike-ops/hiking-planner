@@ -592,6 +592,9 @@ def main():
         fresh_route([(800, 300), (900, 380), (1000, 330)])
         r["libUnsaved"] = page.evaluate("() => window.__topo3d.results.savedState")
         r["libEmpty"] = page.evaluate(f"() => {L}.listRoutes().then((x) => x.length)")
+        page.evaluate("() => window.__topo3d.map.jumpTo({ pitch: 40, bearing: 20 })"); page.wait_for_timeout(500)
+        cam_js = "() => { const m = window.__topo3d.map, c = m.getCenter(); return [+c.lng.toFixed(5), +c.lat.toFixed(5), +m.getZoom().toFixed(2), +m.getPitch().toFixed(1), +m.getBearing().toFixed(1)]; }"
+        cam_before = page.evaluate(cam_js)
         jsclick("#r-save"); wait_js(page, "() => document.getElementById('lib-dialog').open", 60)
         r["libSaveDialog"] = page.evaluate("() => ({ name: !!document.querySelector('#lib-dialog input[name=name]'), folder: !!document.querySelector('#lib-dialog select[name=folder]'), figs: document.querySelectorAll('#lib-dialog .lib-figs dd').length })")
         page.fill("#lib-dialog input[name=name]", "מעיינות")
@@ -599,6 +602,9 @@ def main():
         jsclick("#lib-dialog button[value=save]")
         wait_js(page, "() => !!window.__topo3d.results.lastSaved", 120)
         sid = page.evaluate("() => window.__topo3d.results.lastSaved.id")
+        page.wait_for_timeout(500); r["libCamera"] = [cam_before, page.evaluate(cam_js)]
+        # back to flat: a tilted 3D view keeps software WebGL so busy that Playwright's "stable" checks never finish
+        page.evaluate("() => window.__topo3d.map.jumpTo({ pitch: 0, bearing: 0 })"); page.wait_for_timeout(500)
         r["libSaved"] = page.evaluate(f"""() => {L}.getRoute({sid!r}).then((x) => ({{ name: x.name, folder: !!x.folderId, vertices: x.editor.state.vertices.length,
             geomSame: JSON.stringify(x.geometry) === JSON.stringify({ed}.geometry().map((p) => [p[0], p[1]])), profile: x.profile.length,
             elevOk: x.profile.every((p) => p.length === 4), thumb: (x.thumb || '').slice(0, 11), state: window.__topo3d.results.savedState }}))""")
@@ -709,6 +715,7 @@ def main():
     expect(r["libOpened"] == [3, True, "saved", "מעיינות"], f"open: library closes, the route + name are loaded and marked saved {r['libOpened']}")
     expect(r["libChanged"] == "changed" and r["libUpdateChoice"] == "update" and r["libUpdated"] == [1, 4, True], f"editing marks it changed; save changes updates the original {r['libChanged']} {r['libUpdated']}")
     # sorted by name the original ("מעיינות") comes before its copy, so the original is renamed and moved
+    expect(r["libCamera"][0] == r["libCamera"][1], f"saving (preview picture) gives the user's view back: centre, zoom, tilt, bearing {r['libCamera']}")
     expect(r["libCards"] == [["אאא ראשון", False], ["מעיינות (עותק)", True]], f"duplicate, rename, move to no folder {r['libCards']}")
     expect(r["libNoResults"], "search with no results shows the empty message")
     expect(r["libCopy"] == [3, True, True, "copy", True], f"edit → create copy: new route opened for editing, original untouched {r['libCopy']}")
