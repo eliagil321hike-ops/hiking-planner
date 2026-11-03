@@ -611,6 +611,22 @@ raise the right tool bar a little")
   branch snapshot/site-before-my-routes = the live code before My Routes (c42bae9). Undo = merge a revert of the
   My Routes merge into main (CI tests + redeploys). Saved routes stay in the browser either way.
 
+## D-057 (2026-11-03) Route figures: sketch A (owner)
+- Owner: "no space after the comma" in 4+ digit numbers, larger ascent/descent icons, another icon for max/min;
+  chose sketch A of three. The figures (route panel, pill, library cards, save dialog) use the interface font with
+  same-width digits (tabular figures) instead of IBM Plex Mono, whose comma is a full digit wide.
+- Icons (site/stat-icons.js): an arrow on a slope for ascent (turquoise) / descent (medium blue), a peak with a
+  gold flag for the highest point, a valley for the lowest. e2e checks the font and the four icons.
+
+## D-058 (2026-11-03) Style sheet cleanup (owner: "remove what is no longer relevant")
+- style.css had grown in layers (D-038 → D-056, each overriding the last). Removed: rules for components that no
+  longer exist (old route panel and stats, segmented controls, icon buttons, the layers menu's switches and
+  swatches, which stay hidden since D-052), and declarations always overridden by a later rule. 691 → ~612 lines.
+- Checked by comparing the computed style and box of every element in 14 UI states (computer + phone: start, map
+  style, planning, route, save dialog, pill, library, card menu, edit dialog, search) before and after. The first
+  pass had dropped the top-right controls' offset (they moved 16 px up); restored, compared again. Remaining
+  differences: the hidden layers menu, an empty MapLibre corner container, and the figures area (D-057).
+
 ## Data-source register
 | Source | Use | Licence | Commercial use allowed? | Attribution | Limits / caching | Cost | Checked | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

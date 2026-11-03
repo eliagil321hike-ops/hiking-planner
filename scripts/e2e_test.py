@@ -434,6 +434,10 @@ def main():
             time: document.getElementById('profile-box').textContent.includes('זמן'), dockOpen: !document.getElementById('route-dock').hidden,
             startFinish: !!document.querySelector('#profile .profile-start') && !!document.querySelector('#profile .profile-finish'),
             yLevels: document.querySelectorAll('#profile line.profile-grid-h').length })""")
+        # D-057: figures in the interface font (no wide monospace comma), an icon per figure (slope arrows, peak, valley)
+        r["figures"] = page.evaluate("""() => ({ fonts: [...document.querySelectorAll('#rd-dist, #stats .rd-st b')].map((e) => getComputedStyle(e.matches('#rd-dist') ? e : e).fontFamily.split(',')[0].replace(/"/g, '')),
+            icons: [...document.querySelectorAll('#stats .rd-st')].map((e) => e.querySelector('svg.si')?.getAttribute('class') ?? null),
+            pill: [...document.querySelectorAll('#pill-stats svg.si')].map((e) => e.getAttribute('class')) })""")
         # D-054: the graph fills its box and stays inside the panel, also after the window changes size
         fit_js = """() => { const p = document.getElementById('profile'), svg = p.querySelector('svg'), box = document.getElementById('profile-box');
             const vb = svg.viewBox.baseVal, rs = svg.getBoundingClientRect(), rb = box.getBoundingClientRect();
@@ -515,7 +519,9 @@ def main():
 
         # Draft survives a reload
         draft_before = page.evaluate(f"() => JSON.stringify({ed}.state)")
-        page.reload(wait_until="domcontentloaded", timeout=60_000)
+        import time as _time; _t0 = _time.time()
+        page.reload(wait_until="domcontentloaded", timeout=180_000)   # the unsaved-route warning is accepted first
+        print(f"(reload took {_time.time() - _t0:.0f} s)", flush=True)
         wait_js(page, "() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", 60)
         r["draftRestored"] = page.evaluate(f"() => JSON.stringify({ed}.state)") == draft_before
         if not r["draftRestored"]:
@@ -708,6 +714,9 @@ def main():
     expect(r["libCopy"] == [3, True, True, "copy", True], f"edit → create copy: new route opened for editing, original untouched {r['libCopy']}")
     expect(r["libFolderDeleted"] == [3, 0, True], f"deleting a folder keeps its routes (now without a folder) {r['libFolderDeleted']}")
     expect(r["libDeleted"] == 2, f"delete route (confirmed) {r['libDeleted']}")
+    F = r["figures"]
+    expect(all(x == "IBM Plex Sans Hebrew" for x in F["fonts"]) and F["icons"] == ["si si-up", "si si-down", "si si-max", "si si-min"] and F["pill"] == ["si si-up", "si si-down"],
+           f"route figures: interface font, slope arrows for ascent/descent, peak and valley for max/min (D-057) {F}")
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")

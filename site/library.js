@@ -4,6 +4,7 @@
 
 import { createLibrary, idbAdapter, memoryAdapter, queryRoutes, LibraryError } from './library-store.js';
 import { captureMapThumb, sketchThumb, routeBBox } from './thumbnail.js';
+import { statIcon } from './stat-icons.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ICON = {
@@ -97,7 +98,7 @@ export function initLibrary(ctx) {
       <div class="lib-body">
         <h3 title="${esc(r.name)}">${esc(r.name)}</h3>
         <p class="lib-folder">${esc(folderName(r.folderId) ?? t('lib.noFolder'))}</p>
-        <p class="lib-stats"><b>${km(st.distance ?? 0)}</b> ${t('unit.km')}<span class="up">▲ ${n0(st.ascent)} ${t('unit.m')}</span>${minmax}</p>
+        <p class="lib-stats"><b>${km(st.distance ?? 0)}</b> ${t('unit.km')}<span class="up">${statIcon('up', 15)}${n0(st.ascent)} ${t('unit.m')}</span>${minmax}</p>
         <p class="lib-date">${t('lib.updated', { d: date(r.updatedAt) })}</p>
       </div>
       <div class="lib-actions">
