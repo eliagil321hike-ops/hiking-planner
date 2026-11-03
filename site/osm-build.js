@@ -83,7 +83,7 @@ export function poiKind(t) {
 // Pools in nature (D-058), same rule as scripts/fetch_osm_hiking.py is_pool().
 const POOL_NAME = /^(גב|גבי|בריכת|בריכה) /u;
 const POOL_NOT_WATER = new Set(['reservoir', 'wastewater', 'fishpond', 'basin', 'river', 'canal', 'lake', 'lagoon', 'moat']);
-const POOL_NOT_NAME = /שחי|דגים|חמצון|ניקוז|ביוב/u;
+const POOL_NOT_NAME = /שחי|דגים|חמצון|ניקוז|ביוב|שכשוך|נוי|אגירה/u;
 export function isPool(t) {
   if (t.leisure === 'swimming_area') return !['private', 'no'].includes(t.access);
   if (t.natural !== 'water') return false;

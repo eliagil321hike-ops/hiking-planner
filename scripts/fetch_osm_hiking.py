@@ -287,7 +287,7 @@ def poi_kind(t):
 # or concrete basins and not swimming/fish pools by name.
 POOL_NAME = re.compile(r"^(גב|גבי|בריכת|בריכה) ")
 POOL_NOT_WATER = {"reservoir", "wastewater", "fishpond", "basin", "river", "canal", "lake", "lagoon", "moat"}
-POOL_NOT_NAME = re.compile(r"שחי|דגים|חמצון|ניקוז|ביוב")
+POOL_NOT_NAME = re.compile(r"שחי|דגים|חמצון|ניקוז|ביוב|שכשוך|נוי|אגירה")
 
 
 def is_pool(t):
@@ -548,6 +548,8 @@ def main():
         write(name, {"type": "FeatureCollection", "osm_base": fstamp, "extract_version": EXTRACT_VERSION, "features": feats})
     sizes = {n: os.path.getsize(os.path.join(out, n)) for n in names}
     print(f"{region}: OSM base {stamp}; trails {len(trails)}, pois {len(pois)} ({counts(pois)}); bytes {sizes}")
+    pool_names = sorted({f["properties"]["name"] for f in pois if f["properties"]["kind"] == "pool" and f["properties"]["name"]})
+    print(f"  pool names ({len(pool_names)}): {', '.join(pool_names[:60])}")
     for k in ("int", "national", "regional", "marked"):
         nm = sorted(set(seen.get(k, [])))
         print(f"  {k}: {len(seen.get(k, []))} relations: {', '.join(nm[:40])}{' …' if len(nm) > 40 else ''}")
