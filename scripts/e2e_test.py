@@ -701,7 +701,10 @@ def main():
         M = "window.__topo3d.map"
         mkopen = lambda: page.evaluate("() => document.getElementById('mk-dialog').open")
         def mk_save(name=None, icon=None):
-            wait_js(page, "() => document.getElementById('mk-dialog').open", 60)
+            try: wait_js(page, "() => document.getElementById('mk-dialog').open", 60)
+            except Exception:
+                print("MK-DEBUG", page.evaluate("() => ({ mode: window.__topo3d.ctx.markers.mode(), planning: window.__topo3d.ctx.routeLib.isPlanning(), dock: !document.getElementById('route-dock').hidden, open: [...document.querySelectorAll('dialog[open], .library:not([hidden])')].map((e) => e.id) })"), flush=True)
+                raise
             if name is not None: page.fill("#mk-dialog input[name=name]", name)
             if icon: page.evaluate(f"() => {{ const r = document.querySelector('#mk-dialog input[value={icon}]'); r.checked = true; r.dispatchEvent(new Event('change')); }}")
             info = page.evaluate("() => ({ title: document.querySelector('#mk-dialog h2').textContent, name: document.querySelector('#mk-dialog input[name=name]').value, icon: document.querySelector('#mk-dialog input[name=icon]:checked')?.value })")
@@ -715,7 +718,10 @@ def main():
         jsclick("#mk-mode")
         r["mkModeOn"] = page.evaluate("() => [window.__topo3d.ctx.markers.mode(), !document.getElementById('mark-banner').hidden, document.getElementById('menu-points').hidden]")
         # tap an existing campsite → its name and symbol
-        camp = page.evaluate(f"() => {{ const f = {M}.queryRenderedFeatures({{ layers: ['poi-camp'] }})[0]; const p = {M}.project(f.geometry.coordinates); return [p.x, p.y, f.properties.pk]; }}")
+        camp = page.evaluate(f"""() => {{ const c = {M}.getCanvas();
+            for (const f of {M}.queryRenderedFeatures({{ layers: ['poi-camp'] }})) {{ const p = {M}.project(f.geometry.coordinates);
+              if (document.elementFromPoint(p.x, p.y) === c) return [p.x, p.y, f.properties.pk]; }} return null; }}""")
+        assert camp, "no campsite on an uncovered part of the map"
         page.mouse.click(camp[0], camp[1])
         r["mkPoi"] = mk_save()
         wait_js(page, "() => window.__topo3d.ctx.markers.points().length === 1", 60)
