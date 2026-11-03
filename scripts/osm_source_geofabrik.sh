@@ -49,6 +49,7 @@ osmium tags-filter "$PBF" \
   n/natural=spring \
   nwr/waterway=waterfall \
   nwr/water=stream_pool \
+  nwr/natural=waterhole \
   nwr/leisure=swimming_area \
   nwr/historic=ruins,archaeological_site \
   $EXTRA \

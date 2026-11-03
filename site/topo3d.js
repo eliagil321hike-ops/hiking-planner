@@ -95,7 +95,7 @@ export function applyTopo3d(map, overlay, { contourTiles, demMaxzoom }) {
   report.osm = { trails: null, pois: null };
   const loader = createOsmLoader(map, osm.loader, {
     onUpdate: ({ trails, pois }) => {
-      for (const f of pois) if (f.properties.pk === undefined) f.properties.pk = f.geometry.coordinates.join(',');   // D-063
+      for (const f of pois) if (f.properties.pk === undefined) f.properties.pk = f.geometry.coordinates.join(',');   // D-064
       map.getSource('osm-trails')?.setData({ type: 'FeatureCollection', features: trails });
       for (const kind of OWN_SOURCE) map.getSource(`poi-${kind}`)?.setData({ type: 'FeatureCollection', features: pois.filter((f) => f.properties.kind === kind) });
       map.getSource('poi-other')?.setData({ type: 'FeatureCollection', features: pois.filter((f) => !OWN_SOURCE.includes(f.properties.kind)) });

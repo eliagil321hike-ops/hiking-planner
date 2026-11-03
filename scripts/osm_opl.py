@@ -88,6 +88,7 @@ def poi_wanted(t, is_node):
             or t.get("man_made") == "water_tap"
             or (is_node and t.get("natural") == "spring")
             or t.get("waterway") == "waterfall"
+            or t.get("natural") == "waterhole"
             or (t.get("natural") == "water" and (t.get("water") == "stream_pool" or bool(POOL_NAME.match(t.get("name", "")))))
             or t.get("leisure") == "swimming_area"
             or t.get("historic") in ("ruins", "archaeological_site"))

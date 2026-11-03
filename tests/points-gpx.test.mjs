@@ -1,4 +1,4 @@
-// D-063 marked points: personal points store, legacy waypoint removal, GPX export.
+// D-064 marked points: personal points store, legacy waypoint removal, GPX export.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createLibrary, memoryAdapter, LibraryError } from '../site/library-store.js';

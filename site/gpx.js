@@ -1,4 +1,4 @@
-// GPX 1.1 export (D-063): a saved route (track with elevations + its marked points) and the personal points.
+// GPX 1.1 export (D-064): a saved route (track with elevations + its marked points) and the personal points.
 // Pure functions + one download helper; opened by navigation apps (waypoints carry name and a symbol word).
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));

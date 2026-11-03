@@ -1,4 +1,4 @@
-// Marker pictures for personal points and route marks (D-063, owner approved the sketches 2026-11-03).
+// Marker pictures for personal points and route marks (D-064, owner approved the sketches 2026-11-03).
 // A rounded square (larger than the map's point icons) with a pointer and a small white dot on the exact spot.
 // Inside: the same symbol drawings as the map's point icons (poi-icons.js), so a marked spring looks like a spring.
 //   personal point: crimson fill, white frame, white symbol

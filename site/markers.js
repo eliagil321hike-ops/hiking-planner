@@ -1,4 +1,4 @@
-// Marked points (D-063, owner approved the design 2026-11-03).
+// Marked points (D-064, owner approved the design 2026-11-03).
 //   Personal points: a layer of their own (crimson pins), shown when the layer is switched on (remembered);
 //     "marking mode" = roam the map and tap to mark, no route. Each point is saved by its own "save".
 //   Route marks: points marked next to a route (a viewpoint beside the trail); the route does not pass through

@@ -117,7 +117,7 @@ export function createLibrary(adapter, { userId = LOCAL_USER } = {}) {
     await adapter.del('folders', id);
   }
 
-  // ---------------------------------------------------------------- personal points (D-063)
+  // ---------------------------------------------------------------- personal points (D-064)
   // Saved one by one, by an explicit "save" in the marking dialog (owner: manual saving only).
   async function listPoints() {
     return (await adapter.all('points')).filter(mine);
@@ -143,7 +143,7 @@ export function createLibrary(adapter, { userId = LOCAL_USER } = {}) {
     if (!mine(old)) throw new LibraryError('point-missing');
     await adapter.del('points', id);
   }
-  /** Owner (D-063): the old waypoints (no symbol) are removed for good, also from saved routes. Keeps updatedAt. */
+  /** Owner (D-064): the old waypoints (no symbol) are removed for good, also from saved routes. Keeps updatedAt. */
   async function stripLegacyWaypoints() {
     let n = 0;
     for (const r of await listRoutes()) {
@@ -229,7 +229,7 @@ export function memoryAdapter() {
 export function idbAdapter(name = 'topo3d-library') {
   let dbp = null;
   const open = () => (dbp ??= new Promise((res, rej) => {
-    const req = indexedDB.open(name, 2);   // v2: personal points (D-063)
+    const req = indexedDB.open(name, 2);   // v2: personal points (D-064)
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains('routes')) db.createObjectStore('routes', { keyPath: 'id' }).createIndex('folderId', 'folderId');

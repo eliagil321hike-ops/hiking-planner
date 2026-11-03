@@ -3,7 +3,7 @@
 // user input to commands, renders the editor state, keeps the draft, and shows stats + profile.
 //
 // Map interaction while planning: click = add point · drag a point = move · drag a small mid-segment handle =
-// insert · click a point then Delete = remove · Ctrl+Z / Ctrl+Y = undo / redo. Marked points (route marks, D-063)
+// insert · click a point then Delete = remove · Ctrl+Z / Ctrl+Y = undo / redo. Marked points (route marks, D-064)
 // are the editor's waypoints with a symbol; they are created through markers.js.
 
 import { renderProfile } from './profile.js';
@@ -72,7 +72,7 @@ export function initRoute(ctx) {
         'circle-stroke-color': ['case', ['get', 'selected'], '#ff2d55', '#0a1f0a'],
         'circle-stroke-width': 3,
       } });
-    // Route marks (D-063): pins in the route colour with a dark frame + white ring, the pointer on the exact spot,
+    // Route marks (D-064): pins in the route colour with a dark frame + white ring, the pointer on the exact spot,
     // the body above the line; on top of everything so a line never hides them.
     map.addLayer({ id: 'route-marks', type: 'symbol', source: 'route-waypoints',
       layout: { 'icon-image': ['get', 'image'], 'icon-anchor': 'bottom', 'icon-offset': [0, (PIN.h - PIN.tipY - 1) * PIN.cssWidth / PIN.w],
@@ -365,7 +365,7 @@ export function initRoute(ctx) {
     $('route-pill').hidden = expanded || editor.geometry().length < 2;
     $('profile-toggle').setAttribute('aria-expanded', String(expanded));
     document.body.classList.toggle('dock-open', open);
-    if (!open && ctx.markers?.mode() === 'route') ctx.markers.setMode(null);   // route marking needs a route (D-063)
+    if (!open && ctx.markers?.mode() === 'route') ctx.markers.setMode(null);   // route marking needs a route (D-064)
     if (!expanded || !open) { hoverMarker.remove(); $('color-pop').hidden = true; }
     document.body.classList.toggle('dock-panel', open && expanded);
     requestAnimationFrame(() => {

@@ -538,7 +538,7 @@ def main():
         r["afterDelete"] = nverts()
         page.keyboard.press("Control+z"); page.wait_for_timeout(200)
 
-        # Route mark (D-063): right-click while drawing → marking dialog → name + symbol → "add to route"
+        # Route mark (D-064): right-click while drawing → marking dialog → name + symbol → "add to route"
         page.mouse.click(1050, 450, button="right")
         wait_js(page, "() => document.getElementById('mk-dialog').open", 60)
         r["routeMarkDialog"] = page.evaluate("""async () => ({ title: document.querySelector('#mk-dialog h2').textContent, icons: document.querySelectorAll('#mk-dialog input[name=icon]').length,
@@ -697,7 +697,7 @@ def main():
         r["libDeleted"] = page.evaluate(f"() => {L}.listRoutes().then((x) => x.length)")
         jsclick("#library .lib-x")
 
-        # ---------------------------------------------------------------- marked points (D-063)
+        # ---------------------------------------------------------------- marked points (D-064)
         M = "window.__topo3d.map"
         mkopen = lambda: page.evaluate("() => document.getElementById('mk-dialog').open")
         def mk_save(name=None, icon=None):
@@ -856,24 +856,24 @@ def main():
     F = r["figures"]
     expect(all(x == "IBM Plex Sans Hebrew" for x in F["fonts"]) and F["icons"] == ["si si-up", "si si-down", "si si-max", "si si-min"] and F["pill"] == ["si si-up", "si si-down"],
            f"route figures: interface font, slope arrows for ascent/descent, peak and valley for max/min (D-057) {F}")
-    expect(r["mkMenu"] == [True, True, "true"], f"points button opens the layer menu, layer on by default (D-063) {r['mkMenu']}")
-    expect(r["mkModeOn"] == ["personal", True, True], f"marking mode: red banner, menu closed (D-063) {r['mkModeOn']}")
-    expect(r["mkPoi"]["title"] == "נקודה אישית חדשה" and r["mkPoi"]["icon"] == "tent" and r["mkPoi"]["name"] == "חניון לילה", f"tapping a map campsite takes its name and symbol (D-063) {r['mkPoi']}")
+    expect(r["mkMenu"] == [True, True, "true"], f"points button opens the layer menu, layer on by default (D-064) {r['mkMenu']}")
+    expect(r["mkModeOn"] == ["personal", True, True], f"marking mode: red banner, menu closed (D-064) {r['mkModeOn']}")
+    expect(r["mkPoi"]["title"] == "נקודה אישית חדשה" and r["mkPoi"]["icon"] == "tent" and r["mkPoi"]["name"] == "חניון לילה", f"tapping a map campsite takes its name and symbol (D-064) {r['mkPoi']}")
     S = r["mkPoiSaved"]
-    expect(S[0] == "חניון לילה" and S[1] == "tent" and S[2] and S[3] and S[4] == "mk-tent-d0435b", f"saved personal point; the campsite's small icon is hidden under the pin (D-063) {S}")
-    expect(r["mkFree"]["icon"] == "general", f"an empty spot defaults to 'general location' (D-063) {r['mkFree']}")
-    expect(r["mkCancel"] == [False, 2, 0], f"cancelling an unsaved point asks first, nothing saved, pending pin gone (D-063) {r['mkCancel']}")
-    expect(r["mkModeOff"] == [None, True], f"'done' leaves marking mode (D-063) {r['mkModeOff']}")
-    expect(r["mkHidden"] == "none" and r["mkAfterReload"] == [2, False, "none"], f"layer switch remembered; points persist after a reload (D-063) {r['mkHidden']} {r['mkAfterReload']}")
-    expect(r["mkPanel"] == [True, 2] and r["mkSearch"] == ["נקודת מפגש"], f"'my points' lists and searches (D-063) {r['mkPanel']} {r['mkSearch']}")
+    expect(S[0] == "חניון לילה" and S[1] == "tent" and S[2] and S[3] and S[4] == "mk-tent-d0435b", f"saved personal point; the campsite's small icon is hidden under the pin (D-064) {S}")
+    expect(r["mkFree"]["icon"] == "general", f"an empty spot defaults to 'general location' (D-064) {r['mkFree']}")
+    expect(r["mkCancel"] == [False, 2, 0], f"cancelling an unsaved point asks first, nothing saved, pending pin gone (D-064) {r['mkCancel']}")
+    expect(r["mkModeOff"] == [None, True], f"'done' leaves marking mode (D-064) {r['mkModeOff']}")
+    expect(r["mkHidden"] == "none" and r["mkAfterReload"] == [2, False, "none"], f"layer switch remembered; points persist after a reload (D-064) {r['mkHidden']} {r['mkAfterReload']}")
+    expect(r["mkPanel"] == [True, 2] and r["mkSearch"] == ["נקודת מפגש"], f"'my points' lists and searches (D-064) {r['mkPanel']} {r['mkSearch']}")
     G = r["mkGpx"]
-    expect(G[0].endswith(".gpx") and G[1] == 2 and G[2] and G[3], f"GPX of all personal points (D-063) {G}")
-    expect(r["mkDeleted"] == ["חניון לילה"], f"rename + change symbol, then delete from 'my points' (D-063) {r['mkDeleted']}")
-    expect(r["mkRouteMode"] == ["route", "true", False], f"route marking tool: on, drawing off (D-063) {r['mkRouteMode']}")
-    expect(r["mkRouteFromPoint"]["title"] == "נקודה במסלול" and r["mkRouteMarks"] == [["חניון לילה", "tent"]], f"a personal point tapped in route marking becomes a route mark (D-063) {r['mkRouteFromPoint']} {r['mkRouteMarks']}")
-    expect(r["mkPlanLeavesMarking"] == [None, True], f"drawing and marking are never on together (D-063) {r['mkPlanLeavesMarking']}")
+    expect(G[0].endswith(".gpx") and G[1] == 2 and G[2] and G[3], f"GPX of all personal points (D-064) {G}")
+    expect(r["mkDeleted"] == ["חניון לילה"], f"rename + change symbol, then delete from 'my points' (D-064) {r['mkDeleted']}")
+    expect(r["mkRouteMode"] == ["route", "true", False], f"route marking tool: on, drawing off (D-064) {r['mkRouteMode']}")
+    expect(r["mkRouteFromPoint"]["title"] == "נקודה במסלול" and r["mkRouteMarks"] == [["חניון לילה", "tent"]], f"a personal point tapped in route marking becomes a route mark (D-064) {r['mkRouteFromPoint']} {r['mkRouteMarks']}")
+    expect(r["mkPlanLeavesMarking"] == [None, True], f"drawing and marking are never on together (D-064) {r['mkPlanLeavesMarking']}")
     RG = r["mkRouteGpx"]
-    expect(RG[0] == "מסלול עם נקודות.gpx" and RG[1] == 1 and RG[2] and RG[3], f"library card: GPX with the track (with elevations) and the route's marks (D-063) {RG}")
+    expect(RG[0] == "מסלול עם נקודות.gpx" and RG[1] == 1 and RG[2] and RG[3], f"library card: GPX with the track (with elevations) and the route's marks (D-064) {RG}")
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")
@@ -974,10 +974,10 @@ def main():
     expect(r["afterDelete"] == 2, f"click + Delete removes the selected point ({r['afterDelete']})")
     D = r["routeMarkDialog"]
     expect(D["title"] == "נקודה במסלול" and D["icons"] == 12 and D["checked"] == "general" and D["pending"] == 1,
-           f"right-click while drawing opens the route-mark dialog: 12 symbols, 'general location' by default, a pending pin (D-063) {D}")
-    expect(r["waypoints"] == [["מעיין", "viewpoint"]], f"the route mark is saved with its name and symbol (D-063) {r['waypoints']}")
+           f"right-click while drawing opens the route-mark dialog: 12 symbols, 'general location' by default, a pending pin (D-064) {D}")
+    expect(r["waypoints"] == [["מעיין", "viewpoint"]], f"the route mark is saved with its name and symbol (D-064) {r['waypoints']}")
     M = r["routeMarkDrawn"]
-    expect(M[0] == 1 and M[1] == "mk-viewpoint-39ff14" and M[2] and M[4] == 0, f"route mark drawn as a pin in the route colour, pending pin gone (D-063) {M}")
+    expect(M[0] == 1 and M[1] == "mk-viewpoint-39ff14" and M[2] and M[4] == 0, f"route mark drawn as a pin in the route colour, pending pin gone (D-064) {M}")
     expect(r["draftRestored"] and r["draftNotice"], "draft restored after reload (exact state), notice shown")
     expect(r["afterClear"] == (0, 0) and r["clearUndone"], f"clear (confirmed) empties the route, and is undoable {r['afterClear']}")
     expect("עלייה" in r["stats"] and "ירידה" in r["stats"], "stats shown")

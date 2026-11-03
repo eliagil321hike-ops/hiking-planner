@@ -4,7 +4,7 @@
 
 export function initMenus(ctx) {
   const { $, map } = ctx;
-  const menus = { 'btn-style': 'menu-style', 'btn-library': 'library', 'btn-points': 'menu-points' };   // + marked points (D-063)   // no layers menu (D-052); the route dock is opened by route.js
+  const menus = { 'btn-style': 'menu-style', 'btn-library': 'library', 'btn-points': 'menu-points' };   // + marked points (D-064)   // no layers menu (D-052); the route dock is opened by route.js
 
   function setOpen(btnId, open) {
     $(btnId).setAttribute('aria-expanded', String(open));

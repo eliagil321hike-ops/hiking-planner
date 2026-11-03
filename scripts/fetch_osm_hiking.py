@@ -13,7 +13,7 @@ Exit code 0 even on network failure when --soft is given (the deploy then ships 
 import json, math, os, re, sys, time, urllib.parse, urllib.request
 
 # Bump when the extract's content rules change: a push then re-downloads instead of reusing live files.
-EXTRACT_VERSION = 4  # 4: waterfalls, pools, ruins/archaeology (D-061)
+EXTRACT_VERSION = 5  # 4: waterfalls, pools, ruins/archaeology (D-061); 5: pools also natural=waterhole (D-063)
 BBOX = (29.45, 34.2, 33.45, 35.95)  # south, west, north, east: Israel incl. Golan and Eilat
 # Pre-built regions (D-061): each comes from its Geofabrik file and is written to its own pair of files; the site
 # then shows it from far zooms. Israel keeps its file names and its Overpass fallback; other regions keep their
@@ -46,6 +46,7 @@ Q_POIS = HEAD + """(
   nwr["amenity"="shelter"]({s},{w},{n},{e});
   nwr["tourism"~"^(wilderness_hut|alpine_hut)$"]({s},{w},{n},{e});
   nwr["waterway"="waterfall"]({s},{w},{n},{e});
+  nwr["natural"="waterhole"]({s},{w},{n},{e});
   nwr["natural"="water"]["water"="stream_pool"]({s},{w},{n},{e});
   nwr["natural"="water"]["name"~"^(גב|גבי|בריכת|בריכה) "]({s},{w},{n},{e});
   nwr["leisure"="swimming_area"]({s},{w},{n},{e});
@@ -293,6 +294,8 @@ POOL_NOT_NAME = re.compile(r"שחי|דגים|חמצון|ניקוז|ביוב|שכ
 def is_pool(t):
     if t.get("leisure") == "swimming_area":
         return t.get("access") not in ("private", "no")
+    if t.get("natural") == "waterhole":   # Israeli gevim are tagged this way (D-063)
+        return True
     if t.get("natural") != "water":
         return False
     if t.get("water") == "stream_pool":

@@ -129,10 +129,17 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - Owner approved publishing (2026-11-03 14:20). Merged on top of the 2026-11-03 release; decisions renumbered
   D-057/58/59 → D-060/61/62 (main had used D-057/D-058). Restore point: branch snapshot/site-before-osm-regions.
   The push changes EXTRACT_VERSION (3 → 4), so the deploy fetches fresh data itself (no manual run needed).
+- **Live 2026-11-03** (run 41634979444: test + deploy green): OSM data 2026-11-02 21:21 UTC for Israel, Georgia and
+  Norway (Norway download 570 s); 464 cells, 25 MB; site/data 50 MB in all. Merged code: unit 48/48, geo 31/31,
+  editor 18/18, smoke 17/17 locally; e2e in CI. Owner's look on the real map is the final check.
 
-## Marked points (D-063, 2026-11-03, branch wip/markers – waiting for owner approval)
-- Built from the approved sketches on wip/markers; not on the site. Unit 53/53, editor 18/18, smoke pass; e2e below.
-- Before publishing: save a restore branch (removing old waypoints from saved routes cannot be undone).
+## Gevim fix (D-063, 2026-11-03)
+- Pools now include `natural=waterhole` (how Israeli gevim are tagged). Unit 48/48; published with CI tests.
+
+## Marked points (D-064, 2026-11-03, owner approved, merged 2026-11-03)
+- Built from the approved sketches on wip/markers. Unit 53/53, editor 18/18, smoke pass, full e2e 124 pass / 0 fail (19 new
+  checks). Phone fixes after real screenshots: points menu height, edit button in "my points".
+- Restore point before publishing: branch snapshot/site-before-markers (removing old waypoints from saved routes cannot be undone).
 
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference

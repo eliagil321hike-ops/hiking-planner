@@ -619,7 +619,7 @@ body:not(.dock-panel) .route-tools { margin-bottom: calc(var(--top-h) - var(--ed
 .route-pill .si .si-ground { display: none; }
 .lib-stats .si .si-ground { display: none; }
 
-/* ---------------------------------------------------------------- D-063: marked points (personal + route marks)
+/* ---------------------------------------------------------------- D-064: marked points (personal + route marks)
    Owner approved the sketches 2026-11-03: crimson for personal points, the route colour for route marks;
    the same symbols as the map's points; marking mode = a red banner with "done". */
 :root { --mk-red: #D0435B; }

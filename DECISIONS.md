@@ -695,7 +695,16 @@ raise the right tool bar a little")
   trails at every zoom (D-043): line z12/14/16 6.8/10/15.6 px (was 7.5/11/16), casing 9.8/13/18.6 (was 11/15/21);
   national 6/9/15, casing 8.5/11.5/17.5. Before/after preview sent to the owner. e2e checks the order and widths.
 
-## D-063 (2026-11-03) Owner: waypoints rebuilt as marked points (personal points + route marks)
+## D-063 (2026-11-03) Bug: gevim did not show (owner: "for some reason no gevim appear")
+- Cause: the D-061 pool rule assumed water bodies named "גב …". A scan of the whole Israel file (temporary
+  workflow, branch wip/osm-pools-diag) found that Israeli gevim are tagged **`natural=waterhole`** (nodes, often
+  with photos): גב צרור, גבי שיש, גב חצרה, גבי קניון צין, גב קינה, גב עשרון … ; the 72 "pools" shown were almost
+  all "בריכת …" water bodies.
+- Fix: `natural=waterhole` counts as a pool (worldwide, the standard tag for a natural water hole) in the Python and
+  browser rules, the Overpass queries, the OPL rule and the osmium filter; fixture has גב צרור. EXTRACT_VERSION 5,
+  so the deploy fetches fresh data at once.
+
+## D-064 (2026-11-03) Owner: waypoints rebuilt as marked points (personal points + route marks)
 - Owner sketches approved ("עיצוב נהדר"), with two changes: marking-mode icon replaced (crosshair) and the layer
   button icon replaced (map pin); peak and parking allowed as symbols.
 - Two kinds. Personal points: crimson #D0435B (same lightness as the site colours, apart from the map colours),

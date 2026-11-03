@@ -337,7 +337,7 @@ export function initLibrary(ctx) {
   // ---------------------------------------------------------------- wiring
   $('r-save').addEventListener('click', () => saveFlow());
   new MutationObserver(() => { if (!panel.hidden) reload(); }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
-  // D-063 (owner): the old waypoints are removed for good, also from routes already saved (once per visit)
+  // D-064 (owner): the old waypoints are removed for good, also from routes already saved (once per visit)
   if (!stripped) { stripped = true; lib.stripLegacyWaypoints().then((n) => { ctx.results.legacyWaypointsRemoved = n; }).catch(() => {}); }
   ctx.library = { reload, saveFlow, confirmUnsaved, lib: () => lib };
   return ctx.library;
