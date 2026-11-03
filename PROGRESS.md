@@ -129,6 +129,9 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - Owner approved publishing (2026-11-03 14:20). Merged on top of the 2026-11-03 release; decisions renumbered
   D-057/58/59 → D-060/61/62 (main had used D-057/D-058). Restore point: branch snapshot/site-before-osm-regions.
   The push changes EXTRACT_VERSION (3 → 4), so the deploy fetches fresh data itself (no manual run needed).
+- **Live 2026-11-03** (run 41634979444: test + deploy green): OSM data 2026-11-02 21:21 UTC for Israel, Georgia and
+  Norway (Norway download 570 s); 464 cells, 25 MB; site/data 50 MB in all. Merged code: unit 48/48, geo 31/31,
+  editor 18/18, smoke 17/17 locally; e2e in CI. Owner's look on the real map is the final check.
 
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
