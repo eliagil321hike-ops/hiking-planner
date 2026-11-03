@@ -45,7 +45,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: OSM extract for Israel (national/regional/marked trails, campsites, water) via Overpass
+      - name: OSM source - Geofabrik Israel file filtered by osmium (D-057; empty = fall back to Overpass)
+        if: github.event_name != 'push'   # pushes reuse the live extract (D-041) and need no source
+        run: |
+          ARGS=$(bash scripts/osm_source_geofabrik.sh "$RUNNER_TEMP/osm" | tail -1)
+          echo "OSM_SOURCE_ARGS=$ARGS" >> "$GITHUB_ENV"
+      - name: OSM extract for Israel (national/regional/marked trails, campsites, water)
         run: |
           # previous live files = fallback when Overpass fails or answers only partly (D-035)
           mkdir -p prev
@@ -55,7 +60,8 @@ jobs:
           # Fresh Overpass extract only on the weekly schedule / manual run, or when the live files are missing or
           # from another extract version; ordinary pushes reuse them: deploy in minutes, no Overpass load (D-041).
           REUSE=""; [ "${{ github.event_name }}" = "push" ] && REUSE="--reuse-same-version"
-          python3 scripts/fetch_osm_hiking.py site/data --soft --previous prev $REUSE
+          # OSM_SOURCE_ARGS: "--opl … --osm-base …" when the Geofabrik step worked; empty → Overpass as before
+          python3 scripts/fetch_osm_hiking.py site/data --soft --previous prev $REUSE ${OSM_SOURCE_ARGS:-}
       - name: Stamp build (cache busting, version shown in the page)
         run: bash scripts/stamp_build.sh site "${GITHUB_SHA::7}"
       - name: Setup Pages

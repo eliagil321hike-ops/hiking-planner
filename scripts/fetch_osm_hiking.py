@@ -344,6 +344,9 @@ def main():
     try:
         if "--from" in sys.argv:
             data = json.load(open(sys.argv[sys.argv.index("--from") + 1], encoding="utf-8"))
+        elif "--opl" in sys.argv:  # Geofabrik file filtered by osmium (D-057); Overpass only if this fails
+            data = from_opl(sys.argv[sys.argv.index("--opl") + 1],
+                            sys.argv[sys.argv.index("--osm-base") + 1] if "--osm-base" in sys.argv else "")
         else:
             data = overpass()
     except Exception as ex:  # noqa: BLE001
@@ -395,6 +398,22 @@ def main():
         names = sorted(set(seen.get(k, [])))
         print(f"  {k}: {len(seen.get(k, []))} relations: {', '.join(names[:40])}{' …' if len(names) > 40 else ''}")
     split_from_files(out)
+
+
+def from_opl(path, osm_base):
+    """Overpass-shaped data from an osmium OPL extract (scripts/osm_opl.py). Falls back to Overpass on failure."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import osm_opl
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = osm_opl.to_overpass(fh, BBOX, osm_base)
+        if not any(el["type"] == "relation" for el in data["elements"]):
+            raise RuntimeError("no hiking routes in the file")
+        print(f"source: Geofabrik extract via osmium, OSM base {osm_base or 'unknown'}, {len(data['elements'])} elements")
+        return data
+    except Exception as ex:  # noqa: BLE001 - the Overpass path is the fallback
+        print(f"OPL source failed ({ex}) → Overpass", file=sys.stderr)
+        return overpass()
 
 
 def split_from_files(out):

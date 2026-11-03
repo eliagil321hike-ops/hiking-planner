@@ -1,0 +1,59 @@
+# Dry run of the OSM extract from the Geofabrik file (D-057) on work branches: nothing is deployed.
+# Builds the extract exactly as the weekly deploy would and compares it with the live data, so a change of
+# data source or rules can be judged before it reaches the site.
+name: OSM extract check (no deploy)
+on:
+  push:
+    branches: ["wip/osm-**"]
+  workflow_dispatch:
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Geofabrik file → osmium → OPL
+        run: |
+          ARGS=$(bash scripts/osm_source_geofabrik.sh "$RUNNER_TEMP/osm" | tail -1)
+          echo "source args: $ARGS"
+          [ -n "$ARGS" ] || { echo "::error::Geofabrik/osmium source failed"; exit 1; }
+          echo "OSM_SOURCE_ARGS=$ARGS" >> "$GITHUB_ENV"
+      - name: Build the extract (no Overpass fallback allowed here)
+        run: |
+          mkdir -p prev
+          for f in osm-trails.geojson osm-pois.geojson; do
+            curl -fsS -m 60 -o "prev/$f" "https://eliagil321hike-ops.github.io/hiking-planner/data/$f" || echo "no live $f"
+          done
+          # budget 0: if the OPL path failed, the Overpass fallback stops at once and the step fails
+          OSM_BUDGET_MIN=0 python3 scripts/fetch_osm_hiking.py out $OSM_SOURCE_ARGS 2>&1 | tee extract.log
+          grep -q "source: Geofabrik" extract.log
+      - name: Compare with the live data
+        run: |
+          python3 - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, collections, os
+          def load(d, n):
+              try:
+                  return json.load(open(os.path.join(d, n), encoding="utf-8"))
+              except Exception:
+                  return {"features": [], "osm_base": "none"}
+          print("| | live | new (Geofabrik) |\n|---|---|---|")
+          for n, key in (("osm-trails.geojson", "kind"), ("osm-pois.geojson", "kind")):
+              a, b = load("prev", n), load("out", n)
+              print(f"| {n} OSM time | {a.get('osm_base')} | {b.get('osm_base')} |")
+              print(f"| {n} features | {len(a['features'])} | {len(b['features'])} |")
+              ca = collections.Counter(f["properties"][key] for f in a["features"])
+              cb = collections.Counter(f["properties"][key] for f in b["features"])
+              for k in sorted(set(ca) | set(cb)):
+                  print(f"| &nbsp; {k} | {ca[k]} | {cb[k]} |")
+              if n == "osm-trails.geojson":
+                  na = {f["properties"]["name"] for f in a["features"]}
+                  nb = {f["properties"]["name"] for f in b["features"]}
+                  print(f"| trail names only live | {len(na - nb)}: {', '.join(sorted(na - nb)[:15])} | |")
+                  print(f"| trail names only new | | {len(nb - na)}: {', '.join(sorted(nb - na)[:15])} |")
+          for n in ("osm-trails.geojson", "osm-pois.geojson"):
+              print(f"\n{n}: {os.path.getsize(os.path.join('out', n))} bytes")
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: osm-extract
+          path: out/
+          retention-days: 7
