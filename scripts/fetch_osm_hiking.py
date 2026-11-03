@@ -10,10 +10,10 @@ Usage: fetch_osm_hiking.py <out_dir>            (queries Overpass)
        fetch_osm_hiking.py <out_dir> --from <overpass.json>   (offline, for tests)
 Exit code 0 even on network failure when --soft is given (the deploy then ships without the extra data).
 """
-import json, math, os, sys, time, urllib.parse, urllib.request
+import json, math, os, re, sys, time, urllib.parse, urllib.request
 
 # Bump when the extract's content rules change: a push then re-downloads instead of reusing live files.
-EXTRACT_VERSION = 3
+EXTRACT_VERSION = 4  # 4: waterfalls, pools, ruins/archaeology (D-058)
 BBOX = (29.45, 34.2, 33.45, 35.95)  # south, west, north, east: Israel incl. Golan and Eilat
 ENDPOINTS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"]
 # Several small queries instead of one big one (one big query timed out on both public servers, 2026-11-01).
@@ -31,6 +31,11 @@ Q_POIS = HEAD + """(
   nwr["tourism"="viewpoint"]({s},{w},{n},{e});
   nwr["amenity"="shelter"]({s},{w},{n},{e});
   nwr["tourism"~"^(wilderness_hut|alpine_hut)$"]({s},{w},{n},{e});
+  nwr["waterway"="waterfall"]({s},{w},{n},{e});
+  nwr["natural"="water"]["water"="stream_pool"]({s},{w},{n},{e});
+  nwr["natural"="water"]["name"~"^(גב|גבי|בריכת|בריכה) "]({s},{w},{n},{e});
+  nwr["leisure"="swimming_area"]({s},{w},{n},{e});
+  nwr["historic"~"^(ruins|archaeological_site)$"]({s},{w},{n},{e});
 );
 out center tags;"""
 # All car parks; only those within PARKING_NEAR_M of a hiking route are kept (trailheads, not city car parks).
@@ -254,7 +259,32 @@ def poi_kind(t):
         return "viewpoint"
     if t.get("tourism") in ("wilderness_hut", "alpine_hut") or (t.get("amenity") == "shelter" and t.get("shelter_type") not in ("public_transport", "changing_rooms", "field_shelter")):
         return "shelter"
+    if t.get("waterway") == "waterfall":
+        return "waterfall"
+    if is_pool(t):
+        return "pool"
+    if t.get("historic") in ("ruins", "archaeological_site"):
+        return "ruins"
     return None
+
+
+# Pools in nature (D-058): OSM has no single tag. `water=stream_pool` (rock pool in a stream bed), natural
+# swimming spots, and in Israel water bodies named "גב …" / "בריכת …" that are not reservoirs, sewage, fish ponds
+# or concrete basins and not swimming/fish pools by name.
+POOL_NAME = re.compile(r"^(גב|גבי|בריכת|בריכה) ")
+POOL_NOT_WATER = {"reservoir", "wastewater", "fishpond", "basin", "river", "canal", "lake", "lagoon", "moat"}
+POOL_NOT_NAME = re.compile(r"שחי|דגים|חמצון|ניקוז|ביוב")
+
+
+def is_pool(t):
+    if t.get("leisure") == "swimming_area":
+        return t.get("access") not in ("private", "no")
+    if t.get("natural") != "water":
+        return False
+    if t.get("water") == "stream_pool":
+        return True
+    name = t.get("name:he") or t.get("name") or ""
+    return bool(POOL_NAME.match(name)) and t.get("water") not in POOL_NOT_WATER and not POOL_NOT_NAME.search(name)
 
 
 def trail_index(trails, cell=0.01):
@@ -319,7 +349,7 @@ def split_cells(trails_fc, pois_fc, out_dir):
 
 
 def counts(pois):
-    kinds = ('camp', 'water', 'parking', 'spring', 'viewpoint', 'shelter')
+    kinds = ('camp', 'water', 'parking', 'spring', 'viewpoint', 'shelter', 'waterfall', 'pool', 'ruins')
     return ', '.join(f"{k} {sum(p['properties']['kind'] == k for p in pois)}" for k in kinds)
 
 

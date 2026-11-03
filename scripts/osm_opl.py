@@ -18,7 +18,7 @@ Characters that would break the format are written as %<hex code point>%.
 What it mirrors (scripts/fetch_osm_hiking.py, queries Q_MAJOR, Q_MARKED, Q_POIS, Q_PARKING):
 - hiking route relations with network iwn/nwn/rwn/lwn that touch the box, members with way geometry
   (Overpass `out geom`); for iwn/nwn/rwn also their child relations, at any depth (Overpass: one level);
-- campsites, drinking water, taps, viewpoints, shelters, huts and car parks (nodes, ways, relations) with a
+- campsites, drinking water, taps, viewpoints, shelters, huts, car parks, waterfalls, pools and ruins (nodes, ways, relations) with a
   centre (Overpass `out center`: middle of the bounding box), springs as nodes only.
 Pure standard library, so it runs (and is tested) without osmium.
 """
@@ -78,12 +78,19 @@ def parse(lines):
     return nodes, ways, rels
 
 
+POOL_NAME = re.compile(r"^(גב|גבי|בריכת|בריכה) ")
+
+
 def poi_wanted(t, is_node):
     """The tag tests of Q_POIS and Q_PARKING (springs: nodes only)."""
     return (t.get("tourism") in ("camp_site", "viewpoint", "wilderness_hut", "alpine_hut")
             or t.get("amenity") in ("drinking_water", "shelter", "parking")
             or t.get("man_made") == "water_tap"
-            or (is_node and t.get("natural") == "spring"))
+            or (is_node and t.get("natural") == "spring")
+            or t.get("waterway") == "waterfall"
+            or (t.get("natural") == "water" and (t.get("water") == "stream_pool" or bool(POOL_NAME.match(t.get("name", "")))))
+            or t.get("leisure") == "swimming_area"
+            or t.get("historic") in ("ruins", "archaeological_site"))
 
 
 def _in_box(lon, lat, box):

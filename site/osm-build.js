@@ -22,6 +22,11 @@ rel["route"="hiking"]["network"~"^(iwn|nwn|rwn|lwn)$"](${b})->.top;
   nwr["tourism"="viewpoint"](${b});
   nwr["amenity"="shelter"](${b});
   nwr["tourism"~"^(wilderness_hut|alpine_hut)$"](${b});
+  nwr["waterway"="waterfall"](${b});
+  nwr["natural"="water"]["water"="stream_pool"](${b});
+  nwr["natural"="water"]["name"~"^(גב|גבי|בריכת|בריכה) "](${b});
+  nwr["leisure"="swimming_area"](${b});
+  nwr["historic"~"^(ruins|archaeological_site)$"](${b});
   nwr["amenity"="parking"](${b});
 );
 out center tags;`;
@@ -69,7 +74,22 @@ export function poiKind(t) {
   if (t.natural === 'spring') return 'spring';
   if (t.tourism === 'viewpoint') return 'viewpoint';
   if (['wilderness_hut', 'alpine_hut'].includes(t.tourism) || (t.amenity === 'shelter' && !['public_transport', 'changing_rooms', 'field_shelter'].includes(t.shelter_type))) return 'shelter';
+  if (t.waterway === 'waterfall') return 'waterfall';
+  if (isPool(t)) return 'pool';
+  if (['ruins', 'archaeological_site'].includes(t.historic)) return 'ruins';
   return null;
+}
+
+// Pools in nature (D-058), same rule as scripts/fetch_osm_hiking.py is_pool().
+const POOL_NAME = /^(גב|גבי|בריכת|בריכה) /u;
+const POOL_NOT_WATER = new Set(['reservoir', 'wastewater', 'fishpond', 'basin', 'river', 'canal', 'lake', 'lagoon', 'moat']);
+const POOL_NOT_NAME = /שחי|דגים|חמצון|ניקוז|ביוב/u;
+export function isPool(t) {
+  if (t.leisure === 'swimming_area') return !['private', 'no'].includes(t.access);
+  if (t.natural !== 'water') return false;
+  if (t.water === 'stream_pool') return true;
+  const name = t['name:he'] || t.name || '';
+  return POOL_NAME.test(name) && !POOL_NOT_WATER.has(t.water) && !POOL_NOT_NAME.test(name);
 }
 
 function trailIndex(trails, cell = 0.01) {
