@@ -618,9 +618,34 @@ raise the right tool bar a little")
 | Mapterhorn tiles | DEM: terrain, hillshade, contours, sampling | not found | unknown → light use by a small group; terms to verify | Mapterhorn + isr10 (ASTER GDEM, METI/NASA, 4cast LTD) + Copernicus GLO-30 (DLR, Airbus, EU/ESA) | fair use not found; light use | free | 2026-11-01 data-access + attribution.json | mapterhorn.com/data-access |
 | isr10 (in Mapterhorn) | Israel 10 m DEM | ASTER GDEM Public Domain | yes (per attribution.json) | as above | — | free | 2026-11-01 | download.mapterhorn.com/attribution.json |
 | Copernicus GLO-30 (in Mapterhorn) | global 30 m fallback | Copernicus full, free and open | yes | as above | — | free | 2026-11-01 | attribution.json |
+| OpenStreetMap data (Geofabrik extract, D-057) | Trails, POIs (build-time extract, daily file, weekly use) | ODbL | yes | © OpenStreetMap contributors | one download per weekly run | free | 2026-11-03 | download.geofabrik.de |
 | OpenStreetMap data | Trails, peaks (via OpenFreeMap) | ODbL | yes | © OpenStreetMap contributors | — | free | spec | openstreetmap.org/copyright |
 | MapLibre GL JS 5.24.0, maplibre-contour 0.1.0, rtl-text 0.3.0 | rendering, contours, Hebrew | BSD-3 / BSD-3 / BSD-2 (rtl-text: not re-checked) | yes | — | loaded from unpkg CDN | free | 2026-11-01 | — |
 | Israel Hiking Map tiles | Optional marked-trail overlay | CC BY-NC-SA 3.0 (unverified) | No → personal use only | pending | pending | free | not verified, not used | — |
+
+## D-057 (2026-11-03) OSM extract from the Geofabrik Israel file instead of Overpass (branch wip/osm-geofabrik)
+- Problem: the live OSM extract was stuck at 2026-07-15. The weekly Overpass refresh failed (502/504, 25 min
+  budget used up) or got out-of-date answers from the backup server (D-042, D-044).
+- Change (data path only; nothing in site/ changes, the map looks the same): weekly and manual deploys download
+  `asia/israel-and-palestine-latest.osm.pbf` from Geofabrik (updated daily, ODbL), filter it with osmium
+  (`tags-filter` + `add-locations-to-ways`, OPL text) and `scripts/osm_opl.py` turns that into exactly the data
+  the Overpass queries returned, so `build()` and every output file are unchanged. Overpass stays the fallback;
+  if both fail, the live data is kept (D-035/D-044). Pushes still reuse the live extract (D-041).
+- One improvement over Overpass: a route counts as "in the box" also through its child relations (the Israel
+  Trail super-route holds only sections); children are followed at any depth (Overpass: one level).
+- Checked: tests/osm-opl.test.mjs (same build() output as Overpass on the fixture; escapes, areas, box, missing
+  locations, children; it failed before the super-route fix). Dry run on the real file (osm-check.yml, no
+  deploy): 59 s in all (download 116 MB in 38 s, filter 3 s), OSM data 2026-11-02 21:21 UTC.
+- Comparison with the live data (scripts/osm_compare.py, Geofabrik outline): inside Israel & Palestine the
+  counts match (trails 1889 = 1889; campsites 349 = 349; shelters, water equal; springs 767 → 769; viewpoints
+  1809 → 1811). Differences inside are OSM edits since July ("Gospel Trail" now "דרך הבשורה", new "שביל קדם",
+  "דרך חוצה דן" gone with the 72 Tel Aviv car parks kept only for being near it).
+- **Coverage change, owner to decide:** the old box (to 35.95° E, from 29.45° N) also caught parts of Jordan,
+  Sinai and south Lebanon: the Jordan Trail (39 sections, "national"), ~313 Wadi Rum/Jordan campsites, ~230
+  springs. The Geofabrik file has Israel & Palestine only. Those areas still load on demand from z11 (D-042), but
+  no longer from z7 (trails) / z9.4 (campsites). Option: add Geofabrik's Jordan file to the same run.
+- New files: scripts/osm_opl.py, scripts/osm_source_geofabrik.sh, scripts/osm_compare.py,
+  .github/workflows/osm-check.yml (runs on wip/osm-** branches only). Not merged: needs the owner.
 
 ## D-007 (2026-11-01) Owner answers
 - First region: **Upper Galilee** (initial camera around Har Meron; encoding test peak is in this region).

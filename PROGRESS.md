@@ -106,6 +106,13 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - Context was lost twice during long turns; work was recovered from git and the session log. Commit each step.
 - A git tag push is refused by the proxy here; restore points are branches (snapshot/site-before-my-routes).
 
+## OSM data from Geofabrik (D-057, 2026-11-03, branch wip/osm-geofabrik, not merged)
+- Weekly refresh no longer depends on Overpass: Geofabrik Israel file + osmium, same output, Overpass as fallback.
+- Unit 40/40 (2 new), geo 31/31, editor 18/18; smoke/e2e not run (nothing in site/ changed; CI runs them on merge).
+- Dry run on the real file green twice (59 s; OSM 2026-11-02). Inside Israel & Palestine counts match the live
+  data; outside the old box (Jordan Trail, Wadi Rum) is no longer pre-built → owner decision (D-057).
+- After merging: run the deploy workflow by hand once ("Run workflow") to replace the July data now.
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).
