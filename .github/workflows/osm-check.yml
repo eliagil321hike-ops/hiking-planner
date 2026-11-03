@@ -26,32 +26,10 @@ jobs:
           # budget 0: if the OPL path failed, the Overpass fallback stops at once and the step fails
           OSM_BUDGET_MIN=0 python3 scripts/fetch_osm_hiking.py out $OSM_SOURCE_ARGS 2>&1 | tee extract.log
           grep -q "source: Geofabrik" extract.log
-      - name: Compare with the live data
+      - name: Compare with the live data (inside / outside the Geofabrik outline)
         run: |
-          python3 - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
-          import json, collections, os
-          def load(d, n):
-              try:
-                  return json.load(open(os.path.join(d, n), encoding="utf-8"))
-              except Exception:
-                  return {"features": [], "osm_base": "none"}
-          print("| | live | new (Geofabrik) |\n|---|---|---|")
-          for n, key in (("osm-trails.geojson", "kind"), ("osm-pois.geojson", "kind")):
-              a, b = load("prev", n), load("out", n)
-              print(f"| {n} OSM time | {a.get('osm_base')} | {b.get('osm_base')} |")
-              print(f"| {n} features | {len(a['features'])} | {len(b['features'])} |")
-              ca = collections.Counter(f["properties"][key] for f in a["features"])
-              cb = collections.Counter(f["properties"][key] for f in b["features"])
-              for k in sorted(set(ca) | set(cb)):
-                  print(f"| &nbsp; {k} | {ca[k]} | {cb[k]} |")
-              if n == "osm-trails.geojson":
-                  na = {f["properties"]["name"] for f in a["features"]}
-                  nb = {f["properties"]["name"] for f in b["features"]}
-                  print(f"| trail names only live | {len(na - nb)}: {', '.join(sorted(na - nb)[:15])} | |")
-                  print(f"| trail names only new | | {len(nb - na)}: {', '.join(sorted(nb - na)[:15])} |")
-          for n in ("osm-trails.geojson", "osm-pois.geojson"):
-              print(f"\n{n}: {os.path.getsize(os.path.join('out', n))} bytes")
-          EOF
+          curl -fsSL -m 60 -o area.poly "https://download.geofabrik.de/asia/israel-and-palestine.poly" || rm -f area.poly
+          python3 scripts/osm_compare.py prev out $( [ -f area.poly ] && echo area.poly ) | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: osm-extract
