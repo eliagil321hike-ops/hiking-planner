@@ -23,7 +23,7 @@ export type LonLat = readonly [number, number];
 export type Mode = 'snap' | 'free';
 
 export interface Vertex { lon: number; lat: number; mode: Mode | null }
-export interface Waypoint { id: string; lon: number; lat: number; name: string; note: string }
+export interface Waypoint { id: string; lon: number; lat: number; name: string; note: string; icon?: string; ele?: number | null; source?: { key: string; name: string } | null }
 
 export interface EditorState {
   vertices: readonly Vertex[];

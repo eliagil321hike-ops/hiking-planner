@@ -136,6 +136,11 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 ## Gevim fix (D-063, 2026-11-03)
 - Pools now include `natural=waterhole` (how Israeli gevim are tagged). Unit 48/48; published with CI tests.
 
+## Marked points (D-064, 2026-11-03, owner approved, merged 2026-11-03)
+- Built from the approved sketches on wip/markers. Unit 53/53, editor 18/18, smoke pass, full e2e 124 pass / 0 fail (19 new
+  checks). Phone fixes after real screenshots: points menu height, edit button in "my points".
+- Restore point before publishing: branch snapshot/site-before-markers (removing old waypoints from saved routes cannot be undone).
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).

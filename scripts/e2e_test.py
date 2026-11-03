@@ -409,7 +409,7 @@ def main():
         d2 = page.evaluate("() => ({ terrain: !!window.__topo3d.map.getTerrain(), pitch: window.__topo3d.map.getPitch(), label: document.getElementById('btn-3d').textContent })")
         page.evaluate("() => document.getElementById('btn-3d').click()")
         try:
-            wait_js(page, "() => window.__topo3d.map.getPitch() > 50 && !window.__topo3d.map.isMoving()")
+            wait_js(page, "() => window.__topo3d.map.getPitch() > 50 && !window.__topo3d.map.isMoving()", 180)
         except Exception:
             print("TILT-DEBUG", page.evaluate("() => { const m = window.__topo3d.map; return { pitch: m.getPitch(), moving: m.isMoving(), terrain: !!m.getTerrain(), is3D: window.__topo3d.ctx.view.is3D(), label: document.getElementById('btn-3d').textContent, zoom: m.getZoom(), maxPitch: m.getMaxPitch() }; }"), CONSOLE[-6:], flush=True)
             raise
@@ -538,10 +538,17 @@ def main():
         r["afterDelete"] = nverts()
         page.keyboard.press("Control+z"); page.wait_for_timeout(200)
 
-        # Waypoint: right-click → form → save name
-        page.mouse.click(1050, 450, button="right"); page.wait_for_timeout(400)
-        page.fill(".wp-form input[name=name]", "מעיין"); btn(".wp-form button[type=submit]"); page.wait_for_timeout(300)
-        r["waypoints"] = page.evaluate(f"() => {ed}.state.waypoints.map(w => w.name)")
+        # Route mark (D-064): right-click while drawing → marking dialog → name + symbol → "add to route"
+        page.mouse.click(1050, 450, button="right")
+        wait_js(page, "() => document.getElementById('mk-dialog').open", 60)
+        r["routeMarkDialog"] = page.evaluate("""async () => ({ title: document.querySelector('#mk-dialog h2').textContent, icons: document.querySelectorAll('#mk-dialog input[name=icon]').length,
+            checked: document.querySelector('#mk-dialog input[name=icon]:checked')?.value, pending: (await window.__topo3d.map.getSource('mk-pending').getData()).features.length })""")
+        page.fill("#mk-dialog input[name=name]", "מעיין")
+        page.evaluate("() => { const r = document.querySelector('#mk-dialog input[value=viewpoint]'); r.checked = true; r.dispatchEvent(new Event('change')); }")
+        page.evaluate("() => document.querySelector('#mk-dialog button[value=save]').click()"); page.wait_for_timeout(500)
+        r["waypoints"] = page.evaluate(f"() => {ed}.state.waypoints.map(w => [w.name, w.icon])")
+        r["routeMarkDrawn"] = page.evaluate("""async () => { const f = (await window.__topo3d.map.getSource('route-waypoints').getData()).features; const m = window.__topo3d.map;
+            return [f.length, f[0]?.properties.image, !!m.getLayer('route-marks'), m.hasImage(f[0]?.properties.image) || null, (await m.getSource('mk-pending').getData()).features.length]; }""")
 
         # Draft survives a reload
         draft_before = page.evaluate(f"() => JSON.stringify({ed}.state)")
@@ -690,6 +697,105 @@ def main():
         r["libDeleted"] = page.evaluate(f"() => {L}.listRoutes().then((x) => x.length)")
         jsclick("#library .lib-x")
 
+        # ---------------------------------------------------------------- marked points (D-064)
+        M = "window.__topo3d.map"
+        mkopen = lambda: page.evaluate("() => document.getElementById('mk-dialog').open")
+        def mk_save(name=None, icon=None):
+            try: wait_js(page, "() => document.getElementById('mk-dialog').open", 60)
+            except Exception:
+                print("MK-DEBUG", page.evaluate("() => ({ mode: window.__topo3d.ctx.markers.mode(), planning: window.__topo3d.ctx.routeLib.isPlanning(), dock: !document.getElementById('route-dock').hidden, open: [...document.querySelectorAll('dialog[open], .library:not([hidden])')].map((e) => e.id) })"), flush=True)
+                raise
+            if name is not None: page.fill("#mk-dialog input[name=name]", name)
+            if icon: page.evaluate(f"() => {{ const r = document.querySelector('#mk-dialog input[value={icon}]'); r.checked = true; r.dispatchEvent(new Event('change')); }}")
+            info = page.evaluate("() => ({ title: document.querySelector('#mk-dialog h2').textContent, name: document.querySelector('#mk-dialog input[name=name]').value, icon: document.querySelector('#mk-dialog input[name=icon]:checked')?.value })")
+            page.evaluate("() => document.querySelector('#mk-dialog button[value=save]').click()"); page.wait_for_timeout(700)
+            return info
+        # start from a clean map: no open route, so the route panel is closed (it would cover the points)
+        jsclick("#new-route")
+        if dialog_open(): jsclick("#lib-dialog button[value=discard]")
+        if page.evaluate("() => window.__topo3d.ctx.routeLib.isPlanning()"): jsclick("#plan")
+        wait_js(page, "() => document.getElementById('route-dock').hidden", 60)
+        # the fixture campsite (35.40, 33.006) a little right of the centre, clear of the panels
+        page.evaluate(f"() => {M}.jumpTo({{ center: [35.397, 33.004], zoom: 14, pitch: 0, bearing: 0 }})")
+        wait_js(page, f"() => !{M}.isMoving() && {M}.queryRenderedFeatures({{ layers: ['poi-camp'] }}).some((f) => {{ const p = {M}.project(f.geometry.coordinates); return p.x > 100 && p.y > 150 && p.x < innerWidth - 100 && p.y < innerHeight - 150; }})", 60)
+        jsclick("#btn-points")
+        r["mkMenu"] = page.evaluate("() => [!document.getElementById('menu-points').hidden, document.getElementById('mk-show').checked, document.getElementById('btn-points').getAttribute('aria-expanded')]")
+        jsclick("#mk-mode")
+        r["mkModeOn"] = page.evaluate("() => [window.__topo3d.ctx.markers.mode(), !document.getElementById('mark-banner').hidden, document.getElementById('menu-points').hidden]")
+        # tap an existing campsite → its name and symbol
+        camp = page.evaluate(f"""() => {{ const c = {M}.getCanvas();
+            for (const f of {M}.queryRenderedFeatures({{ layers: ['poi-camp'] }})) {{ const p = {M}.project(f.geometry.coordinates);
+              if (document.elementFromPoint(p.x, p.y) === c) return [p.x, p.y, f.properties.pk]; }} return null; }}""")
+        if not camp:
+            print("CAMP-DEBUG", page.evaluate(f"() => {M}.queryRenderedFeatures({{ layers: ['poi-camp'] }}).slice(0, 5).map((f) => {{ const p = {M}.project(f.geometry.coordinates); const e = document.elementFromPoint(p.x, p.y); return [Math.round(p.x), Math.round(p.y), e?.id || e?.className?.toString?.() || e?.tagName]; }})"), flush=True)
+        assert camp, "no campsite on an uncovered part of the map"
+        page.mouse.click(camp[0], camp[1])
+        r["mkPoi"] = mk_save()
+        wait_js(page, "() => window.__topo3d.ctx.markers.points().length === 1", 60)
+        r["mkPoiSaved"] = page.evaluate(f"""async () => {{ const p = window.__topo3d.ctx.markers.points()[0];
+            return [p.name, p.icon, p.source?.key === {camp[2]!r}, JSON.stringify({M}.getFilter('poi-camp')).includes({camp[2]!r}),
+                    (await {M}.getSource('mk-personal').getData()).features[0].properties.image]; }}""")
+        # tap an empty spot → "general location"; a name, then save
+        page.mouse.click(420, 520)
+        r["mkFree"] = mk_save("נקודת מפגש")
+        wait_js(page, "() => window.__topo3d.ctx.markers.points().length === 2", 60)
+        # cancelling a changed new point asks first; the pending pin goes away
+        page.mouse.click(460, 560); wait_js(page, "() => document.getElementById('mk-dialog').open", 60)
+        page.fill("#mk-dialog input[name=name]", "טיוטה"); page.evaluate("() => document.querySelector('#mk-dialog button[value=cancel]').click()"); page.wait_for_timeout(500)
+        r["mkCancel"] = page.evaluate(f"async () => [document.getElementById('mk-dialog').open, window.__topo3d.ctx.markers.points().length, (await {M}.getSource('mk-pending').getData()).features.length]")
+        jsclick("#mark-done")
+        r["mkModeOff"] = page.evaluate("() => [window.__topo3d.ctx.markers.mode(), document.getElementById('mark-banner').hidden]")
+        # the layer switch is remembered; points persist after a reload
+        jsclick("#btn-points"); page.evaluate("() => { const s = document.getElementById('mk-show'); s.checked = false; s.dispatchEvent(new Event('change')); }")
+        r["mkHidden"] = page.evaluate(f"() => {M}.getLayoutProperty('mk-personal', 'visibility')")
+        page.reload(wait_until="domcontentloaded", timeout=180_000)
+        wait_js(page, "() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded() && window.__topo3d.ctx.markers", 60)
+        wait_js(page, "() => window.__topo3d.ctx.markers.points().length === 2", 60)
+        r["mkAfterReload"] = page.evaluate(f"() => [window.__topo3d.ctx.markers.points().length, document.getElementById('mk-show').checked, {M}.getLayoutProperty('mk-personal', 'visibility')]")
+        jsclick("#btn-points"); page.evaluate("() => { const s = document.getElementById('mk-show'); s.checked = true; s.dispatchEvent(new Event('change')); }")
+        # "my points": list, search, rename, delete, GPX of all
+        jsclick("#mk-list")
+        r["mkPanel"] = page.evaluate("() => [!document.getElementById('points-panel').hidden, document.querySelectorAll('#points-panel .mk-row').length]")
+        page.fill("#points-panel .lib-search input", "מפגש"); page.wait_for_timeout(300)
+        r["mkSearch"] = page.evaluate("() => [...document.querySelectorAll('#points-panel .mk-row b')].map((e) => e.textContent)")
+        page.fill("#points-panel .lib-search input", ""); page.wait_for_timeout(300)
+        with page.expect_download(timeout=60_000) as dl:
+            page.evaluate("() => document.querySelector('#points-panel [data-act=gpx]').click()")
+        gpx_pts = Path(dl.value.path()).read_text(encoding="utf-8")
+        r["mkGpx"] = [dl.value.suggested_filename, gpx_pts.count("<wpt "), "נקודת מפגש" in gpx_pts, "<type>tent</type>" in gpx_pts]
+        page.evaluate("() => [...document.querySelectorAll('#points-panel .mk-row')].find((e) => e.textContent.includes('מפגש')).querySelector('[data-act=edit]').click()")
+        r["mkEdit"] = mk_save("מפגש חדש", "viewpoint")
+        wait_js(page, "() => window.__topo3d.ctx.markers.points().some((p) => p.name === 'מפגש חדש' && p.icon === 'viewpoint')", 60)
+        page.evaluate("() => [...document.querySelectorAll('#points-panel .mk-row')].find((e) => e.textContent.includes('מפגש חדש')).querySelector('[data-act=edit]').click()")
+        wait_js(page, "() => document.getElementById('mk-dialog').open", 60)
+        page.evaluate("() => document.querySelector('#mk-dialog button[value=delete]').click()"); page.wait_for_timeout(800)
+        r["mkDeleted"] = page.evaluate("() => window.__topo3d.ctx.markers.points().map((p) => p.name)")
+        page.evaluate("() => document.querySelector('#points-panel [data-act=close]').click()")
+        # route marking mode: a tap on a personal point adds it to the route with its name and symbol; saved with the
+        # route; the library card downloads a GPX with the track and the marks
+        fresh_route([(760, 300), (900, 380), (1040, 330)])
+        jsclick("#plan")
+        jsclick("#r-mark")
+        r["mkRouteMode"] = page.evaluate("() => [window.__topo3d.ctx.markers.mode(), document.getElementById('r-mark').getAttribute('aria-pressed'), window.__topo3d.ctx.routeLib.isPlanning()]")
+        pp = page.evaluate(f"() => {{ const p = window.__topo3d.ctx.markers.points()[0]; const q = {M}.project([p.lon, p.lat]); return [q.x, q.y - 20]; }}")
+        page.mouse.click(pp[0], pp[1])
+        r["mkRouteFromPoint"] = mk_save()
+        r["mkRouteMarks"] = page.evaluate(f"() => {ed}.state.waypoints.map((w) => [w.name, w.icon])")
+        jsclick("#plan")
+        r["mkPlanLeavesMarking"] = page.evaluate("() => [window.__topo3d.ctx.markers.mode(), window.__topo3d.ctx.routeLib.isPlanning()]")
+        jsclick("#plan")
+        jsclick("#r-save"); wait_js(page, "() => document.getElementById('lib-dialog').open", 60)
+        page.fill("#lib-dialog input[name=name]", "מסלול עם נקודות"); page.evaluate("() => window.__topo3d.results.lastSaved = null")
+        jsclick("#lib-dialog button[value=save]"); wait_js(page, "() => !!window.__topo3d.results.lastSaved", 120)
+        jsclick("#btn-library"); wait_js(page, "() => [...document.querySelectorAll('#library .lib-card h3')].some((e) => e.textContent === 'מסלול עם נקודות')", 60)
+        page.evaluate("() => [...document.querySelectorAll('#library .lib-card')].find((c) => c.querySelector('h3').textContent === 'מסלול עם נקודות').querySelector('[data-act=menu]').click()")
+        wait_js(page, "() => !!document.querySelector('.lib-menu button[data-m=gpx]')", 60)
+        with page.expect_download(timeout=60_000) as dl2:
+            page.evaluate("() => document.querySelector('.lib-menu button[data-m=gpx]').click()")
+        gpx_route = Path(dl2.value.path()).read_text(encoding="utf-8")
+        r["mkRouteGpx"] = [dl2.value.suggested_filename, gpx_route.count("<wpt "), gpx_route.count("<trkpt ") > 10, "<ele>" in gpx_route, "חניון" in gpx_route or "<name></name>" not in gpx_route]
+        jsclick("#library .lib-x")
+
         # Developer mode: test panel visible and the devtools module loaded
         page.goto(f"http://127.0.0.1:{port}/?demz=12&dev=1#12/33.0/35.4167/0/0", wait_until="domcontentloaded", timeout=60_000)
         wait_js(page, "() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", 60)
@@ -750,6 +856,24 @@ def main():
     F = r["figures"]
     expect(all(x == "IBM Plex Sans Hebrew" for x in F["fonts"]) and F["icons"] == ["si si-up", "si si-down", "si si-max", "si si-min"] and F["pill"] == ["si si-up", "si si-down"],
            f"route figures: interface font, slope arrows for ascent/descent, peak and valley for max/min (D-057) {F}")
+    expect(r["mkMenu"] == [True, True, "true"], f"points button opens the layer menu, layer on by default (D-064) {r['mkMenu']}")
+    expect(r["mkModeOn"] == ["personal", True, True], f"marking mode: red banner, menu closed (D-064) {r['mkModeOn']}")
+    expect(r["mkPoi"]["title"] == "נקודה אישית חדשה" and r["mkPoi"]["icon"] == "tent" and r["mkPoi"]["name"] == "חניון לילה", f"tapping a map campsite takes its name and symbol (D-064) {r['mkPoi']}")
+    S = r["mkPoiSaved"]
+    expect(S[0] == "חניון לילה" and S[1] == "tent" and S[2] and S[3] and S[4] == "mk-tent-d0435b", f"saved personal point; the campsite's small icon is hidden under the pin (D-064) {S}")
+    expect(r["mkFree"]["icon"] == "general", f"an empty spot defaults to 'general location' (D-064) {r['mkFree']}")
+    expect(r["mkCancel"] == [False, 2, 0], f"cancelling an unsaved point asks first, nothing saved, pending pin gone (D-064) {r['mkCancel']}")
+    expect(r["mkModeOff"] == [None, True], f"'done' leaves marking mode (D-064) {r['mkModeOff']}")
+    expect(r["mkHidden"] == "none" and r["mkAfterReload"] == [2, False, "none"], f"layer switch remembered; points persist after a reload (D-064) {r['mkHidden']} {r['mkAfterReload']}")
+    expect(r["mkPanel"] == [True, 2] and r["mkSearch"] == ["נקודת מפגש"], f"'my points' lists and searches (D-064) {r['mkPanel']} {r['mkSearch']}")
+    G = r["mkGpx"]
+    expect(G[0].endswith(".gpx") and G[1] == 2 and G[2] and G[3], f"GPX of all personal points (D-064) {G}")
+    expect(r["mkDeleted"] == ["חניון לילה"], f"rename + change symbol, then delete from 'my points' (D-064) {r['mkDeleted']}")
+    expect(r["mkRouteMode"] == ["route", "true", False], f"route marking tool: on, drawing off (D-064) {r['mkRouteMode']}")
+    expect(r["mkRouteFromPoint"]["title"] == "נקודה במסלול" and r["mkRouteMarks"] == [["חניון לילה", "tent"]], f"a personal point tapped in route marking becomes a route mark (D-064) {r['mkRouteFromPoint']} {r['mkRouteMarks']}")
+    expect(r["mkPlanLeavesMarking"] == [None, True], f"drawing and marking are never on together (D-064) {r['mkPlanLeavesMarking']}")
+    RG = r["mkRouteGpx"]
+    expect(RG[0] == "מסלול עם נקודות.gpx" and RG[1] == 1 and RG[2] and RG[3], f"library card: GPX with the track (with elevations) and the route's marks (D-064) {RG}")
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")
@@ -848,7 +972,12 @@ def main():
     expect((r["afterLoop"], r["afterLoop2"], r["afterCtrlZ"]) == (4, 4, 3), f"close loop once, no duplicate, Ctrl+Z {r['afterLoop']},{r['afterLoop2']},{r['afterCtrlZ']}")
     expect(r["dragMoved"], "dragging a point moves it (one command, no new point)")
     expect(r["afterDelete"] == 2, f"click + Delete removes the selected point ({r['afterDelete']})")
-    expect(r["waypoints"] == ["מעיין"], f"right-click adds a named waypoint {r['waypoints']}")
+    D = r["routeMarkDialog"]
+    expect(D["title"] == "נקודה במסלול" and D["icons"] == 12 and D["checked"] == "general" and D["pending"] == 1,
+           f"right-click while drawing opens the route-mark dialog: 12 symbols, 'general location' by default, a pending pin (D-064) {D}")
+    expect(r["waypoints"] == [["מעיין", "viewpoint"]], f"the route mark is saved with its name and symbol (D-064) {r['waypoints']}")
+    M = r["routeMarkDrawn"]
+    expect(M[0] == 1 and M[1] == "mk-viewpoint-39ff14" and M[2] and M[4] == 0, f"route mark drawn as a pin in the route colour, pending pin gone (D-064) {M}")
     expect(r["draftRestored"] and r["draftNotice"], "draft restored after reload (exact state), notice shown")
     expect(r["afterClear"] == (0, 0) and r["clearUndone"], f"clear (confirmed) empties the route, and is undoable {r['afterClear']}")
     expect("עלייה" in r["stats"] and "ירידה" in r["stats"], "stats shown")

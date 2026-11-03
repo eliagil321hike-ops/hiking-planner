@@ -117,8 +117,57 @@ export function createLibrary(adapter, { userId = LOCAL_USER } = {}) {
     await adapter.del('folders', id);
   }
 
+  // ---------------------------------------------------------------- personal points (D-064)
+  // Saved one by one, by an explicit "save" in the marking dialog (owner: manual saving only).
+  async function listPoints() {
+    return (await adapter.all('points')).filter(mine);
+  }
+  async function createPoint(data) {
+    validatePoint(data);
+    const t = now();
+    const rec = { schema: SCHEMA_VERSION, id: newId(), userId, createdAt: t, updatedAt: t, ...pickPoint(data),
+      name: cleanName(data.name, 'נקודה') };
+    await adapter.put('points', rec);
+    return rec;
+  }
+  async function updatePoint(id, patch) {
+    const old = await adapter.get('points', id);
+    if (!mine(old)) throw new LibraryError('point-missing');
+    const rec = { ...old, ...pickPoint(patch), name: cleanName(patch.name ?? old.name, old.name), updatedAt: now() };
+    validatePoint(rec);
+    await adapter.put('points', rec);
+    return rec;
+  }
+  async function deletePoint(id) {
+    const old = await adapter.get('points', id);
+    if (!mine(old)) throw new LibraryError('point-missing');
+    await adapter.del('points', id);
+  }
+  /** Owner (D-064): the old waypoints (no symbol) are removed for good, also from saved routes. Keeps updatedAt. */
+  async function stripLegacyWaypoints() {
+    let n = 0;
+    for (const r of await listRoutes()) {
+      const w = r.editor?.state?.waypoints;
+      if (!Array.isArray(w) || !w.some((x) => !x.icon)) continue;
+      const rec = { ...r, editor: { ...r.editor, state: { ...r.editor.state, waypoints: w.filter((x) => x.icon) } } };
+      await adapter.put('routes', rec);
+      n++;
+    }
+    return n;
+  }
+
   return { listFolders, listRoutes, getRoute, createRoute, updateRoute, renameRoute, moveRoute, duplicateRoute,
-    deleteRoute, createFolder, renameFolder, deleteFolder };
+    deleteRoute, createFolder, renameFolder, deleteFolder, listPoints, createPoint, updatePoint, deletePoint, stripLegacyWaypoints };
+}
+
+function pickPoint(d) {
+  const out = {};
+  for (const k of ['name', 'icon', 'lon', 'lat', 'ele', 'source']) if (k in d) out[k] = d[k];
+  return out;
+}
+export function validatePoint(d) {
+  if (!Number.isFinite(d?.lon) || !Number.isFinite(d?.lat) || Math.abs(d.lat) > 90 || Math.abs(d.lon) > 180) throw new LibraryError('point-bad');
+  if (typeof d.icon !== 'string' || !d.icon) throw new LibraryError('point-bad');
 }
 
 export class LibraryError extends Error {
@@ -165,7 +214,7 @@ export function queryRoutes(routes, folders, { text = '', folder = 'all', sort =
 
 /** In-memory adapter (tests, and the fallback when the browser blocks storage — then nothing persists). */
 export function memoryAdapter() {
-  const db = { routes: new Map(), folders: new Map() };
+  const db = { routes: new Map(), folders: new Map(), points: new Map() };
   const clone = (o) => JSON.parse(JSON.stringify(o));
   return {
     persistent: false,
@@ -180,11 +229,12 @@ export function memoryAdapter() {
 export function idbAdapter(name = 'topo3d-library') {
   let dbp = null;
   const open = () => (dbp ??= new Promise((res, rej) => {
-    const req = indexedDB.open(name, 1);
+    const req = indexedDB.open(name, 2);   // v2: personal points (D-064)
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains('routes')) db.createObjectStore('routes', { keyPath: 'id' }).createIndex('folderId', 'folderId');
       if (!db.objectStoreNames.contains('folders')) db.createObjectStore('folders', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('points')) db.createObjectStore('points', { keyPath: 'id' });
     };
     req.onsuccess = () => res(req.result);
     req.onerror = () => { dbp = null; rej(req.error ?? new Error('IndexedDB open failed')); };

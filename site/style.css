@@ -618,3 +618,62 @@ body:not(.dock-panel) .route-tools { margin-bottom: calc(var(--top-h) - var(--ed
 .route-pill .si { color: var(--c-light); }
 .route-pill .si .si-ground { display: none; }
 .lib-stats .si .si-ground { display: none; }
+
+/* ---------------------------------------------------------------- D-064: marked points (personal + route marks)
+   Owner approved the sketches 2026-11-03: crimson for personal points, the route colour for route marks;
+   the same symbols as the map's points; marking mode = a red banner with "done". */
+:root { --mk-red: #D0435B; }
+.mk-sq { flex: none; display: block; }
+.mk-menu { width: min(300px, calc(100vw - 2 * var(--edge))); padding: 8px; }
+.mk-mi { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 4px 10px; border: 0; border-radius: 8px;
+  background: transparent; font: 600 14px var(--font); color: var(--c-dark); text-align: start; cursor: pointer; }
+.mk-mi:hover { background: var(--c-light); }
+.mk-mi-ic { flex: none; width: 24px; display: grid; place-items: center; }
+.mk-mi-ic .ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
+.mk-target { color: var(--mk-red); }
+.mk-mi-txt { flex: 1; display: grid; line-height: 1.3; }
+.mk-mi-txt small { font: 500 11.5px var(--font); color: var(--c-body); }
+.mk-mi[aria-pressed="true"] { background: var(--c-light); box-shadow: inset 3px 0 0 var(--mk-red); }
+input.switch { appearance: none; -webkit-appearance: none; flex: none; width: 36px; height: 20px; margin: 0; border-radius: 10px;
+  background: var(--frame); position: relative; cursor: pointer; transition: background 0.15s; }
+input.switch::after { content: ""; position: absolute; top: 2px; inset-inline-start: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); transition: inset-inline-start 0.15s; }
+input.switch:checked { background: var(--c-turq); }
+input.switch:checked::after { inset-inline-start: 18px; }
+input.switch:focus-visible { outline: 2px solid var(--c-turq); outline-offset: 2px; }
+
+.mark-banner { position: fixed; z-index: 5; top: calc(var(--top-h) + 4px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px;
+  max-width: calc(100vw - 2 * var(--edge)); min-height: 40px; padding: 4px 6px 4px 16px; border-radius: 20px; background: var(--mk-red); color: #fff;
+  font: 600 14px var(--font); box-shadow: 0 4px 14px rgba(32, 52, 73, 0.25); }
+.mark-banner button { flex: none; height: 30px; padding: 0 14px; border: 0; border-radius: 15px; background: rgba(255, 255, 255, 0.22); color: #fff;
+  font: 700 13px var(--font); cursor: pointer; }
+.mark-banner button:hover { background: rgba(255, 255, 255, 0.34); }
+.tbtn#r-mark[aria-pressed="true"] { background: var(--mk-red); color: #fff; }
+body.marking .maplibregl-canvas { cursor: crosshair; }
+
+.mk-dialog { width: min(470px, calc(100vw - 24px)); }
+.mk-head { display: flex; align-items: center; gap: 10px; }
+.mk-head h2 { margin: 0; font: 700 17px var(--font); }
+.mk-where { margin-inline-start: auto; font: 500 12px var(--font); color: var(--c-body); white-space: nowrap; }
+.mk-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; margin: 0; padding: 0; border: 0; }
+.mk-icons legend { font: 600 12.5px var(--font); color: var(--c-body); margin-bottom: 4px; }
+.mk-icon { display: grid; justify-items: center; gap: 3px; padding: 7px 2px 5px; border: 1px solid var(--divider); border-radius: 10px;
+  font: 500 11px var(--font); color: var(--c-body); cursor: pointer; text-align: center; }
+.mk-icon input { position: absolute; opacity: 0; pointer-events: none; }
+.mk-icon:has(input:checked) { border-color: var(--c-turq); background: var(--c-light); color: var(--c-dark); font-weight: 600; }
+.mk-icon:has(input:focus-visible) { outline: 2px solid var(--c-turq); outline-offset: 1px; }
+
+.mk-panel .lib-chip .mk-sq { width: 18px; height: 18px; }
+.mk-list { display: grid; }
+.mk-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center; padding: 9px 2px; border-bottom: 1px solid var(--c-page); }
+.mk-row-txt { display: grid; min-width: 0; }
+.mk-row-txt b { font: 600 14.5px var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk-row-txt small { font: 500 12px var(--font); color: var(--c-body); }
+.mk-row .lib-btn.icon { margin: 0; }
+.mk-foot { display: flex; justify-content: flex-end; margin-top: 12px; }
+@media (max-width: 600px) {
+  .mk-row { gap: 8px; }
+  .mk-row .lib-btn { padding-inline: 8px; }
+  .mk-menu { bottom: auto; max-height: calc(100vh - var(--top-h) - 16px); }   /* only as tall as its three rows */
+  .mark-banner { font-size: 13px; }
+}

@@ -5,6 +5,7 @@
 import { createLibrary, idbAdapter, memoryAdapter, queryRoutes, LibraryError } from './library-store.js';
 import { captureMapThumb, sketchThumb, routeBBox } from './thumbnail.js';
 import { statIcon } from './stat-icons.js';
+import { routeToGpx, gpxFileName, downloadText } from './gpx.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ICON = {
@@ -26,7 +27,7 @@ export function initLibrary(ctx) {
   try { adapter = typeof indexedDB === 'undefined' ? memoryAdapter() : idbAdapter(); } catch { adapter = memoryAdapter(); }
   let lib = createLibrary(adapter);
   const view = { text: '', folder: 'all', sort: 'date' };
-  let cache = { routes: [], folders: [] }, loading = false, loadError = null;
+  let cache = { routes: [], folders: [] }, loading = false, loadError = null, stripped = false;
   const panel = $('library'), dlg = $('lib-dialog');
   const km = (m) => fmtNumber(m / 1000, { maximumFractionDigits: m < 10_000 ? 2 : 1 });
   const n0 = (v) => (v == null ? '—' : fmtNumber(Math.round(v)));
@@ -130,7 +131,7 @@ export function initLibrary(ctx) {
     document.querySelector('.lib-menu')?.remove();
     const m = document.createElement('div');
     m.className = 'lib-menu'; m.setAttribute('role', 'menu');
-    m.innerHTML = [['rename', 'lib.rename'], ['duplicate', 'lib.duplicate'], ['move', 'lib.move'], ['delete', 'lib.delete']]
+    m.innerHTML = [['rename', 'lib.rename'], ['duplicate', 'lib.duplicate'], ['move', 'lib.move'], ['gpx', 'lib.gpx'], ['delete', 'lib.delete']]
       .map(([a, k]) => `<button type="button" role="menuitem" data-m="${a}" class="${a === 'delete' ? 'danger' : ''}">${t(k)}</button>`).join('');
     document.body.append(m);
     const r = anchor.getBoundingClientRect();
@@ -149,6 +150,7 @@ export function initLibrary(ctx) {
       if (a === 'duplicate') await guarded(() => lib.duplicateRoute(rec.id), t('lib.done.duplicated'));
       if (a === 'move') await moveFlow(rec);
       if (a === 'delete') await deleteFlow(rec);
+      if (a === 'gpx') { const full = await lib.getRoute(rec.id); if (full) downloadText(routeToGpx(full), gpxFileName(full.name)); ctx.results.lastGpx = full ? routeToGpx(full) : null; }
     });
   }
 
@@ -335,6 +337,8 @@ export function initLibrary(ctx) {
   // ---------------------------------------------------------------- wiring
   $('r-save').addEventListener('click', () => saveFlow());
   new MutationObserver(() => { if (!panel.hidden) reload(); }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+  // D-064 (owner): the old waypoints are removed for good, also from routes already saved (once per visit)
+  if (!stripped) { stripped = true; lib.stripLegacyWaypoints().then((n) => { ctx.results.legacyWaypointsRemoved = n; }).catch(() => {}); }
   ctx.library = { reload, saveFlow, confirmUnsaved, lib: () => lib };
   return ctx.library;
 }
