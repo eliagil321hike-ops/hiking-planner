@@ -30,6 +30,13 @@ jobs:
         run: |
           curl -fsSL -m 60 -o area.poly "https://download.geofabrik.de/asia/israel-and-palestine.poly" || rm -f area.poly
           python3 scripts/osm_compare.py prev out $( [ -f area.poly ] && echo area.poly ) | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Tag counts for planned layers (waterfalls, pools, ruins, path difficulty)
+        run: |
+          osmium tags-filter "$RUNNER_TEMP/osm/israel.osm.pbf" \
+            nwr/waterway=waterfall nwr/natural=water nwr/leisure=swimming_area nwr/historic=ruins,archaeological_site \
+            w/highway=path,footway,track,bridleway -O -o "$RUNNER_TEMP/stats.pbf"
+          osmium add-locations-to-ways "$RUNNER_TEMP/stats.pbf" --ignore-missing-nodes -f opl,add_metadata=false -O -o "$RUNNER_TEMP/stats.opl"
+          python3 scripts/osm_tag_stats.py "$RUNNER_TEMP/stats.opl" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: osm-extract
