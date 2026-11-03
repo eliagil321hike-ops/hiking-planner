@@ -106,6 +106,12 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - Context was lost twice during long turns; work was recovered from git and the session log. Commit each step.
 - A git tag push is refused by the proxy here; restore points are branches (snapshot/site-before-my-routes).
 
+## Release 2026-11-03 (owner approved)
+- Route figures (D-057, sketch A), style sheet cleanup (D-058), the three review fixes and the performance work.
+  Before merging: unit 40/40, smoke 17/17, e2e 103/103. Restore point: branch snapshot/site-before-1103.
+- Found while merging: a stray `.cache` link had slipped into the perf branch → removed, `.cache` now ignored as a
+  link too. e2e: the reload with an unsaved route takes ~57 s on this machine → wait up to 180 s.
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).
