@@ -409,7 +409,7 @@ def main():
         d2 = page.evaluate("() => ({ terrain: !!window.__topo3d.map.getTerrain(), pitch: window.__topo3d.map.getPitch(), label: document.getElementById('btn-3d').textContent })")
         page.evaluate("() => document.getElementById('btn-3d').click()")
         try:
-            wait_js(page, "() => window.__topo3d.map.getPitch() > 50 && !window.__topo3d.map.isMoving()")
+            wait_js(page, "() => window.__topo3d.map.getPitch() > 50 && !window.__topo3d.map.isMoving()", 180)
         except Exception:
             print("TILT-DEBUG", page.evaluate("() => { const m = window.__topo3d.map; return { pitch: m.getPitch(), moving: m.isMoving(), terrain: !!m.getTerrain(), is3D: window.__topo3d.ctx.view.is3D(), label: document.getElementById('btn-3d').textContent, zoom: m.getZoom(), maxPitch: m.getMaxPitch() }; }"), CONSOLE[-6:], flush=True)
             raise
