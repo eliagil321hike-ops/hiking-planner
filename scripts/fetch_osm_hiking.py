@@ -15,6 +15,20 @@ import json, math, os, re, sys, time, urllib.parse, urllib.request
 # Bump when the extract's content rules change: a push then re-downloads instead of reusing live files.
 EXTRACT_VERSION = 4  # 4: waterfalls, pools, ruins/archaeology (D-058)
 BBOX = (29.45, 34.2, 33.45, 35.95)  # south, west, north, east: Israel incl. Golan and Eilat
+# Pre-built regions (D-058): each comes from its Geofabrik file and is written to its own pair of files; the site
+# then shows it from far zooms. Israel keeps its file names and its Overpass fallback; other regions keep their
+# previous data when the download fails. The rest of the world loads on demand in the browser (osm-loader.js).
+REGIONS = {
+    "israel": {"bbox": BBOX, "suffix": "", "overpass": True},
+    "georgia": {"bbox": None, "suffix": "-georgia", "overpass": False},
+    "norway": {"bbox": None, "suffix": "-norway", "overpass": False},
+}
+WORLD = (-90, -180, 90, 180)
+
+
+def region_files(region):
+    sfx = REGIONS[region]["suffix"]
+    return f"osm-trails{sfx}.geojson", f"osm-pois{sfx}.geojson"
 ENDPOINTS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"]
 # Several small queries instead of one big one (one big query timed out on both public servers, 2026-11-01).
 HEAD = "[out:json][timeout:180];"
@@ -321,8 +335,76 @@ def cell_key(lon, lat):
     return f"{math.floor(lat / CELL)}_{math.floor(lon / CELL)}"
 
 
-def split_cells(trails_fc, pois_fc, out_dir):
-    """Write data/osm/index.json + one file per 0.5° cell: trail lines by their midpoint, points by position."""
+DCELL = 0.25  # degrees: the browser's on-demand cell (osm-loader.js); cells fully inside a region skip Overpass
+
+
+def read_poly(path):
+    """Geofabrik/osmosis .poly → list of rings [(lon, lat), …] (holes included; even-odd rule)."""
+    rings, cur = [], None
+    with open(path, encoding="utf-8") as fh:
+        lines = fh.read().splitlines()[1:]
+    for line in lines:
+        t = line.strip()
+        if not t:
+            continue
+        if cur is None:
+            if t == "END":
+                break
+            cur = []
+        elif t == "END":
+            rings.append(cur); cur = None
+        else:
+            x, y = t.split()[:2]
+            cur.append((float(x), float(y)))
+    return rings
+
+
+def covered_cells(rings, size=DCELL, samples=8):
+    """{row: [[j0, j1], …]}: the size° cells that lie entirely inside the outline (conservative: a cell counts only
+    when a samples² lattice of points inside it (centres of a samples × samples grid, ≈ 3 km apart at 0.25°) is inside
+    and no outline vertex falls in it)."""
+    import bisect
+    if not rings:
+        return {}
+    xs_all = [x for r in rings for x, _ in r]; ys_all = [y for r in rings for _, y in r]
+    i0, i1 = math.floor(min(ys_all) / size), math.floor(max(ys_all) / size)
+    j0, j1 = math.floor(min(xs_all) / size), math.floor(max(xs_all) / size)
+    edges = [(a, b) for r in rings for a, b in zip(r, r[1:] + r[:1]) if a[1] != b[1]]
+    vert_cells = {(math.floor(y / size), math.floor(x / size)) for r in rings for x, y in r}
+    step = size / samples
+    def row_inside(y):
+        cross = sorted(x1 + (y - y1) * (x2 - x1) / (y2 - y1) for (x1, y1), (x2, y2) in edges if (y1 > y) != (y2 > y))
+        return lambda x: bisect.bisect_right(cross, x) % 2 == 1
+    ok_rows = {}
+    for i in range(i0, i1 + 1):
+        tests = [row_inside(i * size + (k + 0.5) * step) for k in range(samples)]
+        good = []
+        for j in range(j0, j1 + 1):
+            if (i, j) in vert_cells:
+                continue
+            if all(t(j * size + (m + 0.5) * step) for t in tests for m in range(samples)):
+                good.append(j)
+        ranges = []
+        for j in good:
+            if ranges and ranges[-1][1] == j - 1:
+                ranges[-1][1] = j
+            else:
+                ranges.append([j, j])
+        if ranges:
+            ok_rows[str(i)] = ranges
+    return ok_rows
+
+
+def box_rings(bbox):
+    s_, w, n, e = bbox
+    return [[(w, s_), (e, s_), (e, n), (w, n)]]
+
+
+def split_cells(trails_fc, pois_fc, out_dir, regions=None):
+    """Write data/osm/index.json + one file per 0.5° cell: trail lines by their midpoint, points by position.
+    `regions`: [{"name", "osm_base", "rings" (border outline, or None → its bbox)}]; default Israel by its box."""
+    if regions is None:
+        regions = [{"name": "israel", "osm_base": trails_fc.get("osm_base", ""), "rings": None}]
     cells = {}
     for f in trails_fc["features"]:
         by = {}
@@ -330,8 +412,10 @@ def split_cells(trails_fc, pois_fc, out_dir):
             mid = line[len(line) // 2]
             by.setdefault(cell_key(*mid), []).append(line)
         for k, lines in by.items():
-            cells.setdefault(k, {"trails": [], "pois": []})["trails"].append(
-                {"type": "Feature", "properties": f["properties"], "geometry": {"type": "MultiLineString", "coordinates": lines}})
+            feat = {"type": "Feature", "properties": f["properties"], "geometry": {"type": "MultiLineString", "coordinates": lines}}
+            if f.get("id") is not None:
+                feat["id"] = f["id"]          # the browser drops the same route loaded again from Overpass
+            cells.setdefault(k, {"trails": [], "pois": []})["trails"].append(feat)
     for f in pois_fc["features"]:
         cells.setdefault(cell_key(*f["geometry"]["coordinates"]), {"trails": [], "pois": []})["pois"].append(f)
     d = os.path.join(out_dir, "osm")
@@ -339,13 +423,45 @@ def split_cells(trails_fc, pois_fc, out_dir):
     for k, c in cells.items():
         with open(os.path.join(d, f"{k}.json"), "w", encoding="utf-8") as fh:
             json.dump(c, fh, ensure_ascii=False, separators=(",", ":"))
+    covered = {}
+    for r in regions:
+        rings = r.get("rings") or (box_rings(REGIONS[r["name"]]["bbox"]) if REGIONS.get(r["name"], {}).get("bbox") else None)
+        for row, ranges in covered_cells(rings).items():
+            covered.setdefault(row, []).extend(ranges)
     s_, w, n, e = BBOX
     index = {"extract_version": EXTRACT_VERSION, "osm_base": trails_fc.get("osm_base", ""), "cell": CELL,
-             "coverage": [w, s_, e, n], "cells": {k: [len(c["trails"]), len(c["pois"])] for k, c in cells.items()}}
+             "coverage": [w, s_, e, n],   # legacy (before D-058); the browser now uses `covered`
+             "dcell": DCELL, "covered": covered,
+             "regions": [{"name": r["name"], "osm_base": r.get("osm_base", "")} for r in regions],
+             "cells": {k: [len(c["trails"]), len(c["pois"])] for k, c in cells.items()}}
     with open(os.path.join(d, "index.json"), "w", encoding="utf-8") as fh:
         json.dump(index, fh, separators=(",", ":"))
     sizes = sorted(os.path.getsize(os.path.join(d, f"{k}.json")) for k in cells)
-    print(f"split into {len(cells)} cells of {CELL}°; largest {sizes[-1] if sizes else 0} bytes, median {sizes[len(sizes) // 2] if sizes else 0}")
+    ncov = sum(b - a + 1 for rs in covered.values() for a, b in rs)
+    print(f"split into {len(cells)} cells of {CELL}°; largest {sizes[-1] if sizes else 0} bytes, median {sizes[len(sizes) // 2] if sizes else 0}; "
+          f"{ncov} on-demand cells covered by {', '.join(r['name'] for r in regions)}; total {sum(sizes)} bytes")
+
+
+def split_all(out, poly_dir=None):
+    """Merge every region's files present in `out` and write the cells + index (D-058)."""
+    trails, pois, regions = [], [], []
+    for name in REGIONS:
+        tn, pn = region_files(name)
+        try:
+            t = json.load(open(os.path.join(out, tn), encoding="utf-8"))
+            p = json.load(open(os.path.join(out, pn), encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        poly = os.path.join(poly_dir, f"{name}.poly") if poly_dir else None
+        rings = read_poly(poly) if poly and os.path.exists(poly) else None
+        if rings is None and not REGIONS[name]["bbox"]:
+            print(f"WARNING: no outline for {name}: its area will still be loaded on demand")
+        trails += t["features"]; pois += p["features"]
+        regions.append({"name": name, "osm_base": t.get("osm_base", ""), "rings": rings})
+        print(f"region {name}: {len(t['features'])} trails, {len(p['features'])} points, OSM {t.get('osm_base')}, outline {'yes' if rings else 'box' if REGIONS[name]['bbox'] else 'none'}")
+    israel = next((r for r in regions if r["name"] == "israel"), None)
+    split_cells({"type": "FeatureCollection", "osm_base": israel["osm_base"] if israel else "", "features": trails},
+                {"type": "FeatureCollection", "features": pois}, out, regions)
 
 
 def counts(pois):
@@ -353,102 +469,107 @@ def counts(pois):
     return ', '.join(f"{k} {sum(p['properties']['kind'] == k for p in pois)}" for k in kinds)
 
 
+def arg(name, default=None):
+    return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
+
+
 def main():
+    """fetch_osm_hiking.py <out> [--region R] [--opl F --osm-base T | --from F] [--previous DIR] [--reuse-same-version]
+                                [--soft] [--no-split]
+       fetch_osm_hiking.py <out> --split-only [--poly-dir DIR]     (merge all regions in <out> into cells + index)"""
     out = sys.argv[1]
+    if "--split-only" in sys.argv:
+        split_all(out, arg("--poly-dir"))
+        return
+    region = arg("--region", "israel")
+    cfg = REGIONS[region]
+    names = region_files(region)
     soft = "--soft" in sys.argv
-    if "--reuse-same-version" in sys.argv and "--previous" in sys.argv:
-        prevdir = sys.argv[sys.argv.index("--previous") + 1]
-        try:
-            olds = {n: json.load(open(os.path.join(prevdir, n), encoding="utf-8")) for n in ("osm-trails.geojson", "osm-pois.geojson")}
-            if all(o.get("extract_version") == EXTRACT_VERSION for o in olds.values()):
-                os.makedirs(out, exist_ok=True)
-                for n, o in olds.items():
-                    with open(os.path.join(out, n), "w", encoding="utf-8") as f:
-                        json.dump(o, f, ensure_ascii=False, separators=(",", ":"))
-                print(f"reused live OSM extract v{EXTRACT_VERSION} (OSM base {olds['osm-trails.geojson'].get('osm_base')})")
-                split_cells(olds["osm-trails.geojson"], olds["osm-pois.geojson"], out)
-                return
-            print("live extract has another version → fresh extract")
-        except Exception as ex:  # noqa: BLE001
-            print(f"no reusable live extract ({ex}) → fresh extract")
-    try:
-        if "--from" in sys.argv:
-            data = json.load(open(sys.argv[sys.argv.index("--from") + 1], encoding="utf-8"))
-        elif "--opl" in sys.argv:  # Geofabrik file filtered by osmium (D-057); Overpass only if this fails
-            data = from_opl(sys.argv[sys.argv.index("--opl") + 1],
-                            sys.argv[sys.argv.index("--osm-base") + 1] if "--osm-base" in sys.argv else "")
-        else:
-            data = overpass()
-    except Exception as ex:  # noqa: BLE001
-        print(f"OSM extract failed: {ex}")
-        data = None
-    prev = sys.argv[sys.argv.index("--previous") + 1] if "--previous" in sys.argv else None
+    prev = arg("--previous")
+    finish = (lambda: None) if "--no-split" in sys.argv else (lambda: split_all(out, arg("--poly-dir")))
+    os.makedirs(out, exist_ok=True)
+
     def previous(name):
         try:
             with open(os.path.join(prev, name), encoding="utf-8") as f:
                 return json.load(f)
         except Exception:  # noqa: BLE001
             return None
-    os.makedirs(out, exist_ok=True)
+
+    def write(name, obj):
+        with open(os.path.join(out, name), "w", encoding="utf-8") as f:
+            json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
+
+    if "--reuse-same-version" in sys.argv and prev:
+        olds = {n: previous(n) for n in names}
+        if all(olds.values()) and all(o.get("extract_version") == EXTRACT_VERSION for o in olds.values()):
+            for n, o in olds.items():
+                write(n, o)
+            print(f"{region}: reused live OSM extract v{EXTRACT_VERSION} (OSM base {olds[names[0]].get('osm_base')})")
+            return finish()
+        print(f"{region}: live extract missing or another version → fresh extract")
+    try:
+        if "--from" in sys.argv:
+            data = json.load(open(arg("--from"), encoding="utf-8"))
+        elif "--opl" in sys.argv:  # Geofabrik file filtered by osmium (D-057); Overpass only for Israel
+            data = from_opl(arg("--opl"), arg("--osm-base", ""), cfg["bbox"] or WORLD, cfg["overpass"])
+        elif cfg["overpass"]:
+            data = overpass()
+        else:
+            raise RuntimeError("no source given")
+    except Exception as ex:  # noqa: BLE001
+        print(f"{region}: OSM extract failed: {ex}")
+        data = None
     if data is None:  # keep the data that is live now rather than shipping nothing
         kept = 0
-        for name in ("osm-trails.geojson", "osm-pois.geojson"):
+        for name in names:
             old = previous(name) if prev else None
             if old:
-                with open(os.path.join(out, name), "w", encoding="utf-8") as f:
-                    json.dump(old, f, ensure_ascii=False, separators=(",", ":"))
+                write(name, old)
                 kept += 1
-                print(f"kept previous {name} ({len(old['features'])} features, OSM base {old.get('osm_base')})")
-        if kept == 2:
-            split_from_files(out)
+                print(f"{region}: kept previous {name} ({len(old['features'])} features, OSM base {old.get('osm_base')})")
+        finish()
         sys.exit(0 if soft or kept else 1)
     trails, pois, seen = build(data)
     stamp = data.get("osm3s", {}).get("timestamp_osm_base", "")
-    olds = [previous(n) for n in ("osm-trails.geojson", "osm-pois.geojson")] if prev else [None, None]
-    if all(olds) and all(o.get("osm_base", "") > stamp for o in olds) and stamp:
-        print(f"new extract (OSM base {stamp}) is older than the live one ({olds[0].get('osm_base')}): keeping the live data")
-        for n, o in zip(("osm-trails.geojson", "osm-pois.geojson"), olds):
-            with open(os.path.join(out, n), "w", encoding="utf-8") as f:
-                json.dump(o, f, ensure_ascii=False, separators=(",", ":"))
-        split_from_files(out)
-        return
-    for name, feats in (("osm-trails.geojson", trails), ("osm-pois.geojson", pois)):
+    olds = [previous(n) for n in names] if prev else [None, None]
+    if all(olds) and all(o.get("osm_base", "") > stamp for o in olds) and stamp and all(o.get("extract_version") == EXTRACT_VERSION for o in olds):
+        print(f"{region}: new extract (OSM base {stamp}) is older than the live one ({olds[0].get('osm_base')}): keeping the live data")
+        for n, o in zip(names, olds):
+            write(n, o)
+        return finish()
+    for name, feats in zip(names, (trails, pois)):
         old = previous(name) if prev and data.get("incomplete") else None
         if old and len(old["features"]) > len(feats):  # partial run: the previous complete file is better
-            print(f"partial extract: keeping previous {name} ({len(old['features'])} > {len(feats)} features)")
+            print(f"{region}: partial extract: keeping previous {name} ({len(old['features'])} > {len(feats)} features)")
             feats, fstamp = old["features"], old.get("osm_base", "")
         else:
             fstamp = stamp
-        with open(os.path.join(out, name), "w", encoding="utf-8") as f:
-            json.dump({"type": "FeatureCollection", "osm_base": fstamp, "extract_version": EXTRACT_VERSION, "features": feats}, f, ensure_ascii=False, separators=(",", ":"))
-    sizes = {n: os.path.getsize(os.path.join(out, n)) for n in ("osm-trails.geojson", "osm-pois.geojson")}
-    print(f"OSM base {stamp}; trails {len(trails)}, pois {len(pois)} "
-          f"({counts(pois)}); bytes {sizes}")
+        write(name, {"type": "FeatureCollection", "osm_base": fstamp, "extract_version": EXTRACT_VERSION, "features": feats})
+    sizes = {n: os.path.getsize(os.path.join(out, n)) for n in names}
+    print(f"{region}: OSM base {stamp}; trails {len(trails)}, pois {len(pois)} ({counts(pois)}); bytes {sizes}")
     for k in ("int", "national", "regional", "marked"):
-        names = sorted(set(seen.get(k, [])))
-        print(f"  {k}: {len(seen.get(k, []))} relations: {', '.join(names[:40])}{' …' if len(names) > 40 else ''}")
-    split_from_files(out)
+        nm = sorted(set(seen.get(k, [])))
+        print(f"  {k}: {len(seen.get(k, []))} relations: {', '.join(nm[:40])}{' …' if len(nm) > 40 else ''}")
+    finish()
 
 
-def from_opl(path, osm_base):
-    """Overpass-shaped data from an osmium OPL extract (scripts/osm_opl.py). Falls back to Overpass on failure."""
+def from_opl(path, osm_base, bbox=BBOX, allow_overpass=True):
+    """Overpass-shaped data from an osmium OPL extract (scripts/osm_opl.py). Israel falls back to Overpass."""
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import osm_opl
     try:
         with open(path, encoding="utf-8") as fh:
-            data = osm_opl.to_overpass(fh, BBOX, osm_base)
+            data = osm_opl.to_overpass(fh, bbox, osm_base)
         if not any(el["type"] == "relation" for el in data["elements"]):
             raise RuntimeError("no hiking routes in the file")
         print(f"source: Geofabrik extract via osmium, OSM base {osm_base or 'unknown'}, {len(data['elements'])} elements")
         return data
-    except Exception as ex:  # noqa: BLE001 - the Overpass path is the fallback
+    except Exception as ex:  # noqa: BLE001
+        if not allow_overpass:
+            raise
         print(f"OPL source failed ({ex}) → Overpass", file=sys.stderr)
         return overpass()
-
-
-def split_from_files(out):
-    load = lambda n: json.load(open(os.path.join(out, n), encoding="utf-8"))
-    split_cells(load("osm-trails.geojson"), load("osm-pois.geojson"), out)
 
 
 if __name__ == "__main__":

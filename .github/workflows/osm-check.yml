@@ -1,6 +1,6 @@
-# Dry run of the OSM extract from the Geofabrik file (D-057) on work branches: nothing is deployed.
-# Builds the extract exactly as the weekly deploy would and compares it with the live data, so a change of
-# data source or rules can be judged before it reaches the site.
+# Dry run of the OSM extract (Geofabrik files, D-057; regions, D-058) on work branches: nothing is deployed.
+# Builds every region exactly as the weekly deploy would, compares Israel with the live data and reports the size
+# of the data folder (GitHub Pages: a published site may be at most 1 GB).
 name: OSM extract check (no deploy)
 on:
   push:
@@ -11,32 +11,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Geofabrik file → osmium → OPL
+      - name: Geofabrik files → osmium → OPL (all regions)
         run: |
-          ARGS=$(bash scripts/osm_source_geofabrik.sh "$RUNNER_TEMP/osm" | tail -1)
-          echo "source args: $ARGS"
-          [ -n "$ARGS" ] || { echo "::error::Geofabrik/osmium source failed"; exit 1; }
-          echo "OSM_SOURCE_ARGS=$ARGS" >> "$GITHUB_ENV"
+          for r in israel georgia norway; do
+            ARGS=$(bash scripts/osm_source_geofabrik.sh "$RUNNER_TEMP/osm" "$r" | tail -1)
+            echo "$r: $ARGS"
+            [ -n "$ARGS" ] || { echo "::error::$r: Geofabrik/osmium source failed"; exit 1; }
+            echo "OSM_ARGS_$r=$ARGS" >> "$GITHUB_ENV"
+          done
       - name: Build the extract (no Overpass fallback allowed here)
         run: |
           mkdir -p prev
           for f in osm-trails.geojson osm-pois.geojson; do
             curl -fsS -m 60 -o "prev/$f" "https://eliagil321hike-ops.github.io/hiking-planner/data/$f" || echo "no live $f"
           done
-          # budget 0: if the OPL path failed, the Overpass fallback stops at once and the step fails
-          OSM_BUDGET_MIN=0 python3 scripts/fetch_osm_hiking.py out $OSM_SOURCE_ARGS 2>&1 | tee extract.log
-          grep -q "source: Geofabrik" extract.log
-      - name: Compare with the live data (inside / outside the Geofabrik outline)
+          # budget 0: if Israel's OPL path failed, the Overpass fallback stops at once and the step fails
+          for r in israel georgia norway; do
+            V="OSM_ARGS_$r"
+            OSM_BUDGET_MIN=0 python3 scripts/fetch_osm_hiking.py out --region "$r" --no-split ${!V} 2>&1 | tee "extract-$r.log"
+            grep -q "source: Geofabrik" "extract-$r.log"
+          done
+          python3 scripts/fetch_osm_hiking.py out --split-only --poly-dir "$RUNNER_TEMP/osm" | tee split.log
+      - name: Compare Israel with the live data; sizes
         run: |
           curl -fsSL -m 60 -o area.poly "https://download.geofabrik.de/asia/israel-and-palestine.poly" || rm -f area.poly
-          python3 scripts/osm_compare.py prev out $( [ -f area.poly ] && echo area.poly ) | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Tag counts for planned layers (waterfalls, pools, ruins, path difficulty)
-        run: |
-          osmium tags-filter "$RUNNER_TEMP/osm/israel.osm.pbf" \
-            nwr/waterway=waterfall nwr/natural=water nwr/leisure=swimming_area nwr/historic=ruins,archaeological_site \
-            w/highway=path,footway,track,bridleway -O -o "$RUNNER_TEMP/stats.pbf"
-          osmium add-locations-to-ways "$RUNNER_TEMP/stats.pbf" --ignore-missing-nodes -f opl,add_metadata=false -O -o "$RUNNER_TEMP/stats.opl"
-          python3 scripts/osm_tag_stats.py "$RUNNER_TEMP/stats.opl" | tee -a "$GITHUB_STEP_SUMMARY"
+          {
+            python3 scripts/osm_compare.py prev out $( [ -f area.poly ] && echo area.poly )
+            echo; echo "### Regions"; grep -h "^region \|^split into" split.log
+            for r in georgia norway; do grep -h "^$r: OSM base" "extract-$r.log"; done
+            echo; echo "### Sizes"
+            echo "- data/osm cells: $(du -sh out/osm | cut -f1) in $(ls out/osm | wc -l) files; largest: $(ls -S out/osm | head -1) $(du -h out/osm/$(ls -S out/osm | head -1) | cut -f1)"
+            echo "- region GeoJSON (kept for the next run): $(du -ch out/*.geojson | tail -1 | cut -f1)"
+            echo "- whole site with this data: $(du -sh --exclude=data site | cut -f1) code + $(du -sh out | cut -f1) data (Pages limit 1 GB)"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: osm-extract
