@@ -9,6 +9,9 @@ export const CATEGORIES = [
   { kind: 'spring', icon: 'topo-spring', label: 'מעיינות', words: ['מעיין', 'מעיינות', 'עין', 'spring', 'springs'] },
   { kind: 'viewpoint', icon: 'topo-viewpoint', label: 'תצפיות', words: ['תצפית', 'תצפיות', 'נקודת תצפית', 'viewpoint', 'view'] },
   { kind: 'shelter', icon: 'topo-shelter', label: 'מחסות', words: ['מחסה', 'מחסות', 'בקתה', 'בקתות', 'shelter', 'hut'] },
+  { kind: 'waterfall', icon: 'topo-waterfall', label: 'מפלים', words: ['מפל', 'מפלים', 'waterfall', 'waterfalls'] },
+  { kind: 'pool', icon: 'topo-pool', label: 'גבים ובריכות', words: ['גב', 'גבים', 'גבי מים', 'בריכה', 'בריכות', 'בריכה בטבע', 'בריכות טבעיות', 'pool', 'pools', 'rock pool', 'swimming hole'] },
+  { kind: 'ruins', icon: 'topo-ruins', label: 'חורבות ועתיקות', words: ['חורבה', 'חורבות', 'עתיקות', 'אתר ארכאולוגי', 'אתרים ארכאולוגיים', 'ארכאולוגיה', 'תל', 'ruins', 'ruin', 'archaeological site', 'archaeology'] },
 ];
 
 const norm = (s) => s.trim().toLowerCase().replace(/[״"׳']/g, '').replace(/\s+/g, ' ');

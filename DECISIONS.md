@@ -634,9 +634,66 @@ raise the right tool bar a little")
 | Mapterhorn tiles | DEM: terrain, hillshade, contours, sampling | not found | unknown → light use by a small group; terms to verify | Mapterhorn + isr10 (ASTER GDEM, METI/NASA, 4cast LTD) + Copernicus GLO-30 (DLR, Airbus, EU/ESA) | fair use not found; light use | free | 2026-11-01 data-access + attribution.json | mapterhorn.com/data-access |
 | isr10 (in Mapterhorn) | Israel 10 m DEM | ASTER GDEM Public Domain | yes (per attribution.json) | as above | — | free | 2026-11-01 | download.mapterhorn.com/attribution.json |
 | Copernicus GLO-30 (in Mapterhorn) | global 30 m fallback | Copernicus full, free and open | yes | as above | — | free | 2026-11-01 | attribution.json |
+| OpenStreetMap data (Geofabrik extract, D-060) | Trails, POIs (build-time extract, daily file, weekly use) | ODbL | yes | © OpenStreetMap contributors | one download per weekly run | free | 2026-11-03 | download.geofabrik.de |
 | OpenStreetMap data | Trails, peaks (via OpenFreeMap) | ODbL | yes | © OpenStreetMap contributors | — | free | spec | openstreetmap.org/copyright |
 | MapLibre GL JS 5.24.0, maplibre-contour 0.1.0, rtl-text 0.3.0 | rendering, contours, Hebrew | BSD-3 / BSD-3 / BSD-2 (rtl-text: not re-checked) | yes | — | loaded from unpkg CDN | free | 2026-11-01 | — |
 | Israel Hiking Map tiles | Optional marked-trail overlay | CC BY-NC-SA 3.0 (unverified) | No → personal use only | pending | pending | free | not verified, not used | — |
+
+## D-060 (2026-11-03) OSM extract from the Geofabrik Israel file instead of Overpass (branch wip/osm-geofabrik)
+- Problem: the live OSM extract was stuck at 2026-07-15. The weekly Overpass refresh failed (502/504, 25 min
+  budget used up) or got out-of-date answers from the backup server (D-042, D-044).
+- Change (data path only; nothing in site/ changes, the map looks the same): weekly and manual deploys download
+  `asia/israel-and-palestine-latest.osm.pbf` from Geofabrik (updated daily, ODbL), filter it with osmium
+  (`tags-filter` + `add-locations-to-ways`, OPL text) and `scripts/osm_opl.py` turns that into exactly the data
+  the Overpass queries returned, so `build()` and every output file are unchanged. Overpass stays the fallback;
+  if both fail, the live data is kept (D-035/D-044). Pushes still reuse the live extract (D-041).
+- One improvement over Overpass: a route counts as "in the box" also through its child relations (the Israel
+  Trail super-route holds only sections); children are followed at any depth (Overpass: one level).
+- Checked: tests/osm-opl.test.mjs (same build() output as Overpass on the fixture; escapes, areas, box, missing
+  locations, children; it failed before the super-route fix). Dry run on the real file (osm-check.yml, no
+  deploy): 59 s in all (download 116 MB in 38 s, filter 3 s), OSM data 2026-11-02 21:21 UTC.
+- Comparison with the live data (scripts/osm_compare.py, Geofabrik outline): inside Israel & Palestine the
+  counts match (trails 1889 = 1889; campsites 349 = 349; shelters, water equal; springs 767 → 769; viewpoints
+  1809 → 1811). Differences inside are OSM edits since July ("Gospel Trail" now "דרך הבשורה", new "שביל קדם",
+  "דרך חוצה דן" gone with the 72 Tel Aviv car parks kept only for being near it).
+- **Coverage change, owner to decide:** the old box (to 35.95° E, from 29.45° N) also caught parts of Jordan,
+  Sinai and south Lebanon: the Jordan Trail (39 sections, "national"), ~313 Wadi Rum/Jordan campsites, ~230
+  springs. The Geofabrik file has Israel & Palestine only. Those areas still load on demand from z11 (D-042), but
+  no longer from z7 (trails) / z9.4 (campsites). Option: add Geofabrik's Jordan file to the same run.
+  **Correction (found 2026-11-03 while building D-061):** the sentence above was wrong for this branch as first
+  built: the site took the whole old box as "covered" and asked Overpass nothing there, so Jordan/Sinai inside
+  the box would have shown no trails at all. D-061 fixes it: coverage now follows the Geofabrik border outline.
+- New files: scripts/osm_opl.py, scripts/osm_source_geofabrik.sh, scripts/osm_compare.py,
+  .github/workflows/osm-check.yml (runs on wip/osm-** branches only). Not merged: needs the owner.
+
+## D-061 (2026-11-03) Owner: waterfalls, pools, ruins; worldwide with Georgia and Norway pre-built
+- Owner approved the sketch (icons as drawn), chose "no trail difficulty for now" (OSM: only 323 of 188,064
+  Israeli paths carry sac_scale, 501 trail_visibility) and "extra countries + everything else": **Georgia, Norway**.
+- New points, same badge style and zoom as springs/viewpoints (from 12.7, names from 14), worldwide (pre-built
+  regions + Overpass elsewhere), each with category search words:
+  waterfall `waterway=waterfall` (#3f6fa3; 330 in Israel) · pool (#3c8ea8): `water=stream_pool`,
+  `leisure=swimming_area` (not private), and water bodies named "גב/גבי/בריכת/בריכה …" that are not
+  reservoir/wastewater/fishpond/basin/river/canal/lake/lagoon/moat and not swimming/fish/sewage pools by name
+  (OSM has no single tag; the name rule works only in Hebrew areas) · ruins `historic=ruins|archaeological_site`
+  (#8a6f4e; ~2,700 in Israel). Base-map ruins dots are hidden inside the pre-built regions (no duplicates).
+- Regions: each country is extracted from its Geofabrik file into its own files (Israel keeps its names and its
+  Overpass fallback; Georgia/Norway keep their previous data when a download fails), then merged into the 0.5° cells.
+  index.json lists the regions and `covered`: the 0.25° on-demand cells lying wholly inside a region's Geofabrik
+  border outline (a cell counts only if an 8×8 lattice inside it is inside and no outline vertex falls in it).
+  The browser asks Overpass only for uncovered cells; along a border both sources load and the same route (by
+  relation id) or point (kind + position to 4 decimals) is shown once, the pre-built copy winning.
+- Deploy: fresh extract weekly, on manual runs, and on a push that changes EXTRACT_VERSION (now 4); other pushes
+  reuse the live files; outlines are fetched every time. Tests: tests/osm-regions.test.mjs, tests/osm-loader.test.mjs,
+  fixture with included/excluded pools, e2e (new badges render, base ruins dots hidden, a second region loads from
+  cells with no Overpass request).
+
+## D-062 (2026-11-03) Owner: point icons must not be hidden by the planned route (from the 500 m scale)
+- Owner screenshot: a campsite icon under the fluorescent route. The route line, casing and pending segments are now
+  drawn under the point-icon layers (inserted before `topo-poi-dot`); the route's handles, midpoints and waypoints
+  stay above everything (they are dragged and clicked).
+- Route about 10 % thinner from z12 (owner: "maybe a little thinner, if it stays clear"), still wider than national
+  trails at every zoom (D-043): line z12/14/16 6.8/10/15.6 px (was 7.5/11/16), casing 9.8/13/18.6 (was 11/15/21);
+  national 6/9/15, casing 8.5/11.5/17.5. Before/after preview sent to the owner. e2e checks the order and widths.
 
 ## D-007 (2026-11-01) Owner answers
 - First region: **Upper Galilee** (initial camera around Har Meron; encoding test peak is in this region).

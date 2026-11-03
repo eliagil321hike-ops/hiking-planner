@@ -45,17 +45,35 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: OSM extract for Israel (national/regional/marked trails, campsites, water) via Overpass
+      - name: OSM sources - Geofabrik files filtered by osmium (D-060, regions D-061)
         run: |
-          # previous live files = fallback when Overpass fails or answers only partly (D-035)
-          mkdir -p prev
-          for f in osm-trails.geojson osm-pois.geojson; do
-            curl -fsS -m 60 -o "prev/$f" "https://eliagil321hike-ops.github.io/hiking-planner/data/$f" || echo "no previous $f"
+          # Fresh data on the weekly schedule / manual runs, and on a push whose extract rules changed (the live
+          # index has another extract_version); other pushes reuse the live files (D-041). The border outlines
+          # are always fetched: the site's coverage follows them.
+          WANT=$(python3 -c 'import sys; sys.path.insert(0, "scripts"); import fetch_osm_hiking as f; print(f.EXTRACT_VERSION)')
+          LIVE=$(curl -fsS -m 30 "https://eliagil321hike-ops.github.io/hiking-planner/data/osm/index.json" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("extract_version"))' 2>/dev/null || echo none)
+          FRESH=1; [ "${{ github.event_name }}" = "push" ] && [ "$LIVE" = "$WANT" ] && FRESH=0
+          echo "extract version: live $LIVE, wanted $WANT → fresh=$FRESH"
+          echo "OSM_FRESH=$FRESH" >> "$GITHUB_ENV"
+          for r in israel georgia norway; do
+            if [ "$FRESH" = 1 ]; then ARGS=$(bash scripts/osm_source_geofabrik.sh "$RUNNER_TEMP/osm" "$r" | tail -1)
+            else ARGS=""; bash scripts/osm_source_geofabrik.sh "$RUNNER_TEMP/osm" "$r" --poly-only >/dev/null; fi
+            echo "OSM_ARGS_$r=$ARGS" >> "$GITHUB_ENV"
           done
-          # Fresh Overpass extract only on the weekly schedule / manual run, or when the live files are missing or
-          # from another extract version; ordinary pushes reuse them: deploy in minutes, no Overpass load (D-041).
-          REUSE=""; [ "${{ github.event_name }}" = "push" ] && REUSE="--reuse-same-version"
-          python3 scripts/fetch_osm_hiking.py site/data --soft --previous prev $REUSE
+      - name: OSM extract (Israel, Georgia, Norway; trails, campsites, water, waterfalls, pools, ruins …)
+        run: |
+          # previous live files = fallback when a source fails or answers only partly (D-035)
+          mkdir -p prev
+          for f in osm-trails osm-pois; do for sfx in "" -georgia -norway; do
+            curl -fsS -m 60 -o "prev/$f$sfx.geojson" "https://eliagil321hike-ops.github.io/hiking-planner/data/$f$sfx.geojson" || echo "no previous $f$sfx"
+          done; done
+          REUSE=""; [ "$OSM_FRESH" = 0 ] && REUSE="--reuse-same-version"
+          for r in israel georgia norway; do
+            V="OSM_ARGS_$r"   # "--opl … --osm-base …" when the Geofabrik step worked; empty → fallback
+            python3 scripts/fetch_osm_hiking.py site/data --region "$r" --soft --previous prev --no-split $REUSE ${!V}
+          done
+          python3 scripts/fetch_osm_hiking.py site/data --split-only --poly-dir "$RUNNER_TEMP/osm"
+          du -sh site/data site
       - name: Stamp build (cache busting, version shown in the page)
         run: bash scripts/stamp_build.sh site "${GITHUB_SHA::7}"
       - name: Setup Pages

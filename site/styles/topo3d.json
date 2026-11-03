@@ -1548,7 +1548,9 @@
                     "viewpoint",
                     "shelter",
                     "alpine_hut",
-                    "wilderness_hut"
+                    "wilderness_hut",
+                    "ruins",
+                    "archaeological_site"
                   ],
                   true,
                   false
@@ -1570,7 +1572,9 @@
                     "viewpoint",
                     "shelter",
                     "alpine_hut",
-                    "wilderness_hut"
+                    "wilderness_hut",
+                    "ruins",
+                    "archaeological_site"
                   ],
                   true,
                   false
@@ -1579,28 +1583,78 @@
               [
                 "within",
                 {
-                  "type": "Polygon",
+                  "type": "MultiPolygon",
                   "coordinates": [
                     [
                       [
-                        34.2,
-                        29.45
-                      ],
+                        [
+                          34.2,
+                          29.45
+                        ],
+                        [
+                          35.95,
+                          29.45
+                        ],
+                        [
+                          35.95,
+                          33.45
+                        ],
+                        [
+                          34.2,
+                          33.45
+                        ],
+                        [
+                          34.2,
+                          29.45
+                        ]
+                      ]
+                    ],
+                    [
                       [
-                        35.95,
-                        29.45
-                      ],
+                        [
+                          39.9,
+                          41.0
+                        ],
+                        [
+                          46.8,
+                          41.0
+                        ],
+                        [
+                          46.8,
+                          43.65
+                        ],
+                        [
+                          39.9,
+                          43.65
+                        ],
+                        [
+                          39.9,
+                          41.0
+                        ]
+                      ]
+                    ],
+                    [
                       [
-                        35.95,
-                        33.45
-                      ],
-                      [
-                        34.2,
-                        33.45
-                      ],
-                      [
-                        34.2,
-                        29.45
+                        [
+                          4.4,
+                          57.9
+                        ],
+                        [
+                          31.2,
+                          57.9
+                        ],
+                        [
+                          31.2,
+                          71.3
+                        ],
+                        [
+                          4.4,
+                          71.3
+                        ],
+                        [
+                          4.4,
+                          57.9
+                        ]
                       ]
                     ]
                   ]
@@ -1719,28 +1773,78 @@
             [
               "within",
               {
-                "type": "Polygon",
+                "type": "MultiPolygon",
                 "coordinates": [
                   [
                     [
-                      34.2,
-                      29.45
-                    ],
+                      [
+                        34.2,
+                        29.45
+                      ],
+                      [
+                        35.95,
+                        29.45
+                      ],
+                      [
+                        35.95,
+                        33.45
+                      ],
+                      [
+                        34.2,
+                        33.45
+                      ],
+                      [
+                        34.2,
+                        29.45
+                      ]
+                    ]
+                  ],
+                  [
                     [
-                      35.95,
-                      29.45
-                    ],
+                      [
+                        39.9,
+                        41.0
+                      ],
+                      [
+                        46.8,
+                        41.0
+                      ],
+                      [
+                        46.8,
+                        43.65
+                      ],
+                      [
+                        39.9,
+                        43.65
+                      ],
+                      [
+                        39.9,
+                        41.0
+                      ]
+                    ]
+                  ],
+                  [
                     [
-                      35.95,
-                      33.45
-                    ],
-                    [
-                      34.2,
-                      33.45
-                    ],
-                    [
-                      34.2,
-                      29.45
+                      [
+                        4.4,
+                        57.9
+                      ],
+                      [
+                        31.2,
+                        57.9
+                      ],
+                      [
+                        31.2,
+                        71.3
+                      ],
+                      [
+                        4.4,
+                        71.3
+                      ],
+                      [
+                        4.4,
+                        57.9
+                      ]
                     ]
                   ]
                 ]
@@ -1974,7 +2078,9 @@
                   "viewpoint",
                   "shelter",
                   "alpine_hut",
-                  "wilderness_hut"
+                  "wilderness_hut",
+                  "ruins",
+                  "archaeological_site"
                 ],
                 true,
                 false
@@ -1996,7 +2102,9 @@
                   "viewpoint",
                   "shelter",
                   "alpine_hut",
-                  "wilderness_hut"
+                  "wilderness_hut",
+                  "ruins",
+                  "archaeological_site"
                 ],
                 true,
                 false
@@ -2005,28 +2113,78 @@
             [
               "within",
               {
-                "type": "Polygon",
+                "type": "MultiPolygon",
                 "coordinates": [
                   [
                     [
-                      34.2,
-                      29.45
-                    ],
+                      [
+                        34.2,
+                        29.45
+                      ],
+                      [
+                        35.95,
+                        29.45
+                      ],
+                      [
+                        35.95,
+                        33.45
+                      ],
+                      [
+                        34.2,
+                        33.45
+                      ],
+                      [
+                        34.2,
+                        29.45
+                      ]
+                    ]
+                  ],
+                  [
                     [
-                      35.95,
-                      29.45
-                    ],
+                      [
+                        39.9,
+                        41.0
+                      ],
+                      [
+                        46.8,
+                        41.0
+                      ],
+                      [
+                        46.8,
+                        43.65
+                      ],
+                      [
+                        39.9,
+                        43.65
+                      ],
+                      [
+                        39.9,
+                        41.0
+                      ]
+                    ]
+                  ],
+                  [
                     [
-                      35.95,
-                      33.45
-                    ],
-                    [
-                      34.2,
-                      33.45
-                    ],
-                    [
-                      34.2,
-                      29.45
+                      [
+                        4.4,
+                        57.9
+                      ],
+                      [
+                        31.2,
+                        57.9
+                      ],
+                      [
+                        31.2,
+                        71.3
+                      ],
+                      [
+                        4.4,
+                        71.3
+                      ],
+                      [
+                        4.4,
+                        57.9
+                      ]
                     ]
                   ]
                 ]
@@ -2461,7 +2619,7 @@
       }
     },
     {
-      "$comment": "Springs, viewpoints and shelters from the 500 m scale (D-047); names only when there is room.",
+      "$comment": "Springs, viewpoints, shelters, waterfalls, pools and ruins from the 500 m scale (D-047, D-061); names only when there is room.",
       "id": "poi-other",
       "type": "symbol",
       "source": "poi-other",
@@ -2479,6 +2637,12 @@
           "topo-viewpoint",
           "shelter",
           "topo-shelter",
+          "waterfall",
+          "topo-waterfall",
+          "pool",
+          "topo-pool",
+          "ruins",
+          "topo-ruins",
           ""
         ],
         "icon-size": [

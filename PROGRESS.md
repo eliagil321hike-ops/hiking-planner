@@ -112,6 +112,24 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - Found while merging: a stray `.cache` link had slipped into the perf branch → removed, `.cache` now ignored as a
   link too. e2e: the reload with an unsaved route takes ~57 s on this machine → wait up to 180 s.
 
+## OSM data from Geofabrik (D-060, 2026-11-03, merged 2026-11-03)
+- Weekly refresh no longer depends on Overpass: Geofabrik Israel file + osmium, same output, Overpass as fallback.
+- Unit 40/40 (2 new), geo 31/31, editor 18/18; smoke/e2e not run (nothing in site/ changed; CI runs them on merge).
+- Dry run on the real file green twice (59 s; OSM 2026-11-02). Inside Israel & Palestine counts match the live
+  data; outside the old box (Jordan Trail, Wadi Rum) is no longer pre-built → owner decision (D-060).
+
+## New points, worldwide regions, route under icons (D-061, D-062, 2026-11-03, merged 2026-11-03)
+- Waterfalls, pools, ruins (owner-approved sketch); Georgia + Norway pre-built like Israel; coverage by real borders
+  (fixes the D-060 box problem); route line under the point icons and ~10 % thinner (owner screenshot).
+- Tests: unit 46/46, geo 31/31, editor 18/18, smoke 17/17, e2e 105/105 (latest commit e2d429a).
+- Real-data dry run (osm-check, green): Israel 329 waterfalls / 72 pools / 2,684 ruins; Georgia 214 trails,
+  8,565 points; Norway 2,946 trails, 27,454 points; all cells ≈ 25 MB (Pages limit 1 GB). Norway's 1.3 GB download
+  took 15 min → the weekly refresh takes ~20 min. A few pool names are doubtful (e.g. "בריכת הקצינים"); Norway's
+  pools are mostly lake bathing spots (Badeplass).
+- Owner approved publishing (2026-11-03 14:20). Merged on top of the 2026-11-03 release; decisions renumbered
+  D-057/58/59 → D-060/61/62 (main had used D-057/D-058). Restore point: branch snapshot/site-before-osm-regions.
+  The push changes EXTRACT_VERSION (3 → 4), so the deploy fetches fresh data itself (no manual run needed).
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).

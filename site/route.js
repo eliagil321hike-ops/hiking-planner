@@ -48,15 +48,19 @@ export function initRoute(ctx) {
     // pending dotted grey, error dotted red.
     // Owner request: a fluorescent route colour unlike any trail (red/brown/purple) or stream (blue) colour,
     // with a dark casing so it also stands out on satellite imagery.
+    // Owner (D-062): point icons (campsites, water, …) are drawn above the route line so it never hides them;
+    // only the route's handles and waypoints stay above the icons (they are what you drag and click).
+    const underIcons = map.getLayer('topo-poi-dot') ? 'topo-poi-dot' : undefined;
     map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' },
-      // Owner (D-043): the planned route is the dominant line — wider than national trails at every zoom.
-      paint: { 'line-color': '#0a1f0a', 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 6, 10, 8, 12, 11, 14, 15, 16, 21], 'line-opacity': 0.8 } });
+      // Owner (D-043): the planned route is the dominant line — wider than national trails at every zoom
+      // (national z12/14/16: 6/9/15 px, casing 8.5/11.5/17.5). D-062: about 10 % thinner from z12 on.
+      paint: { 'line-color': '#0a1f0a', 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 6, 10, 8, 12, 9.8, 14, 13, 16, 18.6], 'line-opacity': 0.8 } }, underIcons);
     map.addLayer({ id: 'route-line', type: 'line', source: 'route', filter: ['==', ['get', 'status'], 'ok'],
       layout: { 'line-join': 'round' },
-      paint: { 'line-color': routeColor(), 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 3.5, 10, 5, 12, 7.5, 14, 11, 16, 16], 'line-dasharray': ['case', ['==', ['get', 'mode'], 'free'], ['literal', [2, 1.2]], ['literal', [1, 0]]] } });
+      paint: { 'line-color': routeColor(), 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 3.5, 10, 5, 12, 6.8, 14, 10, 16, 15.6], 'line-dasharray': ['case', ['==', ['get', 'mode'], 'free'], ['literal', [2, 1.2]], ['literal', [1, 0]]] } }, underIcons);
     map.addLayer({ id: 'route-provisional', type: 'line', source: 'route', filter: ['!=', ['get', 'status'], 'ok'],
       layout: { 'line-cap': 'round' },
-      paint: { 'line-color': ['case', ['==', ['get', 'status'], 'error'], '#ff2d55', '#e8e8e8'], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 8, 16, 11], 'line-dasharray': [0.1, 1.6] } });
+      paint: { 'line-color': ['case', ['==', ['get', 'status'], 'error'], '#ff2d55', '#e8e8e8'], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 8, 16, 11], 'line-dasharray': [0.1, 1.6] } }, underIcons);
     map.addLayer({ id: 'route-mid', type: 'circle', source: 'route-handles', filter: ['==', ['get', 'kind'], 'mid'],
       paint: { 'circle-radius': 4.5, 'circle-color': '#ffffff', 'circle-opacity': 0.9, 'circle-stroke-color': '#0a1f0a', 'circle-stroke-width': 1.5 } });
     map.addLayer({ id: 'route-points', type: 'circle', source: 'route-handles', filter: ['==', ['get', 'kind'], 'vertex'],
