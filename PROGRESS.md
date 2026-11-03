@@ -113,6 +113,16 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   data; outside the old box (Jordan Trail, Wadi Rum) is no longer pre-built → owner decision (D-057).
 - After merging: run the deploy workflow by hand once ("Run workflow") to replace the July data now.
 
+## New points, worldwide regions, route under icons (D-058, D-059, 2026-11-03, same branch, not merged)
+- Waterfalls, pools, ruins (owner-approved sketch); Georgia + Norway pre-built like Israel; coverage by real borders
+  (fixes the D-057 box problem); route line under the point icons and ~10 % thinner (owner screenshot).
+- Tests: unit 46/46, geo 31/31, editor 18/18, smoke 17/17, e2e 105/105 (latest commit e2d429a).
+- Real-data dry run (osm-check, green): Israel 329 waterfalls / 72 pools / 2,684 ruins; Georgia 214 trails,
+  8,565 points; Norway 2,946 trails, 27,454 points; all cells ≈ 25 MB (Pages limit 1 GB). Norway's 1.3 GB download
+  took 15 min → the weekly refresh takes ~20 min. A few pool names are doubtful (e.g. "בריכת הקצינים"); Norway's
+  pools are mostly lake bathing spots (Badeplass).
+- Waiting for the owner: approval to merge and deploy; then one manual deploy run.
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).
