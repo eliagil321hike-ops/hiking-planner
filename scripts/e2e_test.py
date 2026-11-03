@@ -710,7 +710,11 @@ def main():
             info = page.evaluate("() => ({ title: document.querySelector('#mk-dialog h2').textContent, name: document.querySelector('#mk-dialog input[name=name]').value, icon: document.querySelector('#mk-dialog input[name=icon]:checked')?.value })")
             page.evaluate("() => document.querySelector('#mk-dialog button[value=save]').click()"); page.wait_for_timeout(700)
             return info
-        if page.evaluate("() => !document.getElementById('route-dock').hidden && window.__topo3d.ctx.routeLib.isPlanning()"): jsclick("#plan")
+        # start from a clean map: no open route, so the route panel is closed (it would cover the points)
+        jsclick("#new-route")
+        if dialog_open(): jsclick("#lib-dialog button[value=discard]")
+        if page.evaluate("() => window.__topo3d.ctx.routeLib.isPlanning()"): jsclick("#plan")
+        wait_js(page, "() => document.getElementById('route-dock').hidden", 60)
         page.evaluate(f"() => {M}.jumpTo({{ center: [35.4167, 33.0], zoom: 14, pitch: 0, bearing: 0 }})"); page.wait_for_timeout(1500)
         wait_js(page, f"() => {M}.queryRenderedFeatures({{ layers: ['poi-camp'] }}).length > 0", 60)
         jsclick("#btn-points")
@@ -721,6 +725,8 @@ def main():
         camp = page.evaluate(f"""() => {{ const c = {M}.getCanvas();
             for (const f of {M}.queryRenderedFeatures({{ layers: ['poi-camp'] }})) {{ const p = {M}.project(f.geometry.coordinates);
               if (document.elementFromPoint(p.x, p.y) === c) return [p.x, p.y, f.properties.pk]; }} return null; }}""")
+        if not camp:
+            print("CAMP-DEBUG", page.evaluate(f"() => {M}.queryRenderedFeatures({{ layers: ['poi-camp'] }}).slice(0, 5).map((f) => {{ const p = {M}.project(f.geometry.coordinates); const e = document.elementFromPoint(p.x, p.y); return [Math.round(p.x), Math.round(p.y), e?.id || e?.className?.toString?.() || e?.tagName]; }})"), flush=True)
         assert camp, "no campsite on an uncovered part of the map"
         page.mouse.click(camp[0], camp[1])
         r["mkPoi"] = mk_save()
