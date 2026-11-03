@@ -1,0 +1,16 @@
+# Temporary diagnosis (D-063): how are pools named "גב …" tagged in OSM Israel? No deploy.
+name: OSM pools diagnosis
+on:
+  push:
+    branches: ["wip/osm-pools-diag"]
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Israel file → all named objects whose name starts with גב
+        run: |
+          sudo apt-get update -q >/dev/null && sudo apt-get install -y -q osmium-tool >/dev/null
+          curl -fsSL -o il.pbf https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf
+          osmium cat il.pbf -f opl,add_metadata=false -o il.opl
+          python3 scripts/osm_pool_diag.py il.opl | tee -a "$GITHUB_STEP_SUMMARY"
