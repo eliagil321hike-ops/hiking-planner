@@ -17,7 +17,15 @@ export function captureMapThumb(map, bbox, { timeoutMs = 8000, hide = [] } = {})
     // editing handles (points, mid-segment circles) are hidden for the picture and shown again afterwards
     const hidden = hide.filter((id) => map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== 'none');
     hidden.forEach((id) => map.setLayoutProperty(id, 'visibility', 'none'));
-    const finish = (v) => { if (!done) { done = true; clearTimeout(timer); hidden.forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', 'visible')); resolve(v); } };
+    // the picture needs the whole route, north up and flat; the user's own view comes back afterwards (review 2026-11-03)
+    const view = { center: map.getCenter(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+    const finish = (v) => {
+      if (done) return;
+      done = true; clearTimeout(timer);
+      hidden.forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', 'visible'));
+      try { map.jumpTo(view); } catch { /* map gone */ }
+      resolve(v);
+    };
     const timer = setTimeout(() => finish(null), timeoutMs);
     try {
       const pad = Math.round(Math.min(map.getCanvas().clientWidth, map.getCanvas().clientHeight) * 0.12);

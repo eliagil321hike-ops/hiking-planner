@@ -6,6 +6,7 @@
 // insert · click a point then Delete = remove · right-click = waypoint · Ctrl+Z / Ctrl+Y = undo / redo.
 
 import { renderProfile } from './profile.js';
+import { statIcon } from './stat-icons.js';
 import { resampleLine, computeElevationStats, naismithSeconds } from './vendor/geo/index.js';
 import {
   RouteEditor, addPoint, movePoint, insertPoint, deletePoint, setSegmentMode, reverseRoute, closeLoop,
@@ -244,8 +245,14 @@ export function initRoute(ctx) {
     drag = { kind: f.properties.kind, index: f.properties.index, start: e.lngLat, moved: false };
     map.getCanvas().style.cursor = 'grabbing';
   });
+  // Hover: the handle hit-test (a feature query on the GPU frame) runs at most every 50 ms, not on every mouse
+  // event (perf review 2026-11-03); dragging always follows the mouse.
+  let lastHover = 0;
   map.on('mousemove', (e) => {
-    if (planning && !drag) map.getCanvas().style.cursor = hit(e, ['route-points', 'route-mid']) ? 'grab' : 'crosshair';
+    if (planning && !drag) {
+      const now = performance.now();
+      if (now - lastHover > 50) { lastHover = now; map.getCanvas().style.cursor = hit(e, ['route-points', 'route-mid']) ? 'grab' : 'crosshair'; }
+    }
     if (!drag) return;
     drag.moved = true;
     drag.lngLat = e.lngLat;
@@ -316,7 +323,7 @@ export function initRoute(ctx) {
   const n0 = (v) => (v === null || v === undefined ? '—' : fmtNumber(Math.round(v)));
   const pair = (a, b) => `<div class="rd-pair">${a}${b}</div>`;
   const stat = (value, unit, label, cls = '') =>
-    `<span class="rd-st ${cls}"><b>${value}</b><i>${unit}</i><small>${label}</small></span>`;
+    `<span class="rd-st ${cls}">${statIcon(cls)}<b>${value}</b><i>${unit}</i><small>${label}</small></span>`;
   async function updateStats() {
     const seq = ++statsSeq;
     const line = editor.geometry();
@@ -355,7 +362,7 @@ export function initRoute(ctx) {
     $('stats').title = `${t('stats.source')}: ${t('stats.sourceValue', { z: samplingZoom })} · ${ms} ms`;
     lastFigures = { seq, line, distance: dist, ascent: st.ascent, descent: st.descent, min: st.min, max: st.max,
       profile: samples.map((p) => [p.point[0], p.point[1], Math.round(p.distance * 10) / 10, p.elevation === null ? null : Math.round(p.elevation * 10) / 10]) };
-    $('pill-stats').innerHTML = `<b>${km}</b><i>${t('unit.km')}</i><span class="up">${n0(st.ascent)}</span><span class="down">${n0(st.descent)}</span>`;
+    $('pill-stats').innerHTML = `<b>${km}</b><i>${t('unit.km')}</i><span class="up">${statIcon('up', 15)}${n0(st.ascent)}</span><span class="down">${statIcon('down', 15)}${n0(st.descent)}</span>`;
     drawProfile = () => renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max, compact: true });
     if (expanded) drawProfile();
   }

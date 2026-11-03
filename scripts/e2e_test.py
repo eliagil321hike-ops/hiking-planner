@@ -434,6 +434,10 @@ def main():
             time: document.getElementById('profile-box').textContent.includes('זמן'), dockOpen: !document.getElementById('route-dock').hidden,
             startFinish: !!document.querySelector('#profile .profile-start') && !!document.querySelector('#profile .profile-finish'),
             yLevels: document.querySelectorAll('#profile line.profile-grid-h').length })""")
+        # D-057: figures in the interface font (no wide monospace comma), an icon per figure (slope arrows, peak, valley)
+        r["figures"] = page.evaluate("""() => ({ fonts: [...document.querySelectorAll('#rd-dist, #stats .rd-st b')].map((e) => getComputedStyle(e.matches('#rd-dist') ? e : e).fontFamily.split(',')[0].replace(/"/g, '')),
+            icons: [...document.querySelectorAll('#stats .rd-st')].map((e) => e.querySelector('svg.si')?.getAttribute('class') ?? null),
+            pill: [...document.querySelectorAll('#pill-stats svg.si')].map((e) => e.getAttribute('class')) })""")
         # D-054: the graph fills its box and stays inside the panel, also after the window changes size
         fit_js = """() => { const p = document.getElementById('profile'), svg = p.querySelector('svg'), box = document.getElementById('profile-box');
             const vb = svg.viewBox.baseVal, rs = svg.getBoundingClientRect(), rb = box.getBoundingClientRect();
@@ -515,7 +519,9 @@ def main():
 
         # Draft survives a reload
         draft_before = page.evaluate(f"() => JSON.stringify({ed}.state)")
-        page.reload(wait_until="domcontentloaded", timeout=60_000)
+        import time as _time; _t0 = _time.time()
+        page.reload(wait_until="domcontentloaded", timeout=180_000)   # the unsaved-route warning is accepted first
+        print(f"(reload took {_time.time() - _t0:.0f} s)", flush=True)
         wait_js(page, "() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", 60)
         r["draftRestored"] = page.evaluate(f"() => JSON.stringify({ed}.state)") == draft_before
         if not r["draftRestored"]:
@@ -586,6 +592,9 @@ def main():
         fresh_route([(800, 300), (900, 380), (1000, 330)])
         r["libUnsaved"] = page.evaluate("() => window.__topo3d.results.savedState")
         r["libEmpty"] = page.evaluate(f"() => {L}.listRoutes().then((x) => x.length)")
+        page.evaluate("() => window.__topo3d.map.jumpTo({ pitch: 40, bearing: 20 })"); page.wait_for_timeout(500)
+        cam_js = "() => { const m = window.__topo3d.map, c = m.getCenter(); return [+c.lng.toFixed(5), +c.lat.toFixed(5), +m.getZoom().toFixed(2), +m.getPitch().toFixed(1), +m.getBearing().toFixed(1)]; }"
+        cam_before = page.evaluate(cam_js)
         jsclick("#r-save"); wait_js(page, "() => document.getElementById('lib-dialog').open", 60)
         r["libSaveDialog"] = page.evaluate("() => ({ name: !!document.querySelector('#lib-dialog input[name=name]'), folder: !!document.querySelector('#lib-dialog select[name=folder]'), figs: document.querySelectorAll('#lib-dialog .lib-figs dd').length })")
         page.fill("#lib-dialog input[name=name]", "מעיינות")
@@ -593,6 +602,9 @@ def main():
         jsclick("#lib-dialog button[value=save]")
         wait_js(page, "() => !!window.__topo3d.results.lastSaved", 120)
         sid = page.evaluate("() => window.__topo3d.results.lastSaved.id")
+        page.wait_for_timeout(500); r["libCamera"] = [cam_before, page.evaluate(cam_js)]
+        # back to flat: a tilted 3D view keeps software WebGL so busy that Playwright's "stable" checks never finish
+        page.evaluate("() => window.__topo3d.map.jumpTo({ pitch: 0, bearing: 0 })"); page.wait_for_timeout(500)
         r["libSaved"] = page.evaluate(f"""() => {L}.getRoute({sid!r}).then((x) => ({{ name: x.name, folder: !!x.folderId, vertices: x.editor.state.vertices.length,
             geomSame: JSON.stringify(x.geometry) === JSON.stringify({ed}.geometry().map((p) => [p[0], p[1]])), profile: x.profile.length,
             elevOk: x.profile.every((p) => p.length === 4), thumb: (x.thumb || '').slice(0, 11), state: window.__topo3d.results.savedState }}))""")
@@ -703,11 +715,15 @@ def main():
     expect(r["libOpened"] == [3, True, "saved", "מעיינות"], f"open: library closes, the route + name are loaded and marked saved {r['libOpened']}")
     expect(r["libChanged"] == "changed" and r["libUpdateChoice"] == "update" and r["libUpdated"] == [1, 4, True], f"editing marks it changed; save changes updates the original {r['libChanged']} {r['libUpdated']}")
     # sorted by name the original ("מעיינות") comes before its copy, so the original is renamed and moved
+    expect(r["libCamera"][0] == r["libCamera"][1], f"saving (preview picture) gives the user's view back: centre, zoom, tilt, bearing {r['libCamera']}")
     expect(r["libCards"] == [["אאא ראשון", False], ["מעיינות (עותק)", True]], f"duplicate, rename, move to no folder {r['libCards']}")
     expect(r["libNoResults"], "search with no results shows the empty message")
     expect(r["libCopy"] == [3, True, True, "copy", True], f"edit → create copy: new route opened for editing, original untouched {r['libCopy']}")
     expect(r["libFolderDeleted"] == [3, 0, True], f"deleting a folder keeps its routes (now without a folder) {r['libFolderDeleted']}")
     expect(r["libDeleted"] == 2, f"delete route (confirmed) {r['libDeleted']}")
+    F = r["figures"]
+    expect(all(x == "IBM Plex Sans Hebrew" for x in F["fonts"]) and F["icons"] == ["si si-up", "si si-down", "si si-max", "si si-min"] and F["pill"] == ["si si-up", "si si-down"],
+           f"route figures: interface font, slope arrows for ascent/descent, peak and valley for max/min (D-057) {F}")
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")
