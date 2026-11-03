@@ -23,6 +23,7 @@ rel["route"="hiking"]["network"~"^(iwn|nwn|rwn|lwn)$"](${b})->.top;
   nwr["amenity"="shelter"](${b});
   nwr["tourism"~"^(wilderness_hut|alpine_hut)$"](${b});
   nwr["waterway"="waterfall"](${b});
+  nwr["natural"="waterhole"](${b});
   nwr["natural"="water"]["water"="stream_pool"](${b});
   nwr["natural"="water"]["name"~"^(גב|גבי|בריכת|בריכה) "](${b});
   nwr["leisure"="swimming_area"](${b});
@@ -86,6 +87,7 @@ const POOL_NOT_WATER = new Set(['reservoir', 'wastewater', 'fishpond', 'basin', 
 const POOL_NOT_NAME = /שחי|דגים|חמצון|ניקוז|ביוב|שכשוך|נוי|אגירה/u;
 export function isPool(t) {
   if (t.leisure === 'swimming_area') return !['private', 'no'].includes(t.access);
+  if (t.natural === 'waterhole') return true;   // Israeli gevim are tagged this way (D-063)
   if (t.natural !== 'water') return false;
   if (t.water === 'stream_pool') return true;
   const name = t['name:he'] || t.name || '';

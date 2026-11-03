@@ -695,6 +695,15 @@ raise the right tool bar a little")
   trails at every zoom (D-043): line z12/14/16 6.8/10/15.6 px (was 7.5/11/16), casing 9.8/13/18.6 (was 11/15/21);
   national 6/9/15, casing 8.5/11.5/17.5. Before/after preview sent to the owner. e2e checks the order and widths.
 
+## D-063 (2026-11-03) Bug: gevim did not show (owner: "for some reason no gevim appear")
+- Cause: the D-061 pool rule assumed water bodies named "גב …". A scan of the whole Israel file (temporary
+  workflow, branch wip/osm-pools-diag) found that Israeli gevim are tagged **`natural=waterhole`** (nodes, often
+  with photos): גב צרור, גבי שיש, גב חצרה, גבי קניון צין, גב קינה, גב עשרון … ; the 72 "pools" shown were almost
+  all "בריכת …" water bodies.
+- Fix: `natural=waterhole` counts as a pool (worldwide, the standard tag for a natural water hole) in the Python and
+  browser rules, the Overpass queries, the OPL rule and the osmium filter; fixture has גב צרור. EXTRACT_VERSION 5,
+  so the deploy fetches fresh data at once.
+
 ## D-007 (2026-11-01) Owner answers
 - First region: **Upper Galilee** (initial camera around Har Meron; encoding test peak is in this region).
 - Owner computer: **Windows**. Local server = `start-windows.bat` → `serve.ps1` (built-in PowerShell

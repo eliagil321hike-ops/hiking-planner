@@ -133,6 +133,9 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   Norway (Norway download 570 s); 464 cells, 25 MB; site/data 50 MB in all. Merged code: unit 48/48, geo 31/31,
   editor 18/18, smoke 17/17 locally; e2e in CI. Owner's look on the real map is the final check.
 
+## Gevim fix (D-063, 2026-11-03)
+- Pools now include `natural=waterhole` (how Israeli gevim are tagged). Unit 48/48; published with CI tests.
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).
