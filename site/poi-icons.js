@@ -37,6 +37,23 @@ export const BADGES = {
   'topo-shelter': { bg: '#6c7782', glyph: [
     { d: 'M12 5.6 L5.6 11 H7.4 V17.6 H16.6 V11 H18.4 Z M10.7 17.6 V13.8 H13.3 V17.6 Z', fill: true },
   ] },
+  // D-058 (owner approved the sketch): waterfall = rock ledge with falling water; pool = rock basin with water;
+  // ruins / archaeological site = a whole and a broken column on a base.
+  'topo-waterfall': { bg: '#3f6fa3', glyph: [
+    { d: 'M14.4 5.4 H18.8 V17 H14.4 Z', fill: true },
+    { d: 'M14.4 6.6 Q9.4 6.8 9.4 11.4 V15.6 M14.4 9.4 Q12 9.8 12 12.6 V15.8', stroke: 1.5 },
+    { d: 'M5.2 18.6 Q7.2 17 9.2 18.6 T13.2 18.6 T17.2 18.6', stroke: 1.4 },
+  ] },
+  'topo-pool': { bg: '#3c8ea8', glyph: [
+    { d: 'M5.2 9.4 Q5.6 19 12 19 Q18.4 19 18.8 9.4', stroke: 1.8 },
+    { d: 'M7.6 11.8 Q8.9 10.8 10.2 11.8 T12.8 11.8 T15.4 11.8 T17 11.8', stroke: 1.3 },
+    { d: 'M9 15 Q10.2 14.1 11.4 15 T13.8 15 T15.4 15', stroke: 1.3 },
+  ] },
+  'topo-ruins': { bg: '#8a6f4e', glyph: [
+    { d: 'M6.4 6.2 H10.8 V7.6 H6.4 Z M7.2 7.6 H10 V16.4 H7.2 Z', fill: true },
+    { d: 'M14 16.4 V11.2 L14.9 10 L15.7 10.9 L16.8 9.8 V16.4 Z', fill: true },
+    { d: 'M5.4 16.6 H18.6 V18.6 H5.4 Z', fill: true },
+  ] },
 };
 
 // Plain symbols (not badges): peaks and saddles.

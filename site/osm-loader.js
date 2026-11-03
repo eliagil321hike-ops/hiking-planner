@@ -1,8 +1,10 @@
-// Loads OSM trails and points of interest for what is on screen (D-042).
-//   Israel (coverage of the build-time extract): 0.5° cell files data/osm/{lat}_{lon}.json, from z7.
+// Loads OSM trails and points of interest for what is on screen (D-042, regions D-058).
+//   Pre-built regions (Israel, Georgia, Norway): 0.5° cell files data/osm/{lat}_{lon}.json, from z7.
 //   Elsewhere: on demand from the public Overpass API from z11 (≈ the 1 km scale bar), 0.25° cells, one
 //   request at a time and at most a few cells per request (light use of a free service); same rules
-//   (osm-build.js). Loaded cells are kept in memory (oldest dropped beyond a limit) and merged into the
+//   (osm-build.js). An on-demand cell that lies entirely inside a region's border (index.covered) is never
+//   asked for; along a border both sources are used and the same route or point is shown once (the
+//   pre-built one wins). Loaded cells are kept in memory (oldest dropped beyond a limit) and merged into the
 //   map sources.
 
 import { build, overpassQuery } from './osm-build.js';
@@ -14,7 +16,19 @@ export function createOsmLoader(map, cfg, { onUpdate, fetchImpl = (...a) => fetc
   let index = null, busy = false, again = false, timer = null;
 
   const keyOf = (lat, lon, size, prefix = '') => `${prefix}${Math.floor(lat / size)}_${Math.floor(lon / size)}`;
-  const inCoverage = (lon, lat) => index && lon >= index.coverage[0] && lon <= index.coverage[2] && lat >= index.coverage[1] && lat <= index.coverage[3];
+  // On-demand cells inside a pre-built region (index.covered: {row: [[j0, j1], …]}). An older index without it
+  // falls back to its coverage box (cells fully inside the box).
+  function isCovered(c) {
+    if (!index) return false;
+    if (index.covered) {
+      const [i, j] = c.key.slice(1).split('_').map(Number);
+      return (index.covered[i] ?? []).some(([a, b]) => j >= a && j <= b);
+    }
+    const [w, s, e, n] = index.coverage ?? [0, 0, 0, 0];
+    return c.w >= w && c.e <= e && c.s >= s && c.n <= n;
+  }
+  const hasStatic = (c) => Boolean(index?.cells?.[c.key]);
+  const poiKey = (f) => `${f.properties.kind}|${f.geometry.coordinates.map((v) => v.toFixed(4)).join(',')}`;
 
   function cellsInView(size, prefix, marginFrac = 0.25) {
     const b = map.getBounds();
@@ -30,7 +44,17 @@ export function createOsmLoader(map, cfg, { onUpdate, fetchImpl = (...a) => fetc
 
   function publish() {
     const trails = [], pois = [];
-    for (const c of loaded.values()) { trails.push(...c.trails); pois.push(...c.pois); }
+    const staticIds = new Set(), staticPois = new Set();
+    for (const [k, c] of loaded) {
+      if (k.startsWith('d')) continue;
+      for (const f of c.trails) { trails.push(f); if (f.id != null) staticIds.add(f.id); }
+      for (const f of c.pois) { pois.push(f); staticPois.add(poiKey(f)); }
+    }
+    for (const [k, c] of loaded) {          // on-demand data: skip what a pre-built region already shows
+      if (!k.startsWith('d')) continue;
+      for (const f of c.trails) if (f.id == null || !staticIds.has(f.id)) trails.push(f);
+      for (const f of c.pois) if (!staticPois.has(poiKey(f))) pois.push(f);
+    }
     stats.cells = loaded.size;
     onUpdate?.({ trails, pois });
   }
@@ -57,15 +81,11 @@ export function createOsmLoader(map, cfg, { onUpdate, fetchImpl = (...a) => fetc
     const { trails, pois } = build(await res.json());
     const by = new Map(cells.map((c) => [c.key, { trails: [], pois: [] }]));
     const size = cfg.dynamic.cell;
-    const put = (lon, lat, what, f) => {
-      if (inCoverage(lon, lat)) return;                             // Israel comes from the extract
-      by.get(keyOf(lat, lon, size, 'd'))?.[what].push(f);
-    };
+    const put = (lon, lat, what, f) => by.get(keyOf(lat, lon, size, 'd'))?.[what].push(f);   // only cells asked for
     for (const f of trails) {
       const groups = new Map();
       for (const line of f.geometry.coordinates) {
         const [lon, lat] = line[Math.floor(line.length / 2)];
-        if (inCoverage(lon, lat)) continue;
         const k = keyOf(lat, lon, size, 'd');
         if (!groups.has(k)) groups.set(k, []);
         groups.get(k).push(line);
@@ -85,7 +105,7 @@ export function createOsmLoader(map, cfg, { onUpdate, fetchImpl = (...a) => fetc
       const z = map.getZoom();
       const now = performance.now();
       if (z >= cfg.minZoom) {
-        const want = cellsInView(index.cell, '').filter((c) => c.n > index.coverage[1] && c.s < index.coverage[3] && c.e > index.coverage[0] && c.w < index.coverage[2]);
+        const want = cellsInView(index.cell, '').filter(hasStatic);
         want.forEach((c) => loaded.has(c.key) && (loaded.get(c.key).used = now));
         const missing = want.filter((c) => !loaded.has(c.key) && !pending.has(c.key));
         await Promise.all(missing.map(async (c) => {
@@ -96,7 +116,7 @@ export function createOsmLoader(map, cfg, { onUpdate, fetchImpl = (...a) => fetc
       }
       if (cfg.dynamic?.enabled && z >= cfg.dynamic.minZoom) {
         const size = cfg.dynamic.cell;
-        const want = cellsInView(size, 'd', 0.1).filter((c) => !(inCoverage(c.w, c.s) && inCoverage(c.e, c.n)));   // not fully inside Israel
+        const want = cellsInView(size, 'd', 0.1).filter((c) => !isCovered(c));   // not fully inside a pre-built region
         want.forEach((c) => loaded.has(c.key) && (loaded.get(c.key).used = now));
         const missing = want.filter((c) => !loaded.has(c.key));
         if (missing.length && missing.length <= cfg.dynamic.maxCellsPerRequest) {
@@ -118,14 +138,14 @@ export function createOsmLoader(map, cfg, { onUpdate, fetchImpl = (...a) => fetc
       stats.osmBase = index.osm_base;
     } catch (e) {
       stats.lastError = `index: ${e.message}`;
-      index = { cell: 0.5, coverage: [0, 0, 0, 0], cells: {} };   // no extract: only on-demand loading
+      index = { cell: 0.5, covered: {}, cells: {} };   // no extract: only on-demand loading
     }
     map.on('moveend', schedule);
     await update();
   }
   /**
-   * Category search (D-045): every point of `kind` inside `bounds` ([w, s, e, n]), at any zoom. Israel cells
-   * in view are loaded first if needed; outside Israel the on-demand cells are loaded when the area is small
+   * Category search (D-045): every point of `kind` inside `bounds` ([w, s, e, n]), at any zoom. Pre-built cells
+   * in view are loaded first if needed; outside the regions the on-demand cells are loaded when the area is small
    * enough for a light Overpass request (otherwise `tooLargeAbroad` is set and only what is loaded counts).
    */
   async function collect(kind, [w, s, e, n]) {
@@ -138,10 +158,10 @@ export function createOsmLoader(map, cfg, { onUpdate, fetchImpl = (...a) => fetc
       return out;
     };
     if (index) {
-      const stat = cellsOf(index.cell, '').filter((c) => c.n > index.coverage[1] && c.s < index.coverage[3] && c.e > index.coverage[0] && c.w < index.coverage[2]);
+      const stat = cellsOf(index.cell, '').filter(hasStatic);
       await Promise.all(stat.filter((c) => !loaded.has(c.key)).map((c) => loadStatic(c).catch((err) => { stats.errors++; stats.lastError = err.message; })));
       if (cfg.dynamic?.enabled) {
-        const dyn = cellsOf(cfg.dynamic.cell, 'd').filter((c) => !(inCoverage(c.w, c.s) && inCoverage(c.e, c.n)));
+        const dyn = cellsOf(cfg.dynamic.cell, 'd').filter((c) => !isCovered(c));
         const missing = dyn.filter((c) => !loaded.has(c.key));
         if (missing.length > cfg.dynamic.maxCellsPerSearch) tooLargeAbroad = true;
         else if (missing.length) {
@@ -153,10 +173,11 @@ export function createOsmLoader(map, cfg, { onUpdate, fetchImpl = (...a) => fetc
       publish();
     }
     const seen = new Set(), features = [];
-    for (const c of loaded.values()) for (const f of c.pois) {
+    const ordered = [...loaded.entries()].sort(([a], [b]) => a.startsWith('d') - b.startsWith('d'));   // pre-built first
+    for (const [, c] of ordered) for (const f of c.pois) {
       const [lon, lat] = f.geometry.coordinates;
       if (f.properties.kind !== kind || lon < w || lon > e || lat < s || lat > n) continue;
-      const id = `${lon},${lat}`;
+      const id = poiKey(f);
       if (!seen.has(id)) { seen.add(id); features.push(f); }
     }
     return { features, tooLargeAbroad };
