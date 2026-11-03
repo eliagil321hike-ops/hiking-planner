@@ -13,9 +13,9 @@ Exit code 0 even on network failure when --soft is given (the deploy then ships 
 import json, math, os, re, sys, time, urllib.parse, urllib.request
 
 # Bump when the extract's content rules change: a push then re-downloads instead of reusing live files.
-EXTRACT_VERSION = 4  # 4: waterfalls, pools, ruins/archaeology (D-058)
+EXTRACT_VERSION = 4  # 4: waterfalls, pools, ruins/archaeology (D-061)
 BBOX = (29.45, 34.2, 33.45, 35.95)  # south, west, north, east: Israel incl. Golan and Eilat
-# Pre-built regions (D-058): each comes from its Geofabrik file and is written to its own pair of files; the site
+# Pre-built regions (D-061): each comes from its Geofabrik file and is written to its own pair of files; the site
 # then shows it from far zooms. Israel keeps its file names and its Overpass fallback; other regions keep their
 # previous data when the download fails. The rest of the world loads on demand in the browser (osm-loader.js).
 REGIONS = {
@@ -282,7 +282,7 @@ def poi_kind(t):
     return None
 
 
-# Pools in nature (D-058): OSM has no single tag. `water=stream_pool` (rock pool in a stream bed), natural
+# Pools in nature (D-061): OSM has no single tag. `water=stream_pool` (rock pool in a stream bed), natural
 # swimming spots, and in Israel water bodies named "גב …" / "בריכת …" that are not reservoirs, sewage, fish ponds
 # or concrete basins and not swimming/fish pools by name.
 POOL_NAME = re.compile(r"^(גב|גבי|בריכת|בריכה) ")
@@ -430,7 +430,7 @@ def split_cells(trails_fc, pois_fc, out_dir, regions=None):
             covered.setdefault(row, []).extend(ranges)
     s_, w, n, e = BBOX
     index = {"extract_version": EXTRACT_VERSION, "osm_base": trails_fc.get("osm_base", ""), "cell": CELL,
-             "coverage": [w, s_, e, n],   # legacy (before D-058); the browser now uses `covered`
+             "coverage": [w, s_, e, n],   # legacy (before D-061); the browser now uses `covered`
              "dcell": DCELL, "covered": covered,
              "regions": [{"name": r["name"], "osm_base": r.get("osm_base", "")} for r in regions],
              "cells": {k: [len(c["trails"]), len(c["pois"])] for k, c in cells.items()}}
@@ -443,7 +443,7 @@ def split_cells(trails_fc, pois_fc, out_dir, regions=None):
 
 
 def split_all(out, poly_dir=None):
-    """Merge every region's files present in `out` and write the cells + index (D-058)."""
+    """Merge every region's files present in `out` and write the cells + index (D-061)."""
     trails, pois, regions = [], [], []
     for name in REGIONS:
         tn, pn = region_files(name)
@@ -511,7 +511,7 @@ def main():
     try:
         if "--from" in sys.argv:
             data = json.load(open(arg("--from"), encoding="utf-8"))
-        elif "--opl" in sys.argv:  # Geofabrik file filtered by osmium (D-057); Overpass only for Israel
+        elif "--opl" in sys.argv:  # Geofabrik file filtered by osmium (D-060); Overpass only for Israel
             data = from_opl(arg("--opl"), arg("--osm-base", ""), cfg["bbox"] or WORLD, cfg["overpass"])
         elif cfg["overpass"]:
             data = overpass()

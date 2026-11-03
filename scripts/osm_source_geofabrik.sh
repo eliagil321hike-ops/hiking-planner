@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prepare one region's OSM source for fetch_osm_hiking.py from its Geofabrik file (D-057, regions D-058).
+# Prepare one region's OSM source for fetch_osm_hiking.py from its Geofabrik file (D-060, regions D-061).
 # Usage: osm_source_geofabrik.sh <work_dir> <region>          region: israel | georgia | norway
 #        osm_source_geofabrik.sh <work_dir> <region> --poly-only   (just the border outline, a few kB)
 # Always writes <work_dir>/<region>.poly when Geofabrik answers (the site's coverage follows the real border).
@@ -9,7 +9,7 @@
 set -uo pipefail
 WORK="${1:?work dir}"; REGION="${2:?region}"; MODE="${3:-}"
 case "$REGION" in
-  israel)  PATHS="asia/israel-and-palestine"; EXTRA="nwr/natural=water" ;;   # pools named גב/בריכת (D-058)
+  israel)  PATHS="asia/israel-and-palestine"; EXTRA="nwr/natural=water" ;;   # pools named גב/בריכת (D-061)
   georgia) PATHS="europe/georgia asia/georgia"; EXTRA="" ;;
   norway)  PATHS="europe/norway"; EXTRA="" ;;
   *) echo "unknown region $REGION" >&2; echo ""; exit 0 ;;

@@ -1,4 +1,4 @@
-# Dry run of the OSM extract (Geofabrik files, D-057; regions, D-058) on work branches: nothing is deployed.
+# Dry run of the OSM extract (Geofabrik files, D-060; regions, D-061) on work branches: nothing is deployed.
 # Builds every region exactly as the weekly deploy would, compares Israel with the live data and reports the size
 # of the data folder (GitHub Pages: a published site may be at most 1 GB).
 name: OSM extract check (no deploy)

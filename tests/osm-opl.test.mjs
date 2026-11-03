@@ -1,4 +1,4 @@
-// The Geofabrik/osmium path (scripts/osm_opl.py, D-057) must give build() exactly what Overpass gives, so the
+// The Geofabrik/osmium path (scripts/osm_opl.py, D-060) must give build() exactly what Overpass gives, so the
 // map does not change when the data source does.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

@@ -106,16 +106,16 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - Context was lost twice during long turns; work was recovered from git and the session log. Commit each step.
 - A git tag push is refused by the proxy here; restore points are branches (snapshot/site-before-my-routes).
 
-## OSM data from Geofabrik (D-057, 2026-11-03, branch wip/osm-geofabrik, not merged)
+## OSM data from Geofabrik (D-060, 2026-11-03, branch wip/osm-geofabrik, not merged)
 - Weekly refresh no longer depends on Overpass: Geofabrik Israel file + osmium, same output, Overpass as fallback.
 - Unit 40/40 (2 new), geo 31/31, editor 18/18; smoke/e2e not run (nothing in site/ changed; CI runs them on merge).
 - Dry run on the real file green twice (59 s; OSM 2026-11-02). Inside Israel & Palestine counts match the live
-  data; outside the old box (Jordan Trail, Wadi Rum) is no longer pre-built → owner decision (D-057).
+  data; outside the old box (Jordan Trail, Wadi Rum) is no longer pre-built → owner decision (D-060).
 - After merging: run the deploy workflow by hand once ("Run workflow") to replace the July data now.
 
-## New points, worldwide regions, route under icons (D-058, D-059, 2026-11-03, same branch, not merged)
+## New points, worldwide regions, route under icons (D-061, D-062, 2026-11-03, same branch, not merged)
 - Waterfalls, pools, ruins (owner-approved sketch); Georgia + Norway pre-built like Israel; coverage by real borders
-  (fixes the D-057 box problem); route line under the point icons and ~10 % thinner (owner screenshot).
+  (fixes the D-060 box problem); route line under the point icons and ~10 % thinner (owner screenshot).
 - Tests: unit 46/46, geo 31/31, editor 18/18, smoke 17/17, e2e 105/105 (latest commit e2d429a).
 - Real-data dry run (osm-check, green): Israel 329 waterfalls / 72 pools / 2,684 ruins; Georgia 214 trails,
   8,565 points; Norway 2,946 trails, 27,454 points; all cells ≈ 25 MB (Pages limit 1 GB). Norway's 1.3 GB download

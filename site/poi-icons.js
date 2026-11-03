@@ -37,7 +37,7 @@ export const BADGES = {
   'topo-shelter': { bg: '#6c7782', glyph: [
     { d: 'M12 5.6 L5.6 11 H7.4 V17.6 H16.6 V11 H18.4 Z M10.7 17.6 V13.8 H13.3 V17.6 Z', fill: true },
   ] },
-  // D-058 (owner approved the sketch): waterfall = rock ledge with falling water; pool = rock basin with water;
+  // D-061 (owner approved the sketch): waterfall = rock ledge with falling water; pool = rock basin with water;
   // ruins / archaeological site = a whole and a broken column on a base.
   'topo-waterfall': { bg: '#3f6fa3', glyph: [
     { d: 'M14.4 5.4 H18.8 V17 H14.4 Z', fill: true },

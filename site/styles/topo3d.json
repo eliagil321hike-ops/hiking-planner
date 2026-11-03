@@ -2619,7 +2619,7 @@
       }
     },
     {
-      "$comment": "Springs, viewpoints, shelters, waterfalls, pools and ruins from the 500 m scale (D-047, D-058); names only when there is room.",
+      "$comment": "Springs, viewpoints, shelters, waterfalls, pools and ruins from the 500 m scale (D-047, D-061); names only when there is room.",
       "id": "poi-other",
       "type": "symbol",
       "source": "poi-other",

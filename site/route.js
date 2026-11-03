@@ -47,12 +47,12 @@ export function initRoute(ctx) {
     // pending dotted grey, error dotted red.
     // Owner request: a fluorescent route colour unlike any trail (red/brown/purple) or stream (blue) colour,
     // with a dark casing so it also stands out on satellite imagery.
-    // Owner (D-059): point icons (campsites, water, …) are drawn above the route line so it never hides them;
+    // Owner (D-062): point icons (campsites, water, …) are drawn above the route line so it never hides them;
     // only the route's handles and waypoints stay above the icons (they are what you drag and click).
     const underIcons = map.getLayer('topo-poi-dot') ? 'topo-poi-dot' : undefined;
     map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' },
       // Owner (D-043): the planned route is the dominant line — wider than national trails at every zoom
-      // (national z12/14/16: 6/9/15 px, casing 8.5/11.5/17.5). D-059: about 10 % thinner from z12 on.
+      // (national z12/14/16: 6/9/15 px, casing 8.5/11.5/17.5). D-062: about 10 % thinner from z12 on.
       paint: { 'line-color': '#0a1f0a', 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 6, 10, 8, 12, 9.8, 14, 13, 16, 18.6], 'line-opacity': 0.8 } }, underIcons);
     map.addLayer({ id: 'route-line', type: 'line', source: 'route', filter: ['==', ['get', 'status'], 'ok'],
       layout: { 'line-join': 'round' },

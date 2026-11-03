@@ -1,4 +1,4 @@
-// Loads OSM trails and points of interest for what is on screen (D-042, regions D-058).
+// Loads OSM trails and points of interest for what is on screen (D-042, regions D-061).
 //   Pre-built regions (Israel, Georgia, Norway): 0.5° cell files data/osm/{lat}_{lon}.json, from z7.
 //   Elsewhere: on demand from the public Overpass API from z11 (≈ the 1 km scale bar), 0.25° cells, one
 //   request at a time and at most a few cells per request (light use of a free service); same rules

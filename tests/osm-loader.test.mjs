@@ -1,4 +1,4 @@
-// osm-loader.js with pre-built regions (D-058): on-demand cells fully inside a region are never asked from
+// osm-loader.js with pre-built regions (D-061): on-demand cells fully inside a region are never asked from
 // Overpass; along a border both sources load and a route/point already in the pre-built data is shown once.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

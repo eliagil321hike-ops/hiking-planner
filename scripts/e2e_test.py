@@ -45,13 +45,13 @@ OSM_FIXTURE = {"osm3s": {"timestamp_osm_base": "fixture"}, "elements": [
     {"type": "node", "id": 22, "lat": 32.9942, "lon": 35.4302, "tags": {"amenity": "drinking_water"}},   # 25 m away → one cluster "2"
     {"type": "node", "id": 23, "lat": 33.0015, "lon": 35.4125, "tags": {"amenity": "parking", "name": "חניון רכב"}},  # next to the trail
     {"type": "node", "id": 24, "lat": 32.90, "lon": 35.30, "tags": {"amenity": "parking"}},                # far from any trail → dropped
-    # D-058: waterfall, pool in nature, ruins (and a swimming pool that must not show)
+    # D-061: waterfall, pool in nature, ruins (and a swimming pool that must not show)
     {"type": "node", "id": 30, "lat": 33.0040, "lon": 35.4185, "tags": {"waterway": "waterfall", "name": "מפל"}},
     {"type": "way", "id": 31, "center": {"lat": 32.9965, "lon": 35.4215}, "tags": {"natural": "water", "water": "stream_pool"}},
     {"type": "node", "id": 32, "lat": 33.0025, "lon": 35.4070, "tags": {"historic": "ruins", "name": "חורבה"}},
     {"type": "way", "id": 33, "center": {"lat": 32.9990, "lon": 35.4240}, "tags": {"natural": "water", "name": "בריכת שחייה"}},
 ]}
-# A second pre-built region (D-058), standing in for Norway: one marked trail; its outline is a box
+# A second pre-built region (D-061), standing in for Norway: one marked trail; its outline is a box
 NORWAY = (10.0, 62.0)
 OSM_NORWAY = {"osm3s": {"timestamp_osm_base": "fixture"}, "elements": [
     {"type": "relation", "id": 950, "tags": {"type": "route", "route": "hiking", "network": "lwn", "osmc:symbol": "green:white:green_bar", "name": "Norsk sti"}, "members": [
@@ -330,7 +330,7 @@ def main():
             marked: [...new Set(m.queryRenderedFeatures({ layers: ['topo-marked-line'] }).map((f) => f.properties.color))],
             camp: m.queryRenderedFeatures({ layers: ['poi-camp'] }).length }; }""")
         r["overpassAbroad"] = list(seen.get("overpass", []))
-        # Second pre-built region (D-058): no Overpass request inside it, its trail comes from the cells
+        # Second pre-built region (D-061): no Overpass request inside it, its trail comes from the cells
         page.evaluate(f"() => window.__topo3d.map.jumpTo({{ center: [{NORWAY[0]}, {NORWAY[1]}], zoom: 12.5 }})")
         wait_js(page, "() => window.__topo3d.map.queryRenderedFeatures({ layers: ['topo-marked-line'] }).some((f) => f.properties.name === 'Norsk sti')", 60)
         page.wait_for_timeout(800)
@@ -759,7 +759,7 @@ def main():
     expect(r["routeW14"] > o["natW14"] and r["routeW16"] > 15, f"planned route wider than national trails at z14 and z16 (D-043) {r['routeW14']} > {o['natW14']}, {r['routeW16']} > 15")
     ro = r["routeOrder"]
     expect(-1 < ro["casing"] < ro["line"] < ro["dot"] < ro["camp"] < ro["other"] < ro["points"],
-           f"route line under the point icons, route handles above them (D-059) {ro}")
+           f"route line under the point icons, route handles above them (D-062) {ro}")
     expect(o["natW14"] > o["regW14"] > o["markedW14"] > o["pathW14"], f"width order national > regional > marked > unmarked {o['natW14']} {o['regW14']} {o['markedW14']} {o['pathW14']}")
     expect(o["hasPeakImg"] and "topo-peak" in o["peakIcon"] and "topo-saddle" in o["peakIcon"], "peaks/saddles drawn with their own icons (D-037)")
     expect(o["contourLabelPad"] == 8, "contour labels spaced with collision padding (D-037)")
@@ -769,11 +769,11 @@ def main():
            f"OSM extract loaded; parking far from trails and the swimming pool dropped {o['counts']}")
     oi = o["otherIcon"].replace(" ", "")
     expect(o["newKinds"] == ["pool", "ruins", "waterfall"] and all(f'"{k}","topo-{k}"' in oi for k in ("waterfall", "pool", "ruins")),
-           f"waterfall, pool and ruins drawn with their own badges at the 500 m scale (D-058) {o['newKinds']}")
+           f"waterfall, pool and ruins drawn with their own badges at the 500 m scale (D-061) {o['newKinds']}")
     expect('"ruins","archaeological_site"' in o["baseDotFilter"].replace(" ", "") and '"MultiPolygon"' in o["baseDotFilter"],
-           "base-map ruins dots hidden inside the pre-built regions (no duplicates with the new badges, D-058)")
+           "base-map ruins dots hidden inside the pre-built regions (no duplicates with the new badges, D-061)")
     nw = r["norway"]
-    expect(nw["overpass"] == 0 and nw["colour"] == ["#2e9b3e"], f"second pre-built region: trail from the cells, no Overpass request (D-058) {nw}")
+    expect(nw["overpass"] == 0 and nw["colour"] == ["#2e9b3e"], f"second pre-built region: trail from the cells, no Overpass request (D-061) {nw}")
     expect(o["lines"] == ["int", "regional"] and "poi-camp" in o["icons"] and "poi-parking" in o["icons"] and any(i.startswith("poi-water") for i in o["icons"]),
            f"routes, tent, parking and water rendered at the 500 m scale (D-036, D-045) {o['lines']} {o['icons']}")
     expect(o["iconImgs"], "parking / spring / viewpoint / shelter / waterfall / pool / ruins icons registered")

@@ -618,12 +618,12 @@ raise the right tool bar a little")
 | Mapterhorn tiles | DEM: terrain, hillshade, contours, sampling | not found | unknown → light use by a small group; terms to verify | Mapterhorn + isr10 (ASTER GDEM, METI/NASA, 4cast LTD) + Copernicus GLO-30 (DLR, Airbus, EU/ESA) | fair use not found; light use | free | 2026-11-01 data-access + attribution.json | mapterhorn.com/data-access |
 | isr10 (in Mapterhorn) | Israel 10 m DEM | ASTER GDEM Public Domain | yes (per attribution.json) | as above | — | free | 2026-11-01 | download.mapterhorn.com/attribution.json |
 | Copernicus GLO-30 (in Mapterhorn) | global 30 m fallback | Copernicus full, free and open | yes | as above | — | free | 2026-11-01 | attribution.json |
-| OpenStreetMap data (Geofabrik extract, D-057) | Trails, POIs (build-time extract, daily file, weekly use) | ODbL | yes | © OpenStreetMap contributors | one download per weekly run | free | 2026-11-03 | download.geofabrik.de |
+| OpenStreetMap data (Geofabrik extract, D-060) | Trails, POIs (build-time extract, daily file, weekly use) | ODbL | yes | © OpenStreetMap contributors | one download per weekly run | free | 2026-11-03 | download.geofabrik.de |
 | OpenStreetMap data | Trails, peaks (via OpenFreeMap) | ODbL | yes | © OpenStreetMap contributors | — | free | spec | openstreetmap.org/copyright |
 | MapLibre GL JS 5.24.0, maplibre-contour 0.1.0, rtl-text 0.3.0 | rendering, contours, Hebrew | BSD-3 / BSD-3 / BSD-2 (rtl-text: not re-checked) | yes | — | loaded from unpkg CDN | free | 2026-11-01 | — |
 | Israel Hiking Map tiles | Optional marked-trail overlay | CC BY-NC-SA 3.0 (unverified) | No → personal use only | pending | pending | free | not verified, not used | — |
 
-## D-057 (2026-11-03) OSM extract from the Geofabrik Israel file instead of Overpass (branch wip/osm-geofabrik)
+## D-060 (2026-11-03) OSM extract from the Geofabrik Israel file instead of Overpass (branch wip/osm-geofabrik)
 - Problem: the live OSM extract was stuck at 2026-07-15. The weekly Overpass refresh failed (502/504, 25 min
   budget used up) or got out-of-date answers from the backup server (D-042, D-044).
 - Change (data path only; nothing in site/ changes, the map looks the same): weekly and manual deploys download
@@ -644,13 +644,13 @@ raise the right tool bar a little")
   Sinai and south Lebanon: the Jordan Trail (39 sections, "national"), ~313 Wadi Rum/Jordan campsites, ~230
   springs. The Geofabrik file has Israel & Palestine only. Those areas still load on demand from z11 (D-042), but
   no longer from z7 (trails) / z9.4 (campsites). Option: add Geofabrik's Jordan file to the same run.
-  **Correction (found 2026-11-03 while building D-058):** the sentence above was wrong for this branch as first
+  **Correction (found 2026-11-03 while building D-061):** the sentence above was wrong for this branch as first
   built: the site took the whole old box as "covered" and asked Overpass nothing there, so Jordan/Sinai inside
-  the box would have shown no trails at all. D-058 fixes it: coverage now follows the Geofabrik border outline.
+  the box would have shown no trails at all. D-061 fixes it: coverage now follows the Geofabrik border outline.
 - New files: scripts/osm_opl.py, scripts/osm_source_geofabrik.sh, scripts/osm_compare.py,
   .github/workflows/osm-check.yml (runs on wip/osm-** branches only). Not merged: needs the owner.
 
-## D-058 (2026-11-03) Owner: waterfalls, pools, ruins; worldwide with Georgia and Norway pre-built
+## D-061 (2026-11-03) Owner: waterfalls, pools, ruins; worldwide with Georgia and Norway pre-built
 - Owner approved the sketch (icons as drawn), chose "no trail difficulty for now" (OSM: only 323 of 188,064
   Israeli paths carry sac_scale, 501 trail_visibility) and "extra countries + everything else": **Georgia, Norway**.
 - New points, same badge style and zoom as springs/viewpoints (from 12.7, names from 14), worldwide (pre-built
@@ -671,7 +671,7 @@ raise the right tool bar a little")
   fixture with included/excluded pools, e2e (new badges render, base ruins dots hidden, a second region loads from
   cells with no Overpass request).
 
-## D-059 (2026-11-03) Owner: point icons must not be hidden by the planned route (from the 500 m scale)
+## D-062 (2026-11-03) Owner: point icons must not be hidden by the planned route (from the 500 m scale)
 - Owner screenshot: a campsite icon under the fluorescent route. The route line, casing and pending segments are now
   drawn under the point-icon layers (inserted before `topo-poi-dot`); the route's handles, midpoints and waypoints
   stay above everything (they are dragged and clicked).

@@ -1,4 +1,4 @@
-// Pre-built regions (D-058): each country is extracted to its own files, then merged into cells; the index says
+// Pre-built regions (D-061): each country is extracted to its own files, then merged into cells; the index says
 // which on-demand cells lie fully inside a region's border (those are never asked from Overpass).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

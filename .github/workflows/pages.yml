@@ -45,7 +45,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: OSM sources - Geofabrik files filtered by osmium (D-057, regions D-058)
+      - name: OSM sources - Geofabrik files filtered by osmium (D-060, regions D-061)
         run: |
           # Fresh data on the weekly schedule / manual runs, and on a push whose extract rules changed (the live
           # index has another extract_version); other pushes reuse the live files (D-041). The border outlines

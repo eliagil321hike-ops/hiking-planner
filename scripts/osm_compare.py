@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare two OSM extracts (live vs new) and explain the differences (D-057, used by osm-check.yml).
+"""Compare two OSM extracts (live vs new) and explain the differences (D-060, used by osm-check.yml).
 
 Usage: osm_compare.py <live_dir> <new_dir> [<area.poly>]
 With a Geofabrik .poly outline, every feature that is only in one extract is classed as inside or outside that

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Turn an osmium OPL extract into the same JSON shape the Overpass queries return (D-057).
+"""Turn an osmium OPL extract into the same JSON shape the Overpass queries return (D-060).
 
 Why: the public Overpass servers kept failing (502/504, time budget, out-of-date backup), so the live extract
 stayed at 2026-07-15. The weekly deploy now downloads the Geofabrik Israel file once, filters it with osmium,
