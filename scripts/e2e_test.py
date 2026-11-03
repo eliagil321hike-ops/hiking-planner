@@ -541,14 +541,14 @@ def main():
         # Route mark (D-063): right-click while drawing → marking dialog → name + symbol → "add to route"
         page.mouse.click(1050, 450, button="right")
         wait_js(page, "() => document.getElementById('mk-dialog').open", 60)
-        r["routeMarkDialog"] = page.evaluate("""() => ({ title: document.querySelector('#mk-dialog h2').textContent, icons: document.querySelectorAll('#mk-dialog input[name=icon]').length,
-            checked: document.querySelector('#mk-dialog input[name=icon]:checked')?.value, pending: window.__topo3d.map.getSource('mk-pending')._data.features.length })""")
+        r["routeMarkDialog"] = page.evaluate("""async () => ({ title: document.querySelector('#mk-dialog h2').textContent, icons: document.querySelectorAll('#mk-dialog input[name=icon]').length,
+            checked: document.querySelector('#mk-dialog input[name=icon]:checked')?.value, pending: (await window.__topo3d.map.getSource('mk-pending').getData()).features.length })""")
         page.fill("#mk-dialog input[name=name]", "מעיין")
         page.evaluate("() => { const r = document.querySelector('#mk-dialog input[value=viewpoint]'); r.checked = true; r.dispatchEvent(new Event('change')); }")
         page.evaluate("() => document.querySelector('#mk-dialog button[value=save]').click()"); page.wait_for_timeout(500)
         r["waypoints"] = page.evaluate(f"() => {ed}.state.waypoints.map(w => [w.name, w.icon])")
-        r["routeMarkDrawn"] = page.evaluate("""() => { const f = window.__topo3d.map.getSource('route-waypoints')._data.features; const m = window.__topo3d.map;
-            return [f.length, f[0]?.properties.image, !!m.getLayer('route-marks'), m.hasImage(f[0]?.properties.image) || null, m.getSource('mk-pending')._data.features.length]; }""")
+        r["routeMarkDrawn"] = page.evaluate("""async () => { const f = (await window.__topo3d.map.getSource('route-waypoints').getData()).features; const m = window.__topo3d.map;
+            return [f.length, f[0]?.properties.image, !!m.getLayer('route-marks'), m.hasImage(f[0]?.properties.image) || null, (await m.getSource('mk-pending').getData()).features.length]; }""")
 
         # Draft survives a reload
         draft_before = page.evaluate(f"() => JSON.stringify({ed}.state)")
@@ -719,9 +719,9 @@ def main():
         page.mouse.click(camp[0], camp[1])
         r["mkPoi"] = mk_save()
         wait_js(page, "() => window.__topo3d.ctx.markers.points().length === 1", 60)
-        r["mkPoiSaved"] = page.evaluate(f"""() => {{ const p = window.__topo3d.ctx.markers.points()[0];
+        r["mkPoiSaved"] = page.evaluate(f"""async () => {{ const p = window.__topo3d.ctx.markers.points()[0];
             return [p.name, p.icon, p.source?.key === {camp[2]!r}, JSON.stringify({M}.getFilter('poi-camp')).includes({camp[2]!r}),
-                    {M}.getSource('mk-personal')._data.features[0].properties.image]; }}""")
+                    (await {M}.getSource('mk-personal').getData()).features[0].properties.image]; }}""")
         # tap an empty spot → "general location"; a name, then save
         page.mouse.click(420, 520)
         r["mkFree"] = mk_save("נקודת מפגש")
@@ -729,7 +729,7 @@ def main():
         # cancelling a changed new point asks first; the pending pin goes away
         page.mouse.click(460, 560); wait_js(page, "() => document.getElementById('mk-dialog').open", 60)
         page.fill("#mk-dialog input[name=name]", "טיוטה"); page.evaluate("() => document.querySelector('#mk-dialog button[value=cancel]').click()"); page.wait_for_timeout(500)
-        r["mkCancel"] = page.evaluate(f"() => [document.getElementById('mk-dialog').open, window.__topo3d.ctx.markers.points().length, {M}.getSource('mk-pending')._data.features.length]")
+        r["mkCancel"] = page.evaluate(f"async () => [document.getElementById('mk-dialog').open, window.__topo3d.ctx.markers.points().length, (await {M}.getSource('mk-pending').getData()).features.length]")
         jsclick("#mark-done")
         r["mkModeOff"] = page.evaluate("() => [window.__topo3d.ctx.markers.mode(), document.getElementById('mark-banner').hidden]")
         # the layer switch is remembered; points persist after a reload
