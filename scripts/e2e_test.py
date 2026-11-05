@@ -823,7 +823,8 @@ def main():
         L0 = dst()["lodgings"][0]
         r["dsFar"] = [L0["source"], L0["offset"] > 500] + page.evaluate("() => [document.querySelectorAll('.days-notes p').length, document.querySelectorAll('.days-far').length, document.querySelectorAll('.lodge.far').length]")
         page.evaluate("""() => document.querySelector('.lodge[data-k="0"]').click()"""); wait_js(page, "() => document.getElementById('days-dialog').open", 30)
-        page.fill("#days-dialog input[name=name]", "לינה אצל חברים"); page.evaluate("() => document.querySelector('#days-dialog button[value=save]').click()"); page.wait_for_timeout(600)
+        page.fill("#days-dialog input[name=name]", "לינה אצל חברים"); page.evaluate("() => document.querySelector('#days-dialog button[value=save]').click()")
+        wait_js(page, f"() => {RS}.days.lodgings[0].name === 'לינה אצל חברים'", 30)
         r["dsRename"] = dst()["lodgings"][0]["name"]
         jsclick("#days-bar .lib-chip[data-day='1']")
         r["dsSel"] = [dst()["sel"], page.evaluate("() => document.querySelector('.days-prof-head b').textContent"), page.evaluate(f"async () => (await {M}.getSource('days-route').getData()).features.map((f) => f.properties.color)")]
