@@ -738,3 +738,42 @@ raise the right tool bar a little")
 1. GitHub account + repository for the site (needed to deploy; only the owner can create it).
 2. FATMAP reference screenshots (≥ 3) with location/zoom/tilt.
 3. Mapterhorn hosted-tile licence and fair-use policy (not found on the pages that were reachable).
+
+## D-065 (2026-11-05) Owner: day split ("חלוקה לימים") – added only
+- Owner rules: ADD ONLY (nothing existing changes; minimal hooks, listed in PROGRESS) and keep the site's design
+  language (the owner's picture shows what and where, not how it looks). Only the day colours are new.
+- Owner answers (2026-11-05): entry button with a clear icon, in its own bar together with "save", a short gap
+  above the route tool bar ("as if the bar was cut in the middle"); inside, a "route building / days" switch;
+  NO times of any kind (no walking time, hours, dates, sunrise/sunset, warnings, rest days); automatic split
+  balanced by distance + ascent (100 m of ascent = 1 km), preferring to end a day near a campsite, spring/water,
+  shelter or a personal point; number of days with − / +; "split again" asks first when lodgings were moved by
+  hand; lodgings dragged on the map or by their boundary in the graph, snapping to a known place within 150 m and
+  taking its name (renamable); a lodging may be off the route: dashed line, not counted in any distance; after a
+  route edit lodgings stay where they are and the day boundary moves to the nearest route point (in route order),
+  a lodging more than 500 m away gets a note; table = distance, ascent, descent + total; a day chip focuses the
+  map on that day, dims the others and shows only that day in the graph; a number on the route for every day
+  (not colour alone); day colours only while the days screen is open; one GPX with a track per day and the
+  lodgings as waypoints (a route without days exports exactly as before – checked byte for byte); phone: a
+  drawer from the bottom; "N days" tag on the library card (owner approved this one touch of an existing screen).
+- The split is saved with the route (`daySplits: { version: 1, lodgings: [{ lon, lat, name, source, custom,
+  manual }] }`); N days = N − 1 lodgings. Routes without it load, compare ("saved"/"changed") and save exactly as
+  before.
+- Reused components / tokens per element:
+  | element | built from |
+  | --- | --- |
+  | save + days bar | the route tool bar itself (`.route-tools`, `.tbtn`, `.ic` stroke icons); pressed = `--c-deep` like other pressed tool buttons |
+  | build / days switch | segmented control from `--c-page` track + `--c-deep` pressed (as `aria-pressed` chips), `--font` 600 |
+  | summary panel | the library panel card: `--c-white`, `--lib-radius`, library shadow, `--top-h` / `--edge` / `--nav` placement |
+  | − / + and buttons | `.lib-btn`, `.lib-btn.icon`, `.lib-btn.primary` (library dialogs) |
+  | table | `--font` + tabular numbers, `--c-body` headers, `--divider` / `--c-page` rules, stat icons (`stat-icons.js`, D-058) for ascent/descent |
+  | note (far lodging) | `--c-page` box with a `--c-gold` start border (the site's existing accent), no new colour |
+  | day chips | `.lib-chip` (library folder chips) on a white card with the panel shadow |
+  | day graph | the route graph (`profile.js`): `elevationTicks`, `.profile-axis/grid/cursor/readout`, same card (`--frame` border, `--panel-shadow`) |
+  | lodging marker | white round badge with `--c-dark` ring (like the map's point badges) + `--c-dark` name tag; snapping ring `--c-turq` |
+  | lodging dialog | `.lib-dialog`, `.lib-form`, `.lib-field` |
+  | library tag | `--c-light` pill with `--c-dark` text |
+- New: day palette `#2F7FD8 #E8892B #9A5BD3 #3E9E4F #D9A90F #D2559A #4B5FD1 #8C6D3F` – mid-tone, distinct from each
+  other, from the personal-point crimson and the brand turquoise; drawn at the route's width on its dark casing so
+  they read on topo, hybrid and satellite; every day also has a numbered badge on the route.
+- Code: `site/days-core.js` (pure, unit-tested), `site/days.js` (screen), `site/days-profile.js` (graph);
+  tests `tests/days.test.mjs` + e2e section "day split".

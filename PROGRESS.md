@@ -141,6 +141,22 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   checks). Phone fixes after real screenshots: points menu height, edit button in "my points".
 - Restore point before publishing: branch snapshot/site-before-markers (removing old waypoints from saved routes cannot be undone).
 
+## Day split (D-065, 2026-11-05, branch wip/days – waiting for owner approval; not on the site)
+- New files: site/days-core.js, site/days.js, site/days-profile.js, tests/days.test.mjs.
+- Existing files touched (hooks only):
+  - site/index.html – "save" moved with the new days button into its own small bar above the route tool bar
+    (owner request); the days panel, chips bar, graph and dialog elements added at the end of the body.
+  - site/app.js – import + `initDays(ctx)`; `ctx.days.addLayers()` after the route layers.
+  - site/route.js – the split kept in the route meta (cleared by "new route", read when a saved route opens);
+    included in the "saved/changed" signature only when a split exists; added to the save snapshot only when it
+    exists; `ctx.onRouteFigures` call after the figures update; `routeLib` gains `daySplits`, `setDaySplits`,
+    `figures`, `name`.
+  - site/library-store.js – `daySplits` accepted as a route field; a save without it removes an old one.
+  - site/library.js – "N days" tag on the card (owner approved).
+  - site/gpx.js – a route with a split exports a track per day + lodging waypoints; without one the file is
+    byte-for-byte the same as before (checked against the published gpx.js).
+  - site/i18n.js – new `days.*` texts only. site/style.css – new D-065 section only.
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).
