@@ -21,6 +21,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const TENT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 19 12 5l8.5 14Z" fill="#203449"/><path d="M12 11.5 9.2 19h5.6Z" fill="#fff"/></svg>';
 const PLACE_KEY = { camp: 'days.placeCamp', spring: 'days.placeSpring', water: 'days.placeWater', shelter: 'days.placeShelter' };
 const PHONE = matchMedia('(max-width: 600px)');
+const DIM = '#A9B4BF';   // a day that is not the selected one: a light grey-blue (lighter --frame), so the selected day stands out
 
 export function initDays(ctx) {
   const { map, $, t, fmtNumber, notify } = ctx;
@@ -31,7 +32,6 @@ export function initDays(ctx) {
   let cuts = [];                  // [0, boundary sample indices…, last]
   let anchors = [];               // [{ i, offset }] per lodging
   let lodgeMarkers = [];
-  let routePointsVis = null;      // the route's own control points are hidden while the days screen is open
   const hover = new maplibregl.Marker({ color: '#2a241d', scale: 0.7 });
   const n0 = (v) => fmtNumber(Math.round(v ?? 0));
   const km = (m) => fmtNumber(m / 1000, { maximumFractionDigits: 1, minimumFractionDigits: 1 });
@@ -45,8 +45,8 @@ export function initDays(ctx) {
     const hidden = { visibility: 'none' };
     map.addLayer({ id: 'days-line', type: 'line', source: 'days-route', layout: { ...hidden, 'line-join': 'round', 'line-cap': 'round' },
       paint: { 'line-color': ['get', 'color'], 'line-opacity': ['get', 'opacity'],
-        // the route line's own widths (route.js), so the day colours sit exactly on the route's dark casing
-        'line-width': ['interpolate', ['linear'], ['zoom'], 7, 3.5, 10, 5, 12, 6.8, 14, 10, 16, 15.6] } }, under);
+        // a little wider than the route line (route.js), so no edge of the route's own colour shows beside a day
+        'line-width': ['interpolate', ['linear'], ['zoom'], 7, 4.3, 10, 6, 12, 8, 14, 11.6, 16, 17.6] } }, under);
     map.addLayer({ id: 'days-link', type: 'line', source: 'days-links', layout: { ...hidden, 'line-cap': 'round' },
       paint: { 'line-color': '#203449', 'line-width': 2, 'line-dasharray': [1.5, 1.6], 'line-opacity': 0.9 } });
     map.addLayer({ id: 'days-badge', type: 'circle', source: 'days-badges', layout: hidden,
@@ -56,11 +56,18 @@ export function initDays(ctx) {
       paint: { 'text-color': '#ffffff', 'text-halo-color': 'rgba(10,31,10,0.35)', 'text-halo-width': 0.6, 'text-opacity': ['get', 'opacity'] } });
   }
   const LAYERS = ['days-line', 'days-link', 'days-badge', 'days-badge-n'];
+  // while the days screen is open the route's own line and control points step aside (the day lines replace them;
+  // the route's dark casing stays under the days) and come back exactly as they were when it closes
+  const ROUTE_OWN = ['route-line', 'route-points'];
+  let routeVis = null;
   function showLayers(v) {
     for (const id of LAYERS) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v ? 'visible' : 'none');
-    if (map.getLayer('route-points')) {
-      if (v) { routePointsVis = map.getLayoutProperty('route-points', 'visibility') ?? 'visible'; map.setLayoutProperty('route-points', 'visibility', 'none'); }
-      else if (routePointsVis !== null) { map.setLayoutProperty('route-points', 'visibility', routePointsVis); routePointsVis = null; }
+    if (v && routeVis === null) {
+      routeVis = {};
+      for (const id of ROUTE_OWN) if (map.getLayer(id)) { routeVis[id] = map.getLayoutProperty(id, 'visibility') ?? 'visible'; map.setLayoutProperty(id, 'visibility', 'none'); }
+    } else if (!v && routeVis !== null) {
+      for (const [id, vis] of Object.entries(routeVis)) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
+      routeVis = null;
     }
   }
 
@@ -162,9 +169,10 @@ export function initDays(ctx) {
     const s = split();
     const days = dayStats(fig.profile, anchors);
     const P = fig.profile;
-    const op = (k) => (sel === null || sel === k ? 1 : 0.3);
+    const op = (k) => (sel === null || sel === k ? 1 : 0.45);
+    const lineColor = (k) => (sel === null || sel === k ? dayColor(k) : DIM);
     // map: one coloured line per day, the day number in the middle, dashed links to off-route lodgings
-    map.getSource('days-route')?.setData(FC(days.map((d, k) => ({ type: 'Feature', properties: { day: k, color: dayColor(k), opacity: op(k) },
+    map.getSource('days-route')?.setData(FC(days.map((d, k) => ({ type: 'Feature', properties: { day: k, color: lineColor(k), opacity: 1 },
       geometry: { type: 'LineString', coordinates: P.slice(d.from, d.to + 1).map((p) => [p[0], p[1]]) } }))));
     map.getSource('days-badges')?.setData(FC(days.map((d, k) => {
       const mid = P[d.from + Math.floor((d.to - d.from) / 2)];

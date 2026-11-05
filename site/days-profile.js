@@ -132,6 +132,7 @@ export function renderDaysProfile(container, profile, cuts, colors, opts = {}) {
     const up = () => {
       removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
       box.classList.remove('dragging');
+      opts.onHover?.(null);   // the map marker of the graph cursor goes away with the drag
       opts.onDrag(k, last, true);
     };
     addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);

@@ -796,6 +796,67 @@ def main():
         r["mkRouteGpx"] = [dl2.value.suggested_filename, gpx_route.count("<wpt "), gpx_route.count("<trkpt ") > 10, "<ele>" in gpx_route, "חניון" in gpx_route or "<name></name>" not in gpx_route]
         jsclick("#library .lib-x")
 
+        # ---------------------------------------------------------------- day split (D-065)
+        RS = "window.__topo3d.results"
+        dst = lambda: page.evaluate(f"() => {RS}.days")
+        page.evaluate(f"() => {M}.jumpTo({{ center: [35.40, 33.004], zoom: 13.4, pitch: 0, bearing: 0 }})"); page.wait_for_timeout(1500)
+        fresh_route([(330, 560), (430, 470), (520, 500), (610, 400), (700, 430), (800, 330), (900, 300), (980, 220)])
+        page.wait_for_timeout(1200)
+        r["dsBar"] = page.evaluate("() => [document.getElementById('r-days').disabled, document.querySelector('.rt-top').contains(document.getElementById('r-save')), document.querySelector('.rt-top').contains(document.getElementById('r-days')), !document.querySelector('.rt-top').contains(document.getElementById('plan'))]")
+        r["dsNoSplitSnap"] = page.evaluate("() => 'daySplits' in window.__topo3d.ctx.routeLib.snapshot()")
+        jsclick("#r-days"); wait_js(page, f"() => {RS}.daysOpen && {RS}.days", 60)
+        D0 = dst()
+        r["dsOpen"] = [D0["n"], D0["lodgings"][0]["source"], D0["lodgings"][0]["name"], D0["lodgings"][0]["offset"] > 25] + page.evaluate(f"""async () => [document.querySelectorAll('#days-bar .lib-chip').length, document.querySelectorAll('.days-table tbody tr').length,
+            {M}.getLayoutProperty('route-points', 'visibility'), {M}.getLayoutProperty('route-line', 'visibility'), {M}.getLayoutProperty('days-line', 'visibility'),
+            document.querySelectorAll('.lodge').length, window.__topo3d.ctx.isPlanning(), (await {M}.getSource('days-links').getData()).features.length]""")
+        r["dsSum"] = [sum(d["distance"] for d in D0["days"]), sum(d["ascent"] for d in D0["days"])]
+        r["dsRouteFig"] = page.evaluate("() => { const f = window.__topo3d.ctx.routeLib.figures(); return [Math.round(f.distance), Math.round(f.ascent)]; }")
+        jsclick("#days-panel [data-act=more]"); n_more = dst()["n"]
+        jsclick("#days-panel [data-act=less]"); r["dsCount"] = [n_more, dst()["n"]]
+        h = page.evaluate("""() => { const r = document.querySelector('.dp-hit[data-k="1"]').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""")
+        before = dst()["lodgings"][0]["at"]
+        page.mouse.move(h[0], h[1]); page.mouse.down(); page.mouse.move(h[0] + 60, h[1], steps=6); page.mouse.up(); page.wait_for_timeout(800)
+        r["dsDrag"] = [before, dst()["lodgings"][0]["at"], dst()["lodgings"][0]["manual"], page.evaluate("() => !!document.querySelector('.maplibregl-marker:not(.lodge)')")]
+        page.evaluate("() => window.__topo3d.ctx.days.dropLodging(0, 35.4003, 33.0062)"); page.wait_for_timeout(600)
+        L0 = dst()["lodgings"][0]; r["dsSnap"] = [L0["name"], L0["source"], L0["lon"], L0["lat"]]
+        page.evaluate("() => window.__topo3d.ctx.days.dropLodging(0, 35.39, 33.03)"); page.wait_for_timeout(600)
+        L0 = dst()["lodgings"][0]
+        r["dsFar"] = [L0["source"], L0["offset"] > 500] + page.evaluate("() => [document.querySelectorAll('.days-notes p').length, document.querySelectorAll('.days-far').length, document.querySelectorAll('.lodge.far').length]")
+        page.evaluate("""() => document.querySelector('.lodge[data-k="0"]').click()"""); wait_js(page, "() => document.getElementById('days-dialog').open", 30)
+        page.fill("#days-dialog input[name=name]", "לינה אצל חברים"); page.evaluate("() => document.querySelector('#days-dialog button[value=save]').click()"); page.wait_for_timeout(600)
+        r["dsRename"] = dst()["lodgings"][0]["name"]
+        jsclick("#days-bar .lib-chip[data-day='1']")
+        r["dsSel"] = [dst()["sel"], page.evaluate("() => document.querySelector('.days-prof-head b').textContent"), page.evaluate(f"async () => (await {M}.getSource('days-route').getData()).features.map((f) => f.properties.color)")]
+        jsclick("#days-bar .lib-chip[data-day='']")
+        jsclick("#days-panel [data-act=gpx]"); g = page.evaluate(f"() => {RS}.daysGpx")
+        r["dsGpx"] = [g.count("<trk>"), g.count("<type>lodging</type>"), "לינה אצל חברים" in g, "– יום 2" in g]
+        # the route edited after the split: the lodging stays where it is
+        jsclick("#days-panel [data-act=build]")
+        r["dsBuild"] = page.evaluate(f"() => [{RS}.daysOpen, window.__topo3d.ctx.isPlanning(), {M}.getLayoutProperty('route-line', 'visibility'), {M}.getLayoutProperty('route-points', 'visibility'), {M}.getLayoutProperty('days-line', 'visibility'), document.querySelectorAll('.lodge').length]")
+        page.mouse.click(1060, 170); page.wait_for_timeout(500)
+        wait_js(page, f"() => {ed}.state.vertices.length === 9 && !!window.__topo3d.ctx.routeLib.figures()", 120)
+        jsclick("#r-days"); wait_js(page, f"() => {RS}.daysOpen", 60); page.wait_for_timeout(600)
+        L0 = dst()["lodgings"][0]; r["dsAfterEdit"] = [L0["name"], L0["lon"], L0["lat"], dst()["n"]]
+        jsclick("#days-panel [data-act=close]")
+        # saved with the route; the library card says how many days; opening it brings the days back
+        jsclick("#r-save"); wait_js(page, "() => document.getElementById('lib-dialog').open", 60)
+        page.fill("#lib-dialog input[name=name]", "טרק ימים"); page.evaluate(f"() => {RS}.lastSaved = null")
+        jsclick("#lib-dialog button[value=save]"); wait_js(page, f"() => !!{RS}.lastSaved", 120)
+        jsclick("#btn-library"); wait_js(page, "() => [...document.querySelectorAll('#library .lib-card h3')].some((e) => e.textContent === 'טרק ימים')", 60)
+        r["dsBadge"] = page.evaluate("() => [...document.querySelectorAll('#library .lib-card')].map((c) => [c.querySelector('h3').textContent, c.querySelector('.lib-days')?.textContent ?? null])")
+        jsclick("#library .lib-x")
+        fresh_route([(500, 500), (700, 420), (900, 380)])
+        r["dsNewRoute"] = page.evaluate("() => window.__topo3d.ctx.routeLib.daySplits()")
+        jsclick("#btn-library"); wait_js(page, "() => !!document.querySelector('#library .lib-card')", 60)
+        page.evaluate("() => [...document.querySelectorAll('#library .lib-card')].find((c) => c.querySelector('h3').textContent === 'טרק ימים').querySelector('[data-act=open]').click()")
+        page.wait_for_timeout(800)
+        if dialog_open(): jsclick("#lib-dialog button[value=discard]")
+        wait_js(page, "() => window.__topo3d.ctx.routeLib.daySplits()?.lodgings?.[0]?.name === 'לינה אצל חברים' && !!window.__topo3d.ctx.routeLib.figures()", 120)
+        r["dsReopen"] = page.evaluate("() => [window.__topo3d.ctx.routeLib.daySplits().lodgings.length, window.__topo3d.ctx.routeLib.isDirty()]")
+        jsclick("#r-days"); wait_js(page, f"() => {RS}.daysOpen", 60)
+        jsclick("#days-panel [data-act=remove]"); page.wait_for_timeout(600)
+        r["dsRemoved"] = page.evaluate(f"() => [{RS}.daysOpen, window.__topo3d.ctx.routeLib.daySplits(), window.__topo3d.ctx.routeLib.isDirty(), {M}.getLayoutProperty('route-line', 'visibility')]")
+
         # Developer mode: test panel visible and the devtools module loaded
         page.goto(f"http://127.0.0.1:{port}/?demz=12&dev=1#12/33.0/35.4167/0/0", wait_until="domcontentloaded", timeout=60_000)
         wait_js(page, "() => window.__topo3d && window.__topo3d.results.topo && window.__topo3d.map.loaded()", 60)
@@ -874,6 +935,24 @@ def main():
     expect(r["mkPlanLeavesMarking"] == [None, True], f"drawing and marking are never on together (D-064) {r['mkPlanLeavesMarking']}")
     RG = r["mkRouteGpx"]
     expect(RG[0] == "מסלול עם נקודות.gpx" and RG[1] == 1 and RG[2] and RG[3], f"library card: GPX with the track (with elevations) and the route's marks (D-064) {RG}")
+    expect(r["dsBar"] == [False, True, True, True], f"save + days in their own bar above the route tools (D-065) {r['dsBar']}")
+    expect(r["dsNoSplitSnap"] is False, "a route without days saves exactly as before (no daySplits field) (D-065)")
+    O = r["dsOpen"]
+    expect(O[0] == 2 and O[1] == "camp" and O[2] == "חניון לילה" and O[3] and O[4:] == [3, 2, "none", "none", "visible", 1, False, 1], f"days screen: auto split ends day 1 at the campsite (off the route → dashed link), chips, table; route line/points step aside (D-065) {O}")
+    expect(abs(r["dsSum"][0] - r["dsRouteFig"][0]) <= 2, f"the days add up to the route distance (D-065) {r['dsSum']} {r['dsRouteFig']}")
+    expect(r["dsCount"] == [3, 2], f"− / + changes the number of days (D-065) {r['dsCount']}")
+    expect(r["dsDrag"][1] > r["dsDrag"][0] and r["dsDrag"][2] and not r["dsDrag"][3], f"dragging the boundary in the graph moves the lodging; no stray hover marker (D-065) {r['dsDrag']}")
+    expect(r["dsSnap"] == ["חניון לילה", "camp", 35.4, 33.006], f"a lodging dropped near a campsite snaps to it and takes its name (D-065) {r['dsSnap']}")
+    expect(r["dsFar"] == [None, True, 1, 1, 1], f"a lodging far from the route gets a note (D-065) {r['dsFar']}")
+    expect(r["dsRename"] == "לינה אצל חברים", f"lodging renamed from its marker (D-065) {r['dsRename']}")
+    expect(r["dsSel"][0] == 1 and r["dsSel"][1].endswith("יום 2") and r["dsSel"][2][0] == "#A9B4BF" and r["dsSel"][2][1] != "#A9B4BF", f"a day chip focuses that day, the others greyed (D-065) {r['dsSel']}")
+    expect(r["dsGpx"] == [2, 1, True, True], f"GPX: a track per day + lodging waypoints (D-065) {r['dsGpx']}")
+    expect(r["dsBuild"] == [False, True, "visible", "visible", "none", 0], f"switch back to route building restores the route exactly (D-065) {r['dsBuild']}")
+    expect(r["dsAfterEdit"] == ["לינה אצל חברים", 35.39, 33.03, 2], f"after editing the route the lodging stays where it was (D-065) {r['dsAfterEdit']}")
+    expect(["טרק ימים", "2 ימים"] in r["dsBadge"] and all(b is None for n, b in r["dsBadge"] if n != "טרק ימים"), f"library card: 'N days' only on a split route (D-065) {r['dsBadge']}")
+    expect(r["dsNewRoute"] is None, f"a new route starts without days (D-065) {r['dsNewRoute']}")
+    expect(r["dsReopen"] == [1, False], f"opening the saved route brings its days back, unchanged (D-065) {r['dsReopen']}")
+    expect(r["dsRemoved"] == [False, None, True, "visible"], f"removing the split closes the screen and marks the route changed (D-065) {r['dsRemoved']}")
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")
