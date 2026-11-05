@@ -134,6 +134,8 @@ export function initDays(ctx) {
       await makeSplit(suggestDays(fig.profile));
     } else refreshCandidates();
     render();
+    // fit again now that the panel (on a phone: the drawer) has its real height, so the route is not under it
+    if (fig) fitRoute(fig.profile, false);
     ctx.results.daysOpen = true;
   }
   function close() {
