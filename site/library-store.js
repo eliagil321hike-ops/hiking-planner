@@ -53,6 +53,7 @@ export function createLibrary(adapter, { userId = LOCAL_USER } = {}) {
     validateRouteData(data);
     const rec = { ...old, ...pickRoute(data), name: cleanName(data.name ?? old.name, old.name), folderId: old.folderId,
       updatedAt: now() };
+    if (!('daySplits' in data)) delete rec.daySplits;   // D-065: the split was removed before saving again
     await adapter.put('routes', rec);
     return rec;
   }
@@ -176,7 +177,7 @@ export class LibraryError extends Error {
 
 function pickRoute(d) {
   const out = {};
-  for (const k of ['name', 'folderId', 'color', 'editor', 'geometry', 'profile', 'stats', 'bbox', 'thumb']) if (k in d) out[k] = d[k];
+  for (const k of ['name', 'folderId', 'color', 'editor', 'geometry', 'profile', 'stats', 'bbox', 'thumb', 'daySplits']) if (k in d) out[k] = d[k];   // daySplits: D-065
   if ('folderId' in out) out.folderId = out.folderId ?? null;
   return out;
 }

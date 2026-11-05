@@ -99,7 +99,7 @@ export function initLibrary(ctx) {
       <div class="lib-body">
         <h3 title="${esc(r.name)}">${esc(r.name)}</h3>
         <p class="lib-folder">${esc(folderName(r.folderId) ?? t('lib.noFolder'))}</p>
-        <p class="lib-stats"><b>${km(st.distance ?? 0)}</b> ${t('unit.km')}<span class="up">${statIcon('up', 15)}${n0(st.ascent)} ${t('unit.m')}</span>${minmax}</p>
+        <p class="lib-stats"><b>${km(st.distance ?? 0)}</b> ${t('unit.km')}<span class="up">${statIcon('up', 15)}${n0(st.ascent)} ${t('unit.m')}</span>${minmax}${r.daySplits?.lodgings?.length ? `<span class="lib-days">${t('days.count', { n: r.daySplits.lodgings.length + 1 })}</span>` : ''}</p>
         <p class="lib-date">${t('lib.updated', { d: date(r.updatedAt) })}</p>
       </div>
       <div class="lib-actions">

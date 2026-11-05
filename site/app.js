@@ -21,6 +21,7 @@ import { initView3d } from './view3d.js';
 import { initSearch } from './search.js';
 import { initLibrary } from './library.js';
 import { initMarkers } from './markers.js';
+import { initDays } from './days.js';
 
 const BUILD = '__BUILD__'; // replaced by CI (scripts/stamp_build.sh) with the commit id
 const perf = createPerf();
@@ -141,6 +142,7 @@ const menus = initMenus(ctx);
 ctx.menus = menus;
 initLibrary(ctx);   // My Routes (D-056)
 initMarkers(ctx);   // personal points + route marks (D-064)
+initDays(ctx);      // day split (D-065)
 initSearch(ctx);
 
 // Test/debug handle (used by scripts/e2e_test.py).
@@ -156,6 +158,7 @@ map.on('load', () => {
   }
   route.addRouteLayers();
   ctx.markers.addLayers();   // marked points above everything (D-064)
+  ctx.days.addLayers();      // day split layers, shown only on the days screen (D-065)
   // Map credits start folded (an ⓘ button), so they never cover the map above the route dock.
   document.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
   ctx.applyGroupsFromUI(); // remembered layer switches and opacities (prefs.js)

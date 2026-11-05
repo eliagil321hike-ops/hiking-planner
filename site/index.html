@@ -187,9 +187,13 @@
 <!-- Route dock (owner, D-049): a tool bar in the corner + a data panel (distance, name, colour, ascent/descent,
      max/min, elevation profile). Hiding the panel leaves the tool bar and a small pill with the key figures. -->
 <div id="route-dock" class="route-dock" hidden>
-  <div class="route-tools" role="toolbar" data-i18n-attr="aria-label:menu.route" aria-label="אפשרויות מסלול">
+  <div class="rt-stack">
+  <!-- D-065 (owner): save + day split in their own bar, a short gap above the route tool bar -->
+  <div class="route-tools rt-top" role="toolbar" data-i18n-attr="aria-label:days.bar" aria-label="שמירה וחלוקה לימים">
     <button id="r-save" class="tbtn" type="button" data-i18n-attr="title:lib.saveRoute;aria-label:lib.saveRoute"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4"/><path d="M8 20v-6h8v6"/></svg></button>
-    <span class="tsep" aria-hidden="true"></span>
+    <button id="r-days" class="tbtn" type="button" data-i18n-attr="title:days.button;aria-label:days.button" aria-pressed="false" disabled><svg class="ic days-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 13.5 7.5 5l5 8.5Z"/><path d="M7.5 9.6v3.9"/><path d="M14.5 6.5h7M14.5 10h7M14.5 13.5h4.5"/><path d="M2.5 18.5h19" stroke-dasharray="4.2 2.4"/></svg></button>
+  </div>
+  <div class="route-tools" role="toolbar" data-i18n-attr="aria-label:menu.route" aria-label="אפשרויות מסלול">
     <button id="plan" class="tbtn" type="button" data-i18n-attr="title:route.plan;aria-label:route.plan" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg></button>
     <button id="r-mark" class="tbtn" type="button" data-i18n-attr="title:mk.routeTool;aria-label:mk.routeTool" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg></button>
     <button id="seg-toggle" class="tbtn" type="button" data-i18n-attr="title:route.modeSnap;aria-label:route.modeSnap" aria-pressed="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 17c4-1 1-6 5-7 3-1 3-2 3-3"/></svg></button>
@@ -201,6 +205,7 @@
     <button id="r-loop" class="tbtn" type="button" data-i18n-attr="title:route.loop;aria-label:route.loop"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></button>
     <button id="r-delete" class="tbtn" type="button" data-i18n-attr="title:route.deletePoint;aria-label:route.deletePoint"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     <button id="r-clear" class="tbtn" type="button" data-i18n-attr="title:route.clear;aria-label:route.clear"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+  </div>
   </div>
   <div id="profile-box" class="rd-panel">
     <div class="rd-data">
@@ -230,6 +235,12 @@
 </div>
 
 </div>
+
+<!-- D-065: day split — summary panel (a bottom drawer on a phone), day chips, profile across the days, lodging dialog -->
+<section id="days-panel" class="days-panel" hidden data-i18n-attr="aria-label:days.title" aria-label="חלוקה לימים"></section>
+<nav id="days-bar" class="days-bar" hidden data-i18n-attr="aria-label:days.chips" aria-label="ימי הטרק"><div class="days-chips"></div></nav>
+<section id="days-profile" class="days-profile" hidden><div class="days-prof-head"><b></b><small data-i18n="days.dragHint">גררו גבול בין צבעים כדי להזיז לינה</small></div><div class="days-prof-svg"></div></section>
+<dialog id="days-dialog" class="lib-dialog days-dialog"></dialog>
 
 <script type="module" src="app.js"></script>
 </body>

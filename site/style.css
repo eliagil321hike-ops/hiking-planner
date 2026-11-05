@@ -677,3 +677,123 @@ body.marking .maplibregl-canvas { cursor: crosshair; }
   .mk-menu { bottom: auto; max-height: calc(100vh - var(--top-h) - 16px); }   /* only as tall as its three rows */
   .mark-banner { font-size: 13px; }
 }
+
+/* ---------------------------------------------------------------- D-065: day split ("חלוקה לימים")
+   Added only; built from the site's tokens and components (DECISIONS D-065 lists what is reused where).
+   The save button and the new days button form their own small bar, a short gap above the route tool bar
+   (owner: "as if the bar was cut in the middle"). Day colours are the only new palette (days-core.js). */
+:root { --days-w: 340px; }
+.rt-stack { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+body:not(.dock-panel) .rt-stack > .rt-top { margin-bottom: 0; }
+.tbtn#r-days[aria-pressed="true"] { background: var(--c-deep); color: #fff; }
+.tbtn#r-days:disabled { opacity: 0.35; }
+.route-dock .ic.days-ic { stroke-linecap: round; stroke-linejoin: round; }
+
+/* days screen: the route tool bar, figures panel and pill step aside; the save/days bar stays */
+body.days-mode .rt-stack > .route-tools:not(.rt-top), body.days-mode #profile-box, body.days-mode #route-pill { display: none !important; }
+body.days-mode .rt-stack > .rt-top { margin-bottom: 0; }
+
+/* summary panel (the library panel's card) */
+.days-panel {
+  position: fixed; z-index: 3; top: var(--top-h); inset-inline-start: calc(var(--edge) + var(--nav) + 12px); width: var(--days-w);
+  max-height: calc(100vh - var(--top-h) - var(--days-prof-h, 0px) - var(--edge) - 12px); overflow: auto; box-sizing: border-box;
+  padding: 12px 14px 14px; background: var(--c-white); border-radius: var(--lib-radius); box-shadow: 0 12px 36px rgba(32, 52, 73, 0.22); color: var(--c-dark);
+}
+.days-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.days-switch { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--c-page); }
+.days-switch button { height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--c-body); font: 600 13px var(--font); cursor: pointer; }
+.days-switch button:hover { color: var(--c-dark); }
+.days-switch button[aria-pressed="true"] { background: var(--c-deep); color: #fff; }
+.days-title { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; }
+.days-title h2 { margin: 0; font: 700 18px var(--font); }
+.days-title small { font: 500 13px var(--font); color: var(--c-body); }
+.days-count { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font: 600 13px var(--font); color: var(--c-body); }
+.days-count .lib-btn.icon { margin: 0; width: 32px; }
+.days-count .lib-btn.icon .ic { fill: none; stroke: currentColor; stroke-width: 2.2; }
+.days-count output { min-width: 28px; text-align: center; font: 700 18px var(--font); color: var(--c-dark); font-variant-numeric: tabular-nums lining-nums; }
+.days-table { width: 100%; border-collapse: collapse; font: 500 13.5px var(--font); font-variant-numeric: tabular-nums lining-nums; }
+.days-table th { padding: 0 6px 6px; font: 600 11.5px var(--font); color: var(--c-body); text-align: start; border-bottom: 1px solid var(--divider); }
+.days-table td { padding: 8px 6px; border-bottom: 1px solid var(--c-page); white-space: nowrap; }
+.days-table td i { font: 500 11px var(--font); font-style: normal; color: var(--c-body); margin-inline-start: 2px; }
+.days-table tbody tr { cursor: pointer; }
+.days-table tbody tr:hover { background: var(--c-page); }
+.days-table tbody tr[aria-selected="true"] { background: var(--c-light); }
+.days-table tfoot td { border-bottom: 0; border-top: 2px solid var(--c-dark); font-weight: 700; padding-top: 9px; }
+.days-table .si { vertical-align: -3px; margin-inline-end: 3px; }
+.day-n { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; }
+.day-dot { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--d); box-shadow: 0 0 0 1.5px #0a1f0a, 0 0 0 3px #fff; }
+.days-far { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-inline-start: 4px; border-radius: 50%; background: #fff;
+  box-shadow: inset 0 0 0 1.5px var(--c-gold); color: var(--c-gold); font: 700 11px var(--font); vertical-align: 1px; }
+.days-notes { margin: 10px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--c-page); border-inline-start: 3px solid var(--c-gold); font-size: 12.5px; line-height: 1.5; }
+.days-notes p { margin: 0; }
+.days-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.days-actions .lib-btn { height: 36px; }
+.days-actions .lib-btn.quiet { border-color: transparent; color: var(--c-body); }
+.days-actions .lib-btn.quiet:hover { color: var(--c-dark); background: var(--c-light); }
+.days-foot { margin: 10px 0 0; font-size: 12px; color: var(--c-body); line-height: 1.5; }
+.days-empty { margin: 4px 0; color: var(--c-body); line-height: 1.6; }
+
+/* day chips over the map (the library's folder chips) */
+.days-bar { position: fixed; z-index: 3; top: var(--top-h); inset-inline-start: calc(var(--edge) + var(--nav) + 12px + var(--days-w) + 12px); inset-inline-end: var(--edge);
+  display: flex; justify-content: center; pointer-events: none; }
+.days-chips { display: flex; gap: 6px; padding: 5px; max-width: 100%; overflow-x: auto; border-radius: 12px; background: var(--c-white);
+  box-shadow: 0 2px 10px rgba(32, 52, 73, 0.16); pointer-events: auto; scrollbar-width: none; }
+.days-chips .lib-chip { flex: none; height: 34px; padding: 0 10px; }
+.days-chips .lib-chip .day-dot { width: 10px; height: 10px; }
+.days-chips .lib-chip span { font: 500 11.5px var(--font); }
+
+/* profile across the days (the route figures panel's card) */
+.days-profile { position: fixed; z-index: 2; bottom: var(--edge); inset-inline-start: calc(var(--edge) + var(--ctl) + 12px); inset-inline-end: var(--edge);
+  height: 196px; box-sizing: border-box; padding: 10px 14px 6px; display: grid; grid-template-rows: auto 1fr; gap: 4px;
+  background: var(--c-white); border: 1px solid var(--frame); border-radius: 10px; box-shadow: var(--panel-shadow); }
+.days-prof-head { display: flex; align-items: baseline; gap: 10px; }
+.days-prof-head b { font: 700 14px var(--font); }
+.days-prof-head small { margin-inline-start: auto; font: 500 12px var(--font); color: var(--c-body); }
+.days-prof-svg { min-height: 0; direction: ltr; touch-action: none; }
+.days-prof-svg svg { display: block; width: 100%; height: 100%; }
+.dp-area { opacity: 0.22; }
+.dp-line { fill: none; stroke-width: 2; stroke-linejoin: round; }
+.dp-faded { opacity: 0.28; }
+.dp-bound { stroke: var(--c-dark); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.dp-handle { fill: var(--c-dark); cursor: ew-resize; }
+.dp-grip { stroke: #fff; stroke-width: 1.2; pointer-events: none; }
+.dp-hit { fill: transparent; cursor: ew-resize; }
+.dp-label { font: 600 10.5px var(--font); fill: var(--c-dark); paint-order: stroke; stroke: #fff; stroke-width: 3px; direction: rtl; }
+.days-profile.dragging, .days-profile.dragging .dp-hit { cursor: ew-resize; }
+body.days-mode .maplibregl-ctrl-bottom-left { bottom: calc(var(--days-prof-h, 0px) + 4px); }
+
+/* lodgings on the map: a white round badge with the tent, a dark name tag; draggable */
+.lodge { display: grid; justify-items: center; gap: 3px; cursor: grab; touch-action: none; }
+.lodge:active { cursor: grabbing; }
+.lodge-tag { order: -1; max-width: 170px; padding: 3px 9px; border-radius: 10px; background: var(--c-dark); color: #fff; font: 600 12px var(--font);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 2px 6px rgba(32, 52, 73, 0.3); }
+.lodge.far .lodge-tag { box-shadow: inset 0 0 0 2px var(--c-gold), 0 2px 6px rgba(32, 52, 73, 0.3); }
+.lodge-dot { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--c-dark), 0 2px 6px rgba(32, 52, 73, 0.35); }
+.lodge-dot svg { width: 18px; height: 18px; }
+.lodge.snap .lodge-dot { box-shadow: 0 0 0 2px var(--c-turq), 0 0 0 5px rgba(37, 143, 145, 0.25); }
+.lodge.dim { opacity: 0.45; }
+
+.days-dialog { width: min(400px, calc(100vw - 24px)); }
+
+/* library card: number of days */
+.lib-days { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 10px; background: var(--c-light); color: var(--c-dark); font: 600 11.5px var(--font); }
+
+@media (max-width: 760px) {
+  .rt-stack { flex-direction: row; align-items: stretch; }
+  .rt-stack > .route-tools:not(.rt-top) { flex: 1; }
+}
+@media (max-width: 600px) {
+  /* phone: the summary is a drawer from the bottom holding the profile too; the chips run under the top bar */
+  body.days-mode #route-dock { display: none !important; }
+  .days-panel { top: auto; bottom: 0; inset-inline: 0; width: auto; max-height: 62vh; padding: 6px 12px 14px; border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 28px rgba(32, 52, 73, 0.22); }
+  .days-grab { display: block; width: 100%; height: 22px; margin: 0 0 4px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+  .days-grab::before { content: ""; display: block; width: 40px; height: 4px; margin: 6px auto; border-radius: 2px; background: var(--divider); }
+  .days-panel.collapsed > :not(.days-grab):not(.days-head) { display: none; }
+  .days-bar { inset-inline: var(--edge); }
+  .days-chips { justify-content: flex-start; }
+  .days-profile { position: static; height: 150px; margin: 4px 0 8px; padding: 6px 4px 4px; border: 0; box-shadow: none; background: var(--c-page); }
+  .days-prof-head { padding: 0 6px; }
+  body.days-mode .maplibregl-ctrl-bottom-left { bottom: var(--days-sheet-h, 0px); }
+}
+@media (min-width: 601px) { .days-grab { display: none; } }

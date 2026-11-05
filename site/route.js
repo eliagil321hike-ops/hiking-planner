@@ -16,6 +16,7 @@ import {
 } from './vendor/editor/editor.js';
 import { store } from './satellite.js';
 import { loadPrefs, savePrefs } from './prefs.js';
+import { cleanSplit, splitSignature } from './days-core.js';   // D-065 day split (kept with the route)
 
 const DRAFT_KEY = 'topo3d.draft';
 export const ROUTE_COLOR = '#39ff14';   // fluorescent green (owner request); the default of the colour choice
@@ -215,7 +216,7 @@ export function initRoute(ctx) {
     if (!(await guardUnsaved())) return false;
     selected = null;
     if (s.vertices.length || s.waypoints.length) editor.run(clearRoute(editor.state));
-    setMeta({ name: '', savedId: null, savedSig: null });
+    setMeta({ name: '', savedId: null, savedSig: null, daySplits: null });
     setPlanning(true);
     return true;
   }
@@ -314,6 +315,7 @@ export function initRoute(ctx) {
       samples = [];
       $('stats').innerHTML = ''; $('rd-dist').textContent = '0'; $('profile').innerHTML = ''; $('pill-stats').innerHTML = '';
       hoverMarker.remove();
+      ctx.onRouteFigures?.();   // D-065
       return;
     }
     const t0 = performance.now();
@@ -344,6 +346,7 @@ export function initRoute(ctx) {
     $('pill-stats').innerHTML = `<b>${km}</b><i>${t('unit.km')}</i><span class="up">${statIcon('up', 15)}${n0(st.ascent)}</span><span class="down">${statIcon('down', 15)}${n0(st.descent)}</span>`;
     drawProfile = () => renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max, compact: true });
     if (expanded) drawProfile();
+    ctx.onRouteFigures?.();   // D-065
   }
   // The graph is drawn for the size of its box; redraw whenever that box changes (panel shown, window resized,
   // the figures column grows), otherwise an old drawing is stretched or cut (owner screenshot, 2026-11-02).
@@ -422,7 +425,9 @@ export function initRoute(ctx) {
   // ---------------------------------------------------------------- My Routes link (D-056)
   // The route on the map may be linked to a saved route (savedId). "Saved" means: the editor state, name and
   // colour are exactly what was last saved (savedSig). Nothing is saved automatically.
-  const signature = () => JSON.stringify([editor.state, getMeta().name ?? '', routeColor()]);
+  // D-065: a day split counts too, only when there is one (a route without days compares exactly as before)
+  const daySplits = () => cleanSplit(getMeta().daySplits);
+  const signature = () => { const d = daySplits(); return JSON.stringify(d ? [editor.state, getMeta().name ?? '', routeColor(), splitSignature(d)] : [editor.state, getMeta().name ?? '', routeColor()]); };
   const isDirty = () => hasRoute() && getMeta().savedSig !== signature();
   function syncSaved() {
     const m = getMeta(), chip = $('rd-saved');
@@ -447,7 +452,8 @@ export function initRoute(ctx) {
     const f = lastFigures, d = editor.toDraft();
     if (!f || f.seq !== statsSeq) throw new Error('figures-not-ready');
     return { name: getMeta().name || '', color: routeColor(), editor: d, geometry: editor.geometry().map((p) => [p[0], p[1]]),
-      profile: f.profile, stats: { distance: f.distance, ascent: f.ascent, descent: f.descent, min: f.min, max: f.max } };
+      profile: f.profile, stats: { distance: f.distance, ascent: f.ascent, descent: f.descent, min: f.min, max: f.max },
+      ...(daySplits() ? { daySplits: daySplits() } : {}) };
   }
   function markSaved(rec) {
     setMeta({ name: rec.name, savedId: rec.id });
@@ -457,7 +463,7 @@ export function initRoute(ctx) {
   function openSaved(rec, { edit = false } = {}) {
     selected = null;
     editor.load({ vertices: rec.editor.state.vertices, waypoints: (rec.editor.state.waypoints ?? []).filter((w) => w.icon) }, rec.editor.cache ?? {});
-    setMeta({ name: rec.name, color: ROUTE_COLORS.includes(rec.color) ? rec.color : ROUTE_COLOR, savedId: rec.id });
+    setMeta({ name: rec.name, color: ROUTE_COLORS.includes(rec.color) ? rec.color : ROUTE_COLOR, savedId: rec.id, daySplits: cleanSplit(rec.daySplits) });
     setMeta({ savedSig: signature() });
     setPlanning(edit);
     if (!expanded) setExpanded(true);
@@ -471,7 +477,11 @@ export function initRoute(ctx) {
     addRouteMark: (w) => editor.run(addWaypoint({ note: '', ...w })),
     editRouteMark: (id, patch) => editor.run(editWaypoint(id, patch, editor.state)),
     deleteRouteMark: (id) => editor.run(deleteWaypoint(id, editor.state)),
-    startRoute: () => { if (!planning && !hasRoute()) setPlanning(true); } };
+    startRoute: () => { if (!planning && !hasRoute()) setPlanning(true); },
+    // D-065 day split
+    daySplits, setDaySplits: (d) => setMeta({ daySplits: d ? cleanSplit(d) : null }),
+    figures: () => (lastFigures && lastFigures.seq === statsSeq ? lastFigures : null),
+    name: () => getMeta().name || t('route.defaultName') };
 
   syncDock();
   applyMeta();
