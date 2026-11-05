@@ -758,7 +758,7 @@ body.days-mode .rt-stack > .rt-top { margin-bottom: 0; }
 .dp-handle { fill: var(--c-dark); cursor: ew-resize; }
 .dp-grip { stroke: #fff; stroke-width: 1.2; pointer-events: none; }
 .dp-hit { fill: transparent; cursor: ew-resize; }
-.dp-label { font: 600 10.5px var(--font); fill: var(--c-dark); paint-order: stroke; stroke: #fff; stroke-width: 3px; direction: rtl; }
+.dp-label { font: 600 10.5px var(--font); fill: var(--c-dark); paint-order: stroke; stroke: #fff; stroke-width: 3px; }
 .days-profile.dragging, .days-profile.dragging .dp-hit { cursor: ew-resize; }
 body.days-mode .maplibregl-ctrl-bottom-left { bottom: calc(var(--days-prof-h, 0px) + 4px); }
 
