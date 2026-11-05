@@ -943,7 +943,9 @@ def main():
     expect(abs(r["dsSum"][0] - r["dsRouteFig"][0]) <= 2, f"the days add up to the route distance (D-065) {r['dsSum']} {r['dsRouteFig']}")
     expect(r["dsCount"] == [3, 2], f"− / + changes the number of days (D-065) {r['dsCount']}")
     expect(r["dsDrag"][1] > r["dsDrag"][0] and r["dsDrag"][2] and not r["dsDrag"][3], f"dragging the boundary in the graph moves the lodging; no stray hover marker (D-065) {r['dsDrag']}")
-    expect(r["dsSnap"] == ["חניון לילה", "camp", 35.4, 33.006], f"a lodging dropped near a campsite snaps to it and takes its name (D-065) {r['dsSnap']}")
+    # (in the full run the points step has left a personal point on that same campsite: either is the right place)
+    expect(r["dsSnap"][0] == "חניון לילה" and r["dsSnap"][1] in ("camp", "personal") and abs(r["dsSnap"][2] - 35.4) < 1e-5 and abs(r["dsSnap"][3] - 33.006) < 1e-5,
+           f"a lodging dropped near a campsite snaps to it and takes its name (D-065) {r['dsSnap']}")
     expect(r["dsFar"] == [None, True, 1, 1, 1], f"a lodging far from the route gets a note (D-065) {r['dsFar']}")
     expect(r["dsRename"] == "לינה אצל חברים", f"lodging renamed from its marker (D-065) {r['dsRename']}")
     expect(r["dsSel"][0] == 1 and r["dsSel"][1].endswith("יום 2") and r["dsSel"][2][0] == "#A9B4BF" and r["dsSel"][2][1] != "#A9B4BF", f"a day chip focuses that day, the others greyed (D-065) {r['dsSel']}")
