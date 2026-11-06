@@ -171,6 +171,8 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - Existing files touched (hooks): site/route.js, site/days.js, site/days-profile.js, site/library.js,
   site/index.html, site/app.js, site/i18n.js, site/style.css; scripts/e2e_test.py ("open" steps now use the eye;
   new view checks vmShown, vmGraph, vmLodgeFixed, vmClosed, vmEdit).
+- Tests (2026-11-07, wip/view): unit 62/62, editor 18/18, smoke 17 PASS, full e2e 146 PASS / 0 FAIL (all existing
+  checks incl. building, save/load, library, layers/3D, GPX, day split, plus the 5 view checks).
 
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
