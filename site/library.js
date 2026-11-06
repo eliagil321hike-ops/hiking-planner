@@ -270,7 +270,7 @@ export function initLibrary(ctx) {
     const full = await lib.getRoute(rec.id);
     if (!full) { toast(t('lib.err.route-missing'), true); await reload(); return; }
     ctx.menus?.closeAll();
-    await ctx.view.enter(full);
+    await ctx.viewMode.enter(full);
     ctx.results.opened = full.id;
   }
   async function editFlow(rec) {

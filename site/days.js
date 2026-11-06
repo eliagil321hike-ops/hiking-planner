@@ -172,7 +172,7 @@ export function initDays(ctx) {
 
   // ---------------------------------------------------------------- view
   function fitRoute(coords, animate = true) {
-    if (viewOnly) { ctx.view?.fit?.(coords, animate); return; }   // D-066: view mode knows its own bars
+    if (viewOnly) { ctx.viewMode?.fit?.(coords, animate); return; }   // D-066: view mode knows its own bars
     if (!coords?.length) return;
     let w = 180, s = 90, e = -180, n = -90;
     for (const p of coords) { w = Math.min(w, p[0]); e = Math.max(e, p[0]); s = Math.min(s, p[1]); n = Math.max(n, p[1]); }

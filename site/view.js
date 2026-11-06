@@ -17,6 +17,12 @@ export function initView(ctx) {
   const n0 = (v) => fmtNumber(Math.round(v ?? 0));
   const km = (m) => fmtNumber((m ?? 0) / 1000, { maximumFractionDigits: (m ?? 0) < 10_000 ? 2 : 1 });
   let on = false, graph = false, id = null, fitted = false, saved = null;
+  let pointsVis = null;   // the route's control points step aside while viewing and come back as they were
+  function hidePoints(v) {
+    if (!map.getLayer('route-points')) return;
+    if (v && pointsVis === null) { pointsVis = map.getLayoutProperty('route-points', 'visibility') ?? 'visible'; map.setLayoutProperty('route-points', 'visibility', 'none'); }
+    else if (!v && pointsVis !== null) { map.setLayoutProperty('route-points', 'visibility', pointsVis); pointsVis = null; }
+  }
 
   const split = () => !!R()?.daySplits?.()?.lodgings?.length;
   const graphBox = () => (split() ? $('days-profile') : $('view-profile'));
@@ -26,6 +32,7 @@ export function initView(ctx) {
     R().openSaved(rec, { edit: false });       // leaves any earlier view first (route.js hook)
     on = true; graph = false; id = rec.id; fitted = false; saved = rec;
     document.body.classList.add('view-mode');
+    hidePoints(true);
     $('view-bar').hidden = false;
     $('vb-name').textContent = rec.name ?? '';
     $('vb-dot').style.background = rec.color ?? '';
@@ -46,6 +53,7 @@ export function initView(ctx) {
     $('view-bar').hidden = true;
     $('view-profile').hidden = true;
     if (ctx.days?.isView?.()) ctx.days.close();
+    hidePoints(false);
     hover.remove();
     document.documentElement.style.setProperty('--view-h', '0px');
     ctx.results.view = { on: false, id: null };
@@ -112,6 +120,6 @@ export function initView(ctx) {
   });
   addEventListener('keydown', (e) => { if (on && e.key === 'Escape' && !document.querySelector('dialog[open]')) $('vb-close').click(); });
 
-  ctx.view = { enter, exit, fit, isOn: () => on, saved: () => saved };
-  return ctx.view;
+  ctx.viewMode = { enter, exit, fit, isOn: () => on, saved: () => saved };
+  return ctx.viewMode;
 }

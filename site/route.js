@@ -198,7 +198,7 @@ export function initRoute(ctx) {
 
   // ---------------------------------------------------------------- planning mode + buttons
   function setPlanning(on) {
-    if (on) ctx.view?.exit?.();   // D-066: editing leaves view mode
+    if (on) ctx.viewMode?.exit?.();   // D-066: editing leaves view mode
     planning = on;
     if (on) ctx.markers?.setMode(null);
     $('plan-badge').hidden = !on;
@@ -464,7 +464,7 @@ export function initRoute(ctx) {
   }
   /** Show a saved route (never shown automatically): load it into the editor, fit the view, show the panel. */
   function openSaved(rec, { edit = false } = {}) {
-    ctx.view?.exit?.();   // D-066: view mode starts again only through ctx.view.enter
+    ctx.viewMode?.exit?.();   // D-066: view mode starts again only through ctx.viewMode.enter
     selected = null;
     editor.load({ vertices: rec.editor.state.vertices, waypoints: (rec.editor.state.waypoints ?? []).filter((w) => w.icon) }, rec.editor.cache ?? {});
     setMeta({ name: rec.name, color: ROUTE_COLORS.includes(rec.color) ? rec.color : ROUTE_COLOR, savedId: rec.id, daySplits: cleanSplit(rec.daySplits) });
