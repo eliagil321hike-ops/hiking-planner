@@ -779,3 +779,18 @@ raise the right tool bar a little")
   tests `tests/days.test.mjs` + e2e section "day split".
 - 2026-11-06 (owner): the button is called "חלוקה למקטעים"; icon = elevation line cut into 3 segments with a dot at
   each cut (sketch "A+D 1"). Only the button label/tooltip changed; the screen keeps "ימים / יום k". Approved for release.
+
+## D-066 View mode ("צפייה"), 2026-11-06/07
+- Owner: a saved route can be viewed "only as a map", without the tool bars, by an eye button; a split route is then
+  shown only in its segment colours.
+- Owner answers: the eye replaces "פתח" as the card's main button (option 2 – a deliberate change of existing
+  behaviour, approved explicitly); the thumbnail also opens the view. All map buttons stay (layers, zoom, compass,
+  location, search, library, points). A bar with the name + figures (graph folded, opened by a chevron), "עריכה"
+  (the card's "ערוך" flow: original / copy) and X (closes the route). Split route: segment colours, numbers,
+  lodgings (fixed, no dialog), the day chips as a legend (tap = focus on that segment), graph in day colours without
+  drag handles. Route without a split: its own colour, its control points hidden, the existing slope graph.
+- Reused: the route figures panel card (white, --frame, --panel-shadow, 10px) for the bar and graph; .lib-btn;
+  .lib-days tag; the day chips; stat icons; profile.js / days-profile.js. No new colours or tokens.
+- Code: `site/view.js` (new); hooks in route.js (exit view on edit/open, `closeRoute`, `drawProfileInto`),
+  days.js (`openView`, read-only), days-profile.js (`handles: false`), library.js (eye button, `viewFlow`,
+  `ctx.library.edit`), index.html (`#view-bar`, `#view-profile`), i18n.js, style.css (D-066 section), app.js.

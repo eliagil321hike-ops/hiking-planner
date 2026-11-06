@@ -164,6 +164,14 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   title and icon checked in the browser). Restore point: branch snapshot/site-before-days.
 - LIVE 2026-11-06: main 22a184f, CI run 42197357110 – test success, deploy success.
 
+## View mode (D-066, 2026-11-07, branch wip/view – waiting for owner approval; not on the site)
+- The library card's main button is now "צפייה" (eye) instead of "פתח" (owner, option 2); "ערוך" unchanged.
+- View: no route tool bars; bar with name, figures, graph toggle, "עריכה", X. Split routes in segment colours
+  (read-only), legend chips, graph without handles. See DECISIONS D-066.
+- Existing files touched (hooks): site/route.js, site/days.js, site/days-profile.js, site/library.js,
+  site/index.html, site/app.js, site/i18n.js, site/style.css; scripts/e2e_test.py ("open" steps now use the eye;
+  new view checks vmShown, vmGraph, vmLodgeFixed, vmClosed, vmEdit).
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).
