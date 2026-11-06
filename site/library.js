@@ -10,6 +10,7 @@ import { routeToGpx, gpxFileName, downloadText } from './gpx.js';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ICON = {
   open: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  eye: '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',   // view mode (D-066)
   edit: '<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',
   more: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
@@ -95,7 +96,7 @@ export function initLibrary(ctx) {
     const st = r.stats ?? {};
     const minmax = st.min != null && st.max != null ? `<span>${t('lib.height')} <bdi dir="ltr">${n0(st.min)}–${n0(st.max)}</bdi> ${t('unit.m')}</span>` : '';
     return `<article class="lib-card" data-id="${esc(r.id)}">
-      <button type="button" class="lib-thumb" data-act="open" aria-label="${t('lib.open')}: ${esc(r.name)}"><img src="${esc(r.thumb ?? '')}" alt="" loading="lazy"><i style="background:${esc(r.color ?? '#39ff14')}"></i></button>
+      <button type="button" class="lib-thumb" data-act="view" aria-label="${t('lib.view')}: ${esc(r.name)}"><img src="${esc(r.thumb ?? '')}" alt="" loading="lazy"><i style="background:${esc(r.color ?? '#39ff14')}"></i></button>
       <div class="lib-body">
         <h3 title="${esc(r.name)}">${esc(r.name)}</h3>
         <p class="lib-folder">${esc(folderName(r.folderId) ?? t('lib.noFolder'))}</p>
@@ -103,7 +104,7 @@ export function initLibrary(ctx) {
         <p class="lib-date">${t('lib.updated', { d: date(r.updatedAt) })}</p>
       </div>
       <div class="lib-actions">
-        <button type="button" class="lib-btn primary" data-act="open">${svg('open', 16)} ${t('lib.open')}</button>
+        <button type="button" class="lib-btn primary" data-act="view">${svg('eye', 16)} ${t('lib.view')}</button>
         <button type="button" class="lib-btn" data-act="edit">${svg('edit', 16)} ${t('lib.edit')}</button>
         <button type="button" class="lib-btn icon" data-act="menu" aria-haspopup="menu" aria-label="${t('lib.more')}" title="${t('lib.more')}">${svg('more', 18)}</button>
       </div>
@@ -121,6 +122,7 @@ export function initLibrary(ctx) {
       case 'rename-folder': await renameFolderFlow(view.folder); break;
       case 'delete-folder': await deleteFolderFlow(view.folder); break;
       case 'open': if (rec) await openFlow(rec, false); break;
+      case 'view': if (rec) await viewFlow(rec); break;   // D-066: "צפייה" replaced "פתח" on the card (owner)
       case 'edit': if (rec) await editFlow(rec); break;
       case 'menu': if (rec) cardMenu(b, rec); break;
       default:
@@ -261,6 +263,16 @@ export function initLibrary(ctx) {
     R.openSaved(full, { edit });
     ctx.results.opened = full.id;
   }
+  // D-066 view mode: the route without its tool bars (and in its day colours when it is split)
+  async function viewFlow(rec) {
+    const R = ctx.routeLib;
+    if (R.linkedId() !== rec.id || R.isDirty()) { if (!(await R.guardUnsaved())) return; }
+    const full = await lib.getRoute(rec.id);
+    if (!full) { toast(t('lib.err.route-missing'), true); await reload(); return; }
+    ctx.menus?.closeAll();
+    await ctx.view.enter(full);
+    ctx.results.opened = full.id;
+  }
   async function editFlow(rec) {
     const res = await ask({
       title: t('lib.editTitle', { name: esc(rec.name) }),
@@ -339,6 +351,7 @@ export function initLibrary(ctx) {
   new MutationObserver(() => { if (!panel.hidden) reload(); }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
   // D-064 (owner): the old waypoints are removed for good, also from routes already saved (once per visit)
   if (!stripped) { stripped = true; lib.stripLegacyWaypoints().then((n) => { ctx.results.legacyWaypointsRemoved = n; }).catch(() => {}); }
-  ctx.library = { reload, saveFlow, confirmUnsaved, lib: () => lib };
+  ctx.library = { reload, saveFlow, confirmUnsaved, lib: () => lib,
+    edit: async (id) => { const rec = cache.routes.find((r) => r.id === id) ?? await lib.getRoute(id); if (rec) await editFlow(rec); } };   // D-066
   return ctx.library;
 }

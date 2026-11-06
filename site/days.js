@@ -27,6 +27,7 @@ export function initDays(ctx) {
   const { map, $, t, fmtNumber, notify } = ctx;
   const R = () => ctx.routeLib;
   let on = false;
+  let viewOnly = false;            // D-066: shown from view mode — colours, numbers, lodgings and the chips only, nothing editable
   let sel = null;                 // selected day (null = whole trek)
   let fig = null;                 // the route figures the screen is drawn from
   let cuts = [];                  // [0, boundary sample indices…, last]
@@ -140,7 +141,7 @@ export function initDays(ctx) {
   }
   function close() {
     if (!on) return;
-    on = false; sel = null;
+    on = false; sel = null; viewOnly = false;
     document.body.classList.remove('days-mode');
     $('r-days').setAttribute('aria-pressed', 'false');
     for (const id of ['days-panel', 'days-bar', 'days-profile']) $(id).hidden = true;
@@ -152,8 +153,26 @@ export function initDays(ctx) {
     ctx.results.daysOpen = false;
   }
 
+  // D-066 view mode: the saved split drawn read-only (no panel, no handles, lodgings fixed); the graph is shown by view.js
+  function openView() {
+    fig = R()?.figures?.();
+    if (!fig || !split()) return false;
+    on = true; viewOnly = true; sel = null;
+    ctx.markers?.setMode?.(null);
+    $('days-bar').hidden = false;
+    $('days-panel').hidden = true;
+    placeProfile();
+    addLayers();
+    showLayers(true);
+    refreshCandidates();
+    render();
+    ctx.results.daysOpen = true;
+    return true;
+  }
+
   // ---------------------------------------------------------------- view
   function fitRoute(coords, animate = true) {
+    if (viewOnly) { ctx.view?.fit?.(coords, animate); return; }   // D-066: view mode knows its own bars
     if (!coords?.length) return;
     let w = 180, s = 90, e = -180, n = -90;
     for (const p of coords) { w = Math.min(w, p[0]); e = Math.max(e, p[0]); s = Math.min(s, p[1]); n = Math.max(n, p[1]); }
@@ -184,7 +203,7 @@ export function initDays(ctx) {
       ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[P[anchors[k].i][0], P[anchors[k].i][1]], [l.lon, l.lat]] } }] : []))));
     renderLodgings(s);
     renderChips(days);
-    renderPanel(s, days);
+    if (!viewOnly) renderPanel(s, days);
     renderProfile(s);
     ctx.results.days = { n: days.length, sel, days: days.map((d) => ({ distance: Math.round(d.distance), ascent: Math.round(d.ascent), descent: Math.round(d.descent) })),
       lodgings: s.lodgings.map((l, k) => ({ name: lodgingName(l, k), lon: l.lon, lat: l.lat, offset: Math.round(anchors[k].offset), at: anchors[k].i, manual: l.manual, source: l.source?.kind ?? null })) };
@@ -199,12 +218,12 @@ export function initDays(ctx) {
         const elx = document.createElement('div');
         elx.className = 'lodge';
         elx.innerHTML = `<span class="lodge-tag"></span><span class="lodge-dot">${TENT}</span>`;
-        m = new maplibregl.Marker({ element: elx, draggable: true, anchor: 'bottom', offset: [0, 14] });
+        m = new maplibregl.Marker({ element: elx, draggable: !viewOnly, anchor: 'bottom', offset: [0, 14] });
         m._k = k;
         m.on('dragstart', () => { m._dragged = true; });
         m.on('drag', () => { const p = m.getLngLat(); elx.classList.toggle('snap', !!snapTarget([p.lng, p.lat], candCache)); });
         m.on('dragend', () => { elx.classList.remove('snap'); dropLodging(m._k, m.getLngLat()); setTimeout(() => { m._dragged = false; }, 0); });
-        elx.addEventListener('click', (e) => { e.stopPropagation(); if (!m._dragged) editLodging(m._k); });
+        elx.addEventListener('click', (e) => { e.stopPropagation(); if (!m._dragged && !viewOnly) editLodging(m._k); });
         lodgeMarkers[k] = m;
       }
       m._k = k;
@@ -327,15 +346,17 @@ export function initDays(ctx) {
     renderDaysProfile(box.querySelector('.days-prof-svg'), fig.profile, cuts, dayColor, {
       sel,
       label: (k) => lodgingName(s.lodgings[k - 1], k - 1),
-      onDrag: (k, i, done) => moveBoundary(k, i, done),
+      handles: !viewOnly,   // D-066: no dragging in view mode
+      onDrag: viewOnly ? undefined : (k, i, done) => moveBoundary(k, i, done),
       onHover: (i) => { if (i === null) hover.remove(); else hover.setLngLat([fig.profile[i][0], fig.profile[i][1]]).addTo(map); },
     });
-    if (!PHONE.matches) document.documentElement.style.setProperty('--days-prof-h', `${box.offsetHeight + 12}px`);
+    if (!PHONE.matches && !viewOnly) document.documentElement.style.setProperty('--days-prof-h', `${box.offsetHeight + 12}px`);
   }
 
   // the graph lives in the drawer on a phone, at the bottom of the screen on a computer
   function placeProfile() {
     const prof = $('days-profile');
+    if (viewOnly) { if (prof.parentElement !== document.body) document.body.append(prof); return; }   // D-066: view mode places it
     if (PHONE.matches) { const slot = $('days-panel').querySelector('.days-prof-slot'); if (slot) slot.replaceWith(prof); }
     else if (prof.parentElement !== document.body) { document.body.append(prof); }
     document.documentElement.style.setProperty('--days-prof-h', PHONE.matches ? '0px' : `${(prof.offsetHeight || 196) + 12}px`);
@@ -378,6 +399,6 @@ export function initDays(ctx) {
     render();
   };
 
-  ctx.days = { open, close, isOpen: () => on, selectDay, addLayers, render, moveBoundary, dropLodging: (k, lon, lat) => dropLodging(k, { lng: lon, lat }), refreshCandidates };
+  ctx.days = { open, openView, isView: () => viewOnly, close, isOpen: () => on, selectDay, addLayers, render, moveBoundary, dropLodging: (k, lon, lat) => dropLodging(k, { lng: lon, lat }), refreshCandidates };
   return ctx.days;
 }

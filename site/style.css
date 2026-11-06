@@ -797,3 +797,46 @@ body.days-mode .maplibregl-ctrl-bottom-left { bottom: calc(var(--days-prof-h, 0p
   body.days-mode .maplibregl-ctrl-bottom-left { bottom: var(--days-sheet-h, 0px); }
 }
 @media (min-width: 601px) { .days-grab { display: none; } }
+
+/* ======================================================================== D-066 view mode ("צפייה")
+   The saved route without its tool bars. Reused: the route figures panel's card (white, --frame border,
+   --panel-shadow, radius 10px) for the bar and the graph, .lib-btn for "עריכה", .lib-days for the days tag, the
+   days chips as the legend, the route pill's stat icons. No new colours. */
+body.view-mode #route-dock, body.view-mode #days-panel { display: none !important; }
+body.view-mode .days-bar { inset-inline-start: calc(var(--edge) + var(--nav) + 12px); }
+body.view-mode .lodge { cursor: default; }
+body.view-mode .days-prof-head small { display: none; }
+body.view-mode .maplibregl-ctrl-bottom-left { bottom: var(--view-h, 0px); }
+.view-bar { position: fixed; z-index: 3; bottom: var(--edge); inset-inline-start: calc(var(--edge) + var(--ctl) + 12px); inset-inline-end: var(--edge);
+  min-height: 54px; box-sizing: border-box; display: flex; align-items: center; gap: 14px; padding: 6px 10px 6px 14px;
+  background: var(--c-white); border: 1px solid var(--frame); border-radius: 10px; box-shadow: var(--panel-shadow); color: var(--c-dark); font-family: var(--font); }
+.vb-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.vb-name b { font: 700 15px var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vb-name .lib-days { flex: none; }
+.vb-dot { flex: none; width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 1.5px #0a1f0a, 0 0 0 3px #fff; }
+.vb-stats { display: flex; align-items: center; gap: 14px; white-space: nowrap; font: 500 13px var(--mono); color: var(--c-body); font-variant-numeric: tabular-nums lining-nums; }
+.vb-stats span { display: inline-flex; align-items: baseline; gap: 3px; }
+.vb-stats .up, .vb-stats .down { align-items: center; }
+.vb-stats b { font-size: 15px; color: var(--c-dark); }
+.vb-stats i { font: 500 11px var(--font); font-style: normal; }
+.vb-sp { flex: 1; }
+.view-bar .lib-btn { flex: none; white-space: nowrap; }
+.view-bar .lib-btn .ic, .vb-ic .ic { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.vb-ic { flex: none; width: 38px; height: 38px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--c-dark); cursor: pointer; }
+.vb-ic:hover { background: var(--c-light); }
+.vb-ic .ic { width: 18px; height: 18px; }
+#vb-graph[aria-expanded="true"] .ic { transform: rotate(180deg); }
+body.view-mode .days-profile, .view-profile { bottom: calc(var(--edge) + var(--vb-h, 54px) + 10px); }
+.view-profile { position: fixed; z-index: 2; inset-inline-start: calc(var(--edge) + var(--ctl) + 12px); inset-inline-end: var(--edge);
+  height: 196px; box-sizing: border-box; padding: 10px 14px 6px; display: grid; grid-template-rows: auto 1fr; gap: 4px;
+  background: var(--c-white); border: 1px solid var(--frame); border-radius: 10px; box-shadow: var(--panel-shadow); }
+.view-profile .vp-svg { min-height: 0; height: auto; direction: ltr; }
+@media (max-width: 600px) {
+  .view-bar { inset-inline: var(--edge); flex-wrap: wrap; gap: 4px 8px; padding: 8px 10px; }
+  .vb-name { flex: 1; }
+  .vb-stats { order: 3; width: 100%; gap: 12px; }
+  .vb-sp { display: none; }
+  body.view-mode .days-profile, .view-profile { position: fixed; inset-inline: var(--edge); bottom: calc(var(--edge) + var(--vb-h, 92px) + 8px);
+    height: 170px; margin: 0; padding: 8px 10px 4px; background: var(--c-white); border: 1px solid var(--frame); box-shadow: var(--panel-shadow); }
+  body.view-mode .days-bar { inset-inline: var(--edge); }
+}

@@ -242,6 +242,17 @@
 <section id="days-profile" class="days-profile" hidden><div class="days-prof-head"><b></b><small data-i18n="days.dragHint">גררו גבול בין צבעים כדי להזיז לינה</small></div><div class="days-prof-svg"></div></section>
 <dialog id="days-dialog" class="lib-dialog days-dialog"></dialog>
 
+<!-- D-066: view mode — the saved route without its tool bars: name + figures (graph folded), edit, close -->
+<section id="view-bar" class="view-bar" hidden data-i18n-attr="aria-label:view.bar" aria-label="צפייה במסלול">
+  <div class="vb-name"><i id="vb-dot" class="vb-dot"></i><b id="vb-name"></b><span id="vb-days" class="lib-days" hidden></span></div>
+  <div id="vb-stats" class="vb-stats"></div>
+  <span class="vb-sp"></span>
+  <button id="vb-graph" class="vb-ic" type="button" aria-expanded="false" aria-controls="view-profile"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+  <button id="vb-edit" class="lib-btn" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg> <span data-i18n="view.edit">עריכה</span></button>
+  <button id="vb-close" class="vb-ic" type="button" data-i18n-attr="title:view.close;aria-label:view.close" title="סגירה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</section>
+<section id="view-profile" class="view-profile" hidden><div class="days-prof-head"><b data-i18n="view.profile">פרופיל גובה</b></div><div class="vp-svg rd-profile"></div></section>
+
 <script type="module" src="app.js"></script>
 </body>
 </html>

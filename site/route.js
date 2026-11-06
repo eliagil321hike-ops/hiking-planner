@@ -38,6 +38,7 @@ export function initRoute(ctx) {
   let statsSeq = 0;
   let samples = [];
   let drawProfile = null, lastSize = '';   // redraw of the elevation graph at its current size (D-054)
+  let profileInto = null;   // D-066: the route graph drawn into another box (view mode)
   // My Routes (D-056): figures of the current line for saving; resolves when the figures are up to date.
   let lastFigures = null;
   const hoverMarker = new maplibregl.Marker({ color: '#2a241d', scale: 0.7 });
@@ -197,6 +198,7 @@ export function initRoute(ctx) {
 
   // ---------------------------------------------------------------- planning mode + buttons
   function setPlanning(on) {
+    if (on) ctx.view?.exit?.();   // D-066: editing leaves view mode
     planning = on;
     if (on) ctx.markers?.setMode(null);
     $('plan-badge').hidden = !on;
@@ -346,6 +348,7 @@ export function initRoute(ctx) {
     $('pill-stats').innerHTML = `<b>${km}</b><i>${t('unit.km')}</i><span class="up">${statIcon('up', 15)}${n0(st.ascent)}</span><span class="down">${statIcon('down', 15)}${n0(st.descent)}</span>`;
     drawProfile = () => renderProfile($('profile'), samples, (i) => hoverMarker.setLngLat(samples[i].point).addTo(map), { smoothed: st.smoothed, min: st.min, max: st.max, compact: true });
     if (expanded) drawProfile();
+    profileInto = (el, hover) => renderProfile(el, samples, (i) => hover?.(samples[i].point), { smoothed: st.smoothed, min: st.min, max: st.max, compact: true });   // D-066
     ctx.onRouteFigures?.();   // D-065
   }
   // The graph is drawn for the size of its box; redraw whenever that box changes (panel shown, window resized,
@@ -461,6 +464,7 @@ export function initRoute(ctx) {
   }
   /** Show a saved route (never shown automatically): load it into the editor, fit the view, show the panel. */
   function openSaved(rec, { edit = false } = {}) {
+    ctx.view?.exit?.();   // D-066: view mode starts again only through ctx.view.enter
     selected = null;
     editor.load({ vertices: rec.editor.state.vertices, waypoints: (rec.editor.state.waypoints ?? []).filter((w) => w.icon) }, rec.editor.cache ?? {});
     setMeta({ name: rec.name, color: ROUTE_COLORS.includes(rec.color) ? rec.color : ROUTE_COLOR, savedId: rec.id, daySplits: cleanSplit(rec.daySplits) });
@@ -470,7 +474,17 @@ export function initRoute(ctx) {
     const b = rec.bbox;
     if (b) map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: { top: 90, bottom: 240, left: 80, right: 90 }, maxZoom: 15, duration: 900 });
   }
-  ctx.routeLib = { hasRoute, isDirty, snapshot, markSaved, openSaved, guardUnsaved, linkedId: () => getMeta().savedId ?? null,
+  // D-066 view mode: close the shown (saved) route without starting a new one
+  async function closeRoute() {
+    if (!(await guardUnsaved())) return false;
+    selected = null;
+    const s = editor.state;
+    if (s.vertices.length || s.waypoints.length) editor.run(clearRoute(editor.state));
+    setMeta({ name: '', savedId: null, savedSig: null, daySplits: null });
+    setPlanning(false);
+    return true;
+  }
+  ctx.routeLib = { hasRoute, isDirty, snapshot, markSaved, openSaved, guardUnsaved, closeRoute, drawProfileInto: (el, hover) => profileInto?.(el, hover), linkedId: () => getMeta().savedId ?? null,
     unlink: () => setMeta({ savedId: null, savedSig: null }),
     color: routeColor, setPlanning, isPlanning: () => planning, dockOpen: () => !$('route-dock').hidden,
     routeMarks: () => editor.state.waypoints.filter((w) => w.icon),

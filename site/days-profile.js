@@ -71,8 +71,8 @@ export function renderDaysProfile(container, profile, cuts, colors, opts = {}) {
     svg.append(el('path', { d: line, class: 'dp-line', stroke: colors(k) }));
   }
 
-  // boundaries with handles (whole-trek view only)
-  if (sel === null) {
+  // boundaries with handles (whole-trek view only; none in view mode, D-066)
+  if (sel === null && opts.handles !== false) {
     for (let k = 1; k < cuts.length - 1; k++) {
       const bx = x(profile[cuts[k]][2]);
       const g = el('g', { 'data-k': k });

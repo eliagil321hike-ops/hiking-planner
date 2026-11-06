@@ -22,6 +22,7 @@ import { initSearch } from './search.js';
 import { initLibrary } from './library.js';
 import { initMarkers } from './markers.js';
 import { initDays } from './days.js';
+import { initView } from './view.js';
 
 const BUILD = '__BUILD__'; // replaced by CI (scripts/stamp_build.sh) with the commit id
 const perf = createPerf();
@@ -143,6 +144,7 @@ ctx.menus = menus;
 initLibrary(ctx);   // My Routes (D-056)
 initMarkers(ctx);   // personal points + route marks (D-064)
 initDays(ctx);      // day split (D-065)
+initView(ctx);      // view mode (D-066), after initDays: it follows the route figures after the days screen
 initSearch(ctx);
 
 // Test/debug handle (used by scripts/e2e_test.py).
