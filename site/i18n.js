@@ -128,8 +128,8 @@ const STRINGS = {
     'mk.icons.parking': 'חניה',
     'mk.icons.peak': 'פסגה',
     // D-065 day split
-    'days.bar': 'שמירה וחלוקה לימים',
-    'days.button': 'חלוקה לימים',
+    'days.bar': 'שמירה וחלוקה למקטעים',
+    'days.button': 'חלוקה למקטעים',
     'days.title': 'חלוקה לימים',
     'days.chips': 'ימי הטרק',
     'days.build': 'בניית מסלול',

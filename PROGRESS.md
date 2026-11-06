@@ -141,7 +141,7 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   checks). Phone fixes after real screenshots: points menu height, edit button in "my points".
 - Restore point before publishing: branch snapshot/site-before-markers (removing old waypoints from saved routes cannot be undone).
 
-## Day split (D-065, 2026-11-05, branch wip/days – waiting for owner approval; not on the site)
+## Day split (D-065, 2026-11-05; approved and released 2026-11-06)
 - New files: site/days-core.js, site/days.js, site/days-profile.js, tests/days.test.mjs.
 - Existing files touched (hooks only):
   - site/index.html – "save" moved with the new days button into its own small bar above the route tool bar
@@ -160,6 +160,8 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - Tests (2026-11-06, wip/days): unit 62/62, editor 18/18, smoke 17 PASS, full e2e 141 PASS / 0 FAIL (all existing
   checks for building, save/load, library, layers and GPX export still pass). Not verifiable here: day colours on
   the satellite layer (no satellite tiles offline).
+- 2026-11-06: button renamed "חלוקה למקטעים" with the owner-chosen icon (unit 62/62, editor 18/18, smoke 17 PASS,
+  title and icon checked in the browser). Restore point: branch snapshot/site-before-days.
 
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference

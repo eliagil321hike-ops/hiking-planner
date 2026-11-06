@@ -777,3 +777,5 @@ raise the right tool bar a little")
   they read on topo, hybrid and satellite; every day also has a numbered badge on the route.
 - Code: `site/days-core.js` (pure, unit-tested), `site/days.js` (screen), `site/days-profile.js` (graph);
   tests `tests/days.test.mjs` + e2e section "day split".
+- 2026-11-06 (owner): the button is called "חלוקה למקטעים"; icon = elevation line cut into 3 segments with a dot at
+  each cut (sketch "A+D 1"). Only the button label/tooltip changed; the screen keeps "ימים / יום k". Approved for release.
