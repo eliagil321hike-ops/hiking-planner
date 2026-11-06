@@ -156,6 +156,10 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   - site/gpx.js – a route with a split exports a track per day + lodging waypoints; without one the file is
     byte-for-byte the same as before (checked against the published gpx.js).
   - site/i18n.js – new `days.*` texts only. site/style.css – new D-065 section only.
+  - scripts/e2e_test.py – new "day split (D-065)" section (17 checks); existing checks unchanged.
+- Tests (2026-11-06, wip/days): unit 62/62, editor 18/18, smoke 17 PASS, full e2e 141 PASS / 0 FAIL (all existing
+  checks for building, save/load, library, layers and GPX export still pass). Not verifiable here: day colours on
+  the satellite layer (no satellite tiles offline).
 
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
