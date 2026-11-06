@@ -162,6 +162,7 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   the satellite layer (no satellite tiles offline).
 - 2026-11-06: button renamed "חלוקה למקטעים" with the owner-chosen icon (unit 62/62, editor 18/18, smoke 17 PASS,
   title and icon checked in the browser). Restore point: branch snapshot/site-before-days.
+- LIVE 2026-11-06: main 22a184f, CI run 42197357110 – test success, deploy success.
 
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
