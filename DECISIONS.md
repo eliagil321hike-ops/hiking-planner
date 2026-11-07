@@ -794,3 +794,12 @@ raise the right tool bar a little")
 - Code: `site/view.js` (new); hooks in route.js (exit view on edit/open, `closeRoute`, `drawProfileInto`),
   days.js (`openView`, read-only), days-profile.js (`handles: false`), library.js (eye button, `viewFlow`,
   `ctx.library.edit`), index.html (`#view-bar`, `#view-profile`), i18n.js, style.css (D-066 section), app.js.
+
+## D-067 Side tool bar without "מחק נקודה" on desktop, 2026-11-07
+- Owner: remove the X from the tool bar so the bar does not hide the map buttons (screenshot: on a low window the
+  upright bar climbed over "my location" and "2D").
+- The X is "מחק נקודה" (delete the selected point), not "clear route" (that is the bin, kept). Hidden only where the
+  bar stands upright (> 760 px) and a mouse is used; Delete / Backspace still deletes the selected point. Phones and
+  touch screens keep it (no key there). CSS only (style.css D-067); the button and its code stay.
+- Measured: the bar is 36 px lower; at 920×600 its top moved from 151 to 187 px (map buttons end at 177 px). Windows
+  lower than about 600 px can still overlap.

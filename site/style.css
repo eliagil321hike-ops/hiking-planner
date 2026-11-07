@@ -840,3 +840,10 @@ body.view-mode .days-profile, .view-profile { bottom: calc(var(--edge) + var(--v
     height: 170px; margin: 0; padding: 8px 10px 4px; background: var(--c-white); border: 1px solid var(--frame); box-shadow: var(--panel-shadow); }
   body.view-mode .days-bar { inset-inline: var(--edge); }
 }
+
+/* D-067 (owner, 2026-11-07): the side tool bar is one button shorter so it does not climb over the map buttons on
+   lower windows – "מחק נקודה" (X) leaves the bar where the bar stands upright and a mouse is used; the selected point
+   is still deleted by the Delete / Backspace key. On phones and touch screens the button stays (no key there). */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  #r-delete { display: none; }
+}
