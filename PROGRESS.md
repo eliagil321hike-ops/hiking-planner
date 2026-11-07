@@ -164,7 +164,8 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   title and icon checked in the browser). Restore point: branch snapshot/site-before-days.
 - LIVE 2026-11-06: main 22a184f, CI run 42197357110 – test success, deploy success.
 
-## View mode (D-066, 2026-11-07, branch wip/view – waiting for owner approval; not on the site)
+## View mode (D-066, 2026-11-07; owner approved, live 2026-11-07 – main 26ce581, CI run 42353906605 test + deploy success;
+   restore point: branch snapshot/site-before-view)
 - The library card's main button is now "צפייה" (eye) instead of "פתח" (owner, option 2); "ערוך" unchanged.
 - View: no route tool bars; bar with name, figures, graph toggle, "עריכה", X. Split routes in segment colours
   (read-only), legend chips, graph without handles. See DECISIONS D-066.
