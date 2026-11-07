@@ -175,7 +175,7 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - Tests (2026-11-07, wip/view): unit 62/62, editor 18/18, smoke 17 PASS, full e2e 146 PASS / 0 FAIL (all existing
   checks incl. building, save/load, library, layers/3D, GPX, day split, plus the 5 view checks).
 
-## Side bar without "מחק נקודה" on desktop (D-067, 2026-11-07, branch wip/no-x – waiting for owner approval)
+## Side bar without "מחק נקודה" on desktop (D-067, 2026-11-07, live – commit 3550b9d, CI run 42363985233; snapshot/site-before-no-x)
 - site/style.css only (new D-067 rule). Checked in the browser: bar top 151 → 187 px at 920×600 (clear of the map
   buttons), Delete key still deletes the selected point, phone keeps the button.
 
