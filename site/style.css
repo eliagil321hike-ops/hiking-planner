@@ -847,3 +847,44 @@ body.view-mode .days-profile, .view-profile { bottom: calc(var(--edge) + var(--v
 @media (min-width: 761px) and (hover: hover) and (pointer: fine) {
   #r-delete { display: none; }
 }
+
+/* D-068 (owner, 2026-11-08): the days screen's summary and profile fold on a computer, with the route panel's own
+   "הסתר" button (.panel-btn.hide-btn, chevron, turquoise bar). The folded summary is a narrow strip at its own edge
+   (inline-start = right in Hebrew) with the button, the number of days, the distance and the far-lodging "!" (.days-far);
+   the folded profile keeps only its title line. Phones keep their drawer (.days-grab). */
+.days-fold, .days-prof-fold, .days-mini { display: none; }
+@media (min-width: 601px) {
+  .days-fold, .days-prof-fold { display: inline-flex; position: relative; flex: none; }
+  .days-fold::after, .days-prof-fold::after { content: ""; position: absolute; inset: -7px -4px; }   /* a 44 px target */
+  .days-fold { margin-inline-start: auto; }
+  .days-fold + .lib-x { margin-inline-start: 0; }
+  .days-prof-head { align-items: center; }
+  .days-prof-fold { margin-inline-start: 10px; }
+  .days-fold .chev, .days-fold[aria-expanded="true"] .chev { transform: rotate(-90deg); }      /* points to its own edge */
+  .days-fold[aria-expanded="false"] .chev { transform: rotate(90deg); }
+  html[dir="ltr"] .days-fold .chev { transform: rotate(90deg); }
+  html[dir="ltr"] .days-fold[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+  .days-prof-fold .chev, .days-prof-fold[aria-expanded="true"] .chev { transform: none; }        /* down: fold down */
+  .days-prof-fold[aria-expanded="false"] .chev { transform: rotate(180deg); }
+  body.days-folded { --days-w: 68px; }
+  .days-panel, .days-bar { transition: width 0.18s ease, inset-inline-start 0.18s ease; }
+  .days-panel.folded { padding: 8px 6px 10px; overflow: hidden; }
+  .days-panel.folded > :not(.days-head):not(.days-mini) { display: none; }
+  .days-panel.folded .days-head { justify-content: center; margin: 0 0 6px; }
+  .days-panel.folded .days-head > :not(.days-fold) { display: none; }
+  .days-panel.folded .days-fold { margin: 0; width: 44px; height: 44px; padding: 0; justify-content: center; }
+  .days-panel.folded .days-fold > span { display: none; }
+  .days-panel.folded .days-fold::after { inset: 0; }
+  .days-panel.folded .days-mini { display: flex; flex-direction: column; align-items: center; gap: 1px; text-align: center;
+    font-variant-numeric: tabular-nums lining-nums; color: var(--c-dark); }
+  .days-mini b { font: 700 17px var(--font); line-height: 1.2; }
+  .days-mini b + span { font: 500 11.5px var(--font); color: var(--c-body); margin-bottom: 6px; }
+  .days-mini .days-far { margin: 2px 0 0; width: 24px; height: 24px; font-size: 13px; }
+  .days-profile.folded { height: auto; grid-template-rows: auto; padding: 7px 14px; }
+  .days-profile.folded .days-prof-svg, .days-profile.folded .days-prof-head small { display: none; }
+  .days-profile.folded .days-prof-fold { margin-inline-start: auto; }
+  body.view-mode .days-prof-fold { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .days-panel, .days-bar, .days-fold .chev, .days-prof-fold .chev { transition: none; }
+}

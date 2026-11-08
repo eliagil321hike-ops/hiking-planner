@@ -15,6 +15,7 @@ import {
 import { renderDaysProfile } from './days-profile.js';
 import { statIcon } from './stat-icons.js';
 import { routeToGpx, gpxFileName, downloadText } from './gpx.js';
+import { loadPrefs, savePrefs } from './prefs.js';
 
 const FC = (features) => ({ type: 'FeatureCollection', features });
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -22,6 +23,16 @@ const TENT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 19 12 5l
 const PLACE_KEY = { camp: 'days.placeCamp', spring: 'days.placeSpring', water: 'days.placeWater', shelter: 'days.placeShelter' };
 const PHONE = matchMedia('(max-width: 600px)');
 const DIM = '#A9B4BF';   // a day that is not the selected one: a light grey-blue (lighter --frame), so the selected day stands out
+// D-068: every day line is a white casing under the day colour, both from one width table (px at zoom 7/10/12/14/16)
+// so the casing is always 3–4 px wider; a dimmed day lowers the opacity of both lines together.
+const DAY_W = [3.5, 5, 6.5, 9, 13];
+const CASE_W = [6.5, 8, 10, 13, 17];
+const zw = (w) => ['interpolate', ['linear'], ['zoom'], 7, w[0], 10, w[1], 12, w[2], 14, w[3], 16, w[4]];
+const DIM_OP = 0.75;
+// D-068: the summary and the profile fold on a computer; a smaller screen starts with the profile folded until the
+// owner chooses (the choice is remembered in this browser, not in the route)
+const SMALL = () => innerWidth < 1366 || innerHeight < 800;
+const CHEV = '<svg class="chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
 export function initDays(ctx) {
   const { map, $, t, fmtNumber, notify } = ctx;
@@ -33,6 +44,7 @@ export function initDays(ctx) {
   let cuts = [];                  // [0, boundary sample indices…, last]
   let anchors = [];               // [{ i, offset }] per lodging
   let lodgeMarkers = [];
+  let fold = { panel: false, prof: false };   // D-068: folded summary / profile (computer only)
   const hover = new maplibregl.Marker({ color: '#2a241d', scale: 0.7 });
   const n0 = (v) => fmtNumber(Math.round(v ?? 0));
   const km = (m) => fmtNumber(m / 1000, { maximumFractionDigits: 1, minimumFractionDigits: 1 });
@@ -44,10 +56,11 @@ export function initDays(ctx) {
     const under = map.getLayer('topo-poi-dot') ? 'topo-poi-dot' : undefined;   // like the route: under point icons
     for (const id of ['days-route', 'days-links', 'days-badges']) map.addSource(id, { type: 'geojson', data: FC([]) });
     const hidden = { visibility: 'none' };
+    // D-068: the casing is added in the same step and from the same source, so a day line is never drawn without it
+    map.addLayer({ id: 'days-casing', type: 'line', source: 'days-route', layout: { ...hidden, 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#ffffff', 'line-opacity': ['get', 'opacity'], 'line-width': zw(CASE_W) } }, under);
     map.addLayer({ id: 'days-line', type: 'line', source: 'days-route', layout: { ...hidden, 'line-join': 'round', 'line-cap': 'round' },
-      paint: { 'line-color': ['get', 'color'], 'line-opacity': ['get', 'opacity'],
-        // a little wider than the route line (route.js), so no edge of the route's own colour shows beside a day
-        'line-width': ['interpolate', ['linear'], ['zoom'], 7, 4.3, 10, 6, 12, 8, 14, 11.6, 16, 17.6] } }, under);
+      paint: { 'line-color': ['get', 'color'], 'line-opacity': ['get', 'opacity'], 'line-width': zw(DAY_W) } }, under);
     map.addLayer({ id: 'days-link', type: 'line', source: 'days-links', layout: { ...hidden, 'line-cap': 'round' },
       paint: { 'line-color': '#203449', 'line-width': 2, 'line-dasharray': [1.5, 1.6], 'line-opacity': 0.9 } });
     map.addLayer({ id: 'days-badge', type: 'circle', source: 'days-badges', layout: hidden,
@@ -56,10 +69,11 @@ export function initDays(ctx) {
       layout: { ...hidden, 'text-field': ['get', 'n'], 'text-font': ctx.results.topo?.labelFont ?? ['Noto Sans Bold'], 'text-size': 12, 'text-allow-overlap': true, 'text-ignore-placement': true },
       paint: { 'text-color': '#ffffff', 'text-halo-color': 'rgba(10,31,10,0.35)', 'text-halo-width': 0.6, 'text-opacity': ['get', 'opacity'] } });
   }
-  const LAYERS = ['days-line', 'days-link', 'days-badge', 'days-badge-n'];
+  const LAYERS = ['days-casing', 'days-line', 'days-link', 'days-badge', 'days-badge-n'];
   // while the days screen is open the route's own line and control points step aside (the day lines replace them;
-  // the route's dark casing stays under the days) and come back exactly as they were when it closes
-  const ROUTE_OWN = ['route-line', 'route-points'];
+  // D-068: the route's dark casing steps aside too — the days have their own white casing) and come back exactly as
+  // they were when it closes
+  const ROUTE_OWN = ['route-casing', 'route-line', 'route-points'];
   let routeVis = null;
   function showLayers(v) {
     for (const id of LAYERS) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v ? 'visible' : 'none');
@@ -123,6 +137,7 @@ export function initDays(ctx) {
     ctx.markers?.setMode?.(null);
     on = true; sel = null;
     document.body.classList.add('days-mode');
+    loadFold();
     $('r-days').setAttribute('aria-pressed', 'true');
     for (const id of ['days-panel', 'days-bar', 'days-profile']) $(id).hidden = false;
     placeProfile();
@@ -142,7 +157,9 @@ export function initDays(ctx) {
   function close() {
     if (!on) return;
     on = false; sel = null; viewOnly = false;
-    document.body.classList.remove('days-mode');
+    document.body.classList.remove('days-mode', 'days-folded');
+    $('days-panel').classList.remove('folded');
+    $('days-profile').classList.remove('folded');
     $('r-days').setAttribute('aria-pressed', 'false');
     for (const id of ['days-panel', 'days-bar', 'days-profile']) $(id).hidden = true;
     showLayers(false);
@@ -158,6 +175,7 @@ export function initDays(ctx) {
     fig = R()?.figures?.();
     if (!fig || !split()) return false;
     on = true; viewOnly = true; sel = null;
+    applyFold();   // D-068: nothing is folded in view mode (its bar has its own graph button)
     ctx.markers?.setMode?.(null);
     $('days-bar').hidden = false;
     $('days-panel').hidden = true;
@@ -180,7 +198,8 @@ export function initDays(ctx) {
     const sheet = phone ? Math.min(innerHeight * 0.62, $('days-panel').offsetHeight || innerHeight * 0.5) : 0;
     const pad = phone
       ? { top: 130, bottom: sheet + 24, left: 30, right: 50 }
-      : { top: 130, bottom: ($('days-profile').offsetHeight || 196) + 40, left: 60, right: 340 + 90 };   // RTL: the panel is on the right
+      // RTL: the panel is on the right; D-068: its real width and the profile's real height, so a folded panel frees room
+      : { top: 130, bottom: ($('days-profile').offsetHeight || 196) + 40, left: 60, right: ($('days-panel').offsetWidth || 340) + 90 };
     try { map.fitBounds([[w, s], [e, n]], { padding: pad, maxZoom: 15, duration: animate ? 700 : 0 }); } catch { /* view smaller than the padding */ }
   }
 
@@ -191,9 +210,10 @@ export function initDays(ctx) {
     const days = dayStats(fig.profile, anchors);
     const P = fig.profile;
     const op = (k) => (sel === null || sel === k ? 1 : 0.45);
+    const lineOp = (k) => (sel === null || sel === k ? 1 : DIM_OP);   // D-068: casing and colour dim together
     const lineColor = (k) => (sel === null || sel === k ? dayColor(k) : DIM);
     // map: one coloured line per day, the day number in the middle, dashed links to off-route lodgings
-    map.getSource('days-route')?.setData(FC(days.map((d, k) => ({ type: 'Feature', properties: { day: k, color: lineColor(k), opacity: 1 },
+    map.getSource('days-route')?.setData(FC(days.map((d, k) => ({ type: 'Feature', properties: { day: k, color: lineColor(k), opacity: lineOp(k) },
       geometry: { type: 'LineString', coordinates: P.slice(d.from, d.to + 1).map((p) => [p[0], p[1]]) } }))));
     map.getSource('days-badges')?.setData(FC(days.map((d, k) => {
       const mid = P[d.from + Math.floor((d.to - d.from) / 2)];
@@ -281,7 +301,11 @@ export function initDays(ctx) {
   }
   const head = () => `<button type="button" class="days-grab" data-act="grab" aria-label="${t('days.collapse')}"></button>
     <div class="days-head"><div class="days-switch" role="group"><button type="button" data-act="build" aria-pressed="false">${t('days.build')}</button><button type="button" data-act="days" aria-pressed="true">${t('days.days')}</button></div>
+    ${foldBtn()}
     <button type="button" class="lib-x" data-act="close" aria-label="${t('days.close')}" title="${t('days.close')}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button></div>`;
+  // D-068: the summary's fold button — the same "הסתר" button as the route panel's, kept in place when folded so focus stays
+  const foldBtn = () => `<button type="button" class="panel-btn hide-btn days-fold" data-act="fold" aria-controls="days-panel" aria-expanded="${!fold.panel}"
+    aria-label="${t(fold.panel ? 'days.expandSum' : 'days.foldSum')}" title="${t(fold.panel ? 'days.expandSum' : 'days.foldSum')}"><span>${t('route.hide')}</span>${CHEV}</button>`;
   function renderPanel(s, days) {
     const n = days.length;
     const tot = days.reduce((a, d) => ({ distance: a.distance + d.distance, ascent: a.ascent + d.ascent, descent: a.descent + d.descent }), { distance: 0, ascent: 0, descent: 0 });
@@ -289,6 +313,8 @@ export function initDays(ctx) {
     const prof = $('days-profile');
     const keepProf = prof.parentElement === $('days-panel');
     $('days-panel').innerHTML = `${head()}
+      <div class="days-mini" aria-hidden="${!fold.panel}"><b>${n}</b><span>${t('days.miniDays')}</span><b>${km(tot.distance)}</b><span>${t('unit.km')}</span>
+        ${far.length ? `<span class="days-far" role="img" aria-label="${esc(t('days.miniWarn', { n: far.length }))}" title="${esc(far.map((x) => t('days.far', { n: x.k + 1, m: n0(x.m) })).join('\n'))}">!</span>` : ''}</div>
       <div class="days-title"><h2>${t('days.summary')}</h2><small>${n - 1 === 1 ? t('days.sub1', { n }) : t('days.sub', { n, l: n - 1 })}</small></div>
       <div class="days-count"><span>${t('days.countLabel')}</span>
         <button type="button" class="lib-btn icon" data-act="less" aria-label="${t('days.less')}" title="${t('days.less')}" ${n <= MIN_DAYS ? 'disabled' : ''}><svg class="ic" width="16" height="16" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
@@ -315,6 +341,7 @@ export function initDays(ctx) {
     const s = split();
     if (a === 'close' || a === 'days') { if (a === 'close') close(); return; }
     if (a === 'build') { close(); R().setPlanning(true); return; }
+    if (a === 'fold') { setFold('panel', !fold.panel); return; }
     if (a === 'grab') { $('days-panel').classList.toggle('collapsed'); syncSheet(); return; }
     if (a === 'less' || a === 'more' || a === 'resplit') {
       if (isManual(s) && !confirm(t('days.resplitConfirm'))) return;
@@ -340,6 +367,39 @@ export function initDays(ctx) {
     }
   });
 
+  // ---------------------------------------------------------------- D-068 folding (computer only)
+  function loadFold() {
+    const p = loadPrefs();
+    fold = { panel: p.daysPanelFolded === true, prof: typeof p.daysProfFolded === 'boolean' ? p.daysProfFolded : SMALL() };
+  }
+  const profBtn = document.createElement('button');
+  profBtn.type = 'button';
+  profBtn.className = 'panel-btn hide-btn days-prof-fold';
+  profBtn.setAttribute('aria-controls', 'days-profile');
+  $('days-profile').querySelector('.days-prof-head').append(profBtn);
+  profBtn.addEventListener('click', () => setFold('prof', !fold.prof));
+  function applyFold() {
+    const desk = on && !PHONE.matches && !viewOnly;
+    const fp = desk && fold.panel, fq = desk && fold.prof;
+    $('days-panel').classList.toggle('folded', fp);
+    document.body.classList.toggle('days-folded', fp);
+    $('days-profile').classList.toggle('folded', fq);
+    const pb = $('days-panel').querySelector('.days-fold');
+    if (pb) { const l = t(fp ? 'days.expandSum' : 'days.foldSum'); pb.setAttribute('aria-expanded', String(!fp)); pb.setAttribute('aria-label', l); pb.title = l; }
+    $('days-panel').querySelector('.days-mini')?.setAttribute('aria-hidden', String(!fp));
+    const pl = t(fq ? 'days.expandProf' : 'days.foldProf');
+    profBtn.innerHTML = `<span>${t(fq ? 'days.show' : 'route.hide')}</span>${CHEV}`;
+    profBtn.setAttribute('aria-expanded', String(!fq)); profBtn.setAttribute('aria-label', pl); profBtn.title = pl;
+    if (desk) document.documentElement.style.setProperty('--days-prof-h', `${$('days-profile').offsetHeight + 12}px`);
+    ctx.results.daysFold = { panel: fp, prof: fq };
+  }
+  function setFold(which, v) {
+    fold[which] = v;
+    savePrefs(which === 'panel' ? { daysPanelFolded: v } : { daysProfFolded: v });
+    applyFold();
+    if (which === 'prof' && !v && fig && split()) renderProfile(split());   // drawn again at its real size
+  }
+
   function renderProfile(s) {
     const box = $('days-profile');
     box.querySelector('.days-prof-head b').textContent = sel === null ? t('days.profAll') : t('days.profDay', { n: sel + 1 });
@@ -351,6 +411,7 @@ export function initDays(ctx) {
       onHover: (i) => { if (i === null) hover.remove(); else hover.setLngLat([fig.profile[i][0], fig.profile[i][1]]).addTo(map); },
     });
     if (!PHONE.matches && !viewOnly) document.documentElement.style.setProperty('--days-prof-h', `${box.offsetHeight + 12}px`);
+    applyFold();
   }
 
   // the graph lives in the drawer on a phone, at the bottom of the screen on a computer
@@ -361,7 +422,7 @@ export function initDays(ctx) {
     else if (prof.parentElement !== document.body) { document.body.append(prof); }
     document.documentElement.style.setProperty('--days-prof-h', PHONE.matches ? '0px' : `${(prof.offsetHeight || 196) + 12}px`);
   }
-  PHONE.addEventListener?.('change', () => { if (on) { placeProfile(); render(); } });
+  PHONE.addEventListener?.('change', () => { if (on) { placeProfile(); render(); applyFold(); } });
   function syncSheet() {
     requestAnimationFrame(() => document.documentElement.style.setProperty('--days-sheet-h', `${PHONE.matches && on ? $('days-panel').offsetHeight : 0}px`));
   }
@@ -399,6 +460,6 @@ export function initDays(ctx) {
     render();
   };
 
-  ctx.days = { open, openView, isView: () => viewOnly, close, isOpen: () => on, selectDay, addLayers, render, moveBoundary, dropLodging: (k, lon, lat) => dropLodging(k, { lng: lon, lat }), refreshCandidates };
+  ctx.days = { open, openView, isView: () => viewOnly, close, isOpen: () => on, selectDay, setFold, fitRoute, addLayers, render, moveBoundary, dropLodging: (k, lon, lat) => dropLodging(k, { lng: lon, lat }), refreshCandidates };
   return ctx.days;
 }
