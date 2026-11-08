@@ -50,6 +50,8 @@ function notify(text) {
   $('status').textContent = text ?? '';
   delete $('status').dataset.source;   // callers may tag their own message to clear only that one later
 }
+// D-069 (owner, 2026-11-08): a tap anywhere on the screen closes the notification (a new one shown by that tap stays)
+document.addEventListener('pointerdown', () => { if (!$('status').hidden) notify(null); }, true);
 
 // ---------------------------------------------------------------- configuration and libraries
 const overlay = await (await fetch('./styles/topo3d.json', { cache: 'no-cache' })).json();

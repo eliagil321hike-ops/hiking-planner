@@ -889,3 +889,10 @@ body.view-mode .days-profile, .view-profile { bottom: calc(var(--edge) + var(--v
 @media (prefers-reduced-motion: reduce) {
   .days-panel, .days-bar, .days-fold .chev, .days-prof-fold .chev { transition: none; }
 }
+
+/* D-069 (owner, 2026-11-08, phone screenshot): on a phone the "עריכת מסלול" badge broke the top row into two, pushing
+   the search down under the notification. On a phone the badge is not shown; the route bar's pressed pencil (#plan)
+   already shows that the route is being edited. */
+@media (max-width: 600px) {
+  .toolbar .plan-badge { display: none; }
+}
