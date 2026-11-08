@@ -47,6 +47,7 @@ export function initDays(ctx) {
   let anchors = [];               // [{ i, offset }] per lodging
   let lodgeMarkers = [];
   let fold = { panel: false, prof: false };   // D-068: folded summary / profile (computer only)
+  let ambient = false;            // D-070: the screen is closed but the route has a split: its days stay on the map
   const hover = new maplibregl.Marker({ color: '#2a241d', scale: 0.7 });
   const n0 = (v) => fmtNumber(Math.round(v ?? 0));
   const km = (m) => fmtNumber(m / 1000, { maximumFractionDigits: 1, minimumFractionDigits: 1 });
@@ -86,6 +87,30 @@ export function initDays(ctx) {
       for (const [id, vis] of Object.entries(routeVis)) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
       routeVis = null;
     }
+  }
+
+  // D-070 (owner, 2026-11-08): a route split into days always shows its day colours, numbers and lodgings on the
+  // map – also while it is being edited (the route's own line and points stay; the days are drawn over the line and
+  // follow it when the new figures arrive). Read-only: the lodgings are moved in the days screen.
+  function setLayersVis(v) { for (const id of LAYERS) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v ? 'visible' : 'none'); }
+  function clearAmbient() {
+    if (!ambient) return;
+    ambient = false;
+    setLayersVis(false);
+    for (const m of lodgeMarkers) m.remove();
+    lodgeMarkers = [];
+    ctx.results.daysAlways = false;
+  }
+  function renderAmbient() {
+    if (on || !compute()) { clearAmbient(); return; }
+    if (!ambient) { for (const m of lodgeMarkers) m.remove(); lodgeMarkers = []; }   // markers made fixed
+    ambient = true;
+    addLayers();
+    setLayersVis(true);
+    const s = split();
+    drawDays(s, dayStats(fig.profile, anchors), () => 1, (k) => dayColor(k));
+    renderLodgings(s);
+    ctx.results.daysAlways = true;
   }
 
   // ---------------------------------------------------------------- places a lodging may snap to
@@ -137,6 +162,7 @@ export function initDays(ctx) {
     if (!fig || fig.profile.length < 7) { notify(t('days.tooShort')); return; }
     if (R().isPlanning()) R().setPlanning(false);
     ctx.markers?.setMode?.(null);
+    clearAmbient();   // D-070: its markers are fixed ones; the screen makes its own
     on = true; sel = null;
     document.body.classList.add('days-mode');
     loadFold();
@@ -170,12 +196,14 @@ export function initDays(ctx) {
     hover.remove();
     document.documentElement.style.setProperty('--days-prof-h', '0px');
     ctx.results.daysOpen = false;
+    renderAmbient();   // D-070
   }
 
   // D-066 view mode: the saved split drawn read-only (no panel, no handles, lodgings fixed); the graph is shown by view.js
   function openView() {
     fig = R()?.figures?.();
     if (!fig || !split()) return false;
+    clearAmbient();   // D-070
     on = true; viewOnly = true; sel = null;
     applyFold();   // D-068: nothing is folded in view mode (its bar has its own graph button)
     ctx.markers?.setMode?.(null);
@@ -214,7 +242,18 @@ export function initDays(ctx) {
     const op = (k) => (sel === null || sel === k ? 1 : 0.45);
     const lineOp = (k) => (sel === null || sel === k ? 1 : DIM_OP);   // D-068: casing and colour dim together
     const lineColor = (k) => (sel === null || sel === k ? dayColor(k) : DIM);
-    // map: one coloured line per day, the day number in the middle, dashed links to off-route lodgings
+    drawDays(s, days, lineOp, lineColor, op);
+    renderLodgings(s);
+    renderChips(days);
+    if (!viewOnly) renderPanel(s, days);
+    renderProfile(s);
+    ctx.results.days = { n: days.length, sel, days: days.map((d) => ({ distance: Math.round(d.distance), ascent: Math.round(d.ascent), descent: Math.round(d.descent) })),
+      lodgings: s.lodgings.map((l, k) => ({ name: lodgingName(l, k), lon: l.lon, lat: l.lat, offset: Math.round(anchors[k].offset), at: anchors[k].i, manual: l.manual, source: l.source?.kind ?? null })) };
+  }
+
+  // map: one coloured line per day, the day number in the middle, dashed links to off-route lodgings
+  function drawDays(s, days, lineOp, lineColor, op = lineOp) {
+    const P = fig.profile;
     map.getSource('days-route')?.setData(FC(days.map((d, k) => ({ type: 'Feature', properties: { day: k, color: lineColor(k), opacity: lineOp(k) },
       geometry: { type: 'LineString', coordinates: P.slice(d.from, d.to + 1).map((p) => [p[0], p[1]]) } }))));
     map.getSource('days-badges')?.setData(FC(days.map((d, k) => {
@@ -223,12 +262,6 @@ export function initDays(ctx) {
     })));
     map.getSource('days-links')?.setData(FC(s.lodgings.flatMap((l, k) => (anchors[k].offset > CONNECT_M
       ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[P[anchors[k].i][0], P[anchors[k].i][1]], [l.lon, l.lat]] } }] : []))));
-    renderLodgings(s);
-    renderChips(days);
-    if (!viewOnly) renderPanel(s, days);
-    renderProfile(s);
-    ctx.results.days = { n: days.length, sel, days: days.map((d) => ({ distance: Math.round(d.distance), ascent: Math.round(d.ascent), descent: Math.round(d.descent) })),
-      lodgings: s.lodgings.map((l, k) => ({ name: lodgingName(l, k), lon: l.lon, lat: l.lat, offset: Math.round(anchors[k].offset), at: anchors[k].i, manual: l.manual, source: l.source?.kind ?? null })) };
   }
 
   // lodgings: draggable map markers (HTML), snapping to a known place within 150 m
@@ -240,12 +273,12 @@ export function initDays(ctx) {
         const elx = document.createElement('div');
         elx.className = 'lodge';
         elx.innerHTML = `<span class="lodge-tag"></span><span class="lodge-dot">${TENT}</span>`;
-        m = new maplibregl.Marker({ element: elx, draggable: !viewOnly, anchor: 'bottom', offset: [0, 14] });
+        m = new maplibregl.Marker({ element: elx, draggable: !viewOnly && !ambient, anchor: 'bottom', offset: [0, 14] });   // D-070: fixed outside the screen
         m._k = k;
         m.on('dragstart', () => { m._dragged = true; });
         m.on('drag', () => { const p = m.getLngLat(); elx.classList.toggle('snap', !!snapTarget([p.lng, p.lat], candCache)); });
         m.on('dragend', () => { elx.classList.remove('snap'); dropLodging(m._k, m.getLngLat()); setTimeout(() => { m._dragged = false; }, 0); });
-        elx.addEventListener('click', (e) => { e.stopPropagation(); if (!m._dragged && !viewOnly) editLodging(m._k); });
+        elx.addEventListener('click', (e) => { e.stopPropagation(); if (!m._dragged && !viewOnly && !ambient) editLodging(m._k); });
         lodgeMarkers[k] = m;
       }
       m._k = k;
@@ -456,7 +489,7 @@ export function initDays(ctx) {
     const f = R()?.figures?.();
     $('r-days').disabled = !(f && f.profile.length >= 7);
     if (!f && !R()?.hasRoute?.() && split()) setSplit(null);   // the route was cleared: its days go with it
-    if (!on) return;
+    if (!on) { renderAmbient(); return; }   // D-070
     if (!f) { if (!R()?.hasRoute?.()) close(); return; }
     if (!split()) { close(); return; }                          // another route was opened
     render();

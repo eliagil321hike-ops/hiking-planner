@@ -858,8 +858,12 @@ def main():
         # the route edited after the split: the lodging stays where it is
         jsclick("#days-panel [data-act=build]")
         r["dsBuild"] = page.evaluate(f"() => [{RS}.daysOpen, window.__topo3d.ctx.isPlanning(), {M}.getLayoutProperty('route-line', 'visibility'), {M}.getLayoutProperty('route-points', 'visibility'), {M}.getLayoutProperty('days-line', 'visibility'), document.querySelectorAll('.lodge').length]")
+        page.evaluate("() => document.querySelector('.lodge')?.click()"); page.wait_for_timeout(400)
+        r["d70Always"] = page.evaluate(f"() => [{RS}.daysAlways, document.getElementById('days-dialog').open, {M}.getLayoutProperty('days-casing', 'visibility'), {M}.getLayoutProperty('days-badge', 'visibility'), {M}.getLayoutProperty('route-points', 'visibility'), document.getElementById('days-panel').hidden]")
         page.mouse.click(1060, 170); page.wait_for_timeout(500)
         wait_js(page, f"() => {ed}.state.vertices.length === 9 && !!window.__topo3d.ctx.routeLib.figures()", 120)
+        wait_js(page, f"async () => (await {M}.getSource('days-route').getData()).features.at(-1).geometry.coordinates.length > 0 && {RS}.daysAlways", 60)
+        r["d70AfterEdit"] = page.evaluate(f"async () => {{ const f = (await {M}.getSource('days-route').getData()).features, e = f.at(-1).geometry.coordinates.at(-1), g = {ed}.geometry().at(-1); return [f.length, Math.abs(e[0] - g[0]) < 0.001 && Math.abs(e[1] - g[1]) < 0.001]; }}")
         jsclick("#r-days"); wait_js(page, f"() => {RS}.daysOpen", 60); page.wait_for_timeout(600)
         L0 = dst()["lodgings"][0]; r["dsAfterEdit"] = [L0["name"], L0["lon"], L0["lat"], dst()["n"]]
         jsclick("#days-panel [data-act=close]")
@@ -899,6 +903,7 @@ def main():
         jsclick("#r-days"); wait_js(page, f"() => {RS}.daysOpen", 60)
         jsclick("#days-panel [data-act=remove]"); page.wait_for_timeout(600)
         r["dsRemoved"] = page.evaluate(f"() => [{RS}.daysOpen, window.__topo3d.ctx.routeLib.daySplits(), window.__topo3d.ctx.routeLib.isDirty(), {M}.getLayoutProperty('route-line', 'visibility')]")
+        r["d70Removed"] = page.evaluate(f"() => [{M}.getLayoutProperty('days-line', 'visibility'), document.querySelectorAll('.lodge').length, {RS}.daysAlways]")
 
         # Developer mode: test panel visible and the devtools module loaded
         page.goto(f"http://127.0.0.1:{port}/?demz=12&dev=1#12/33.0/35.4167/0/0", wait_until="domcontentloaded", timeout=60_000)
@@ -998,7 +1003,9 @@ def main():
     expect(r["d68Remembered"] == [{"panel": True, "prof": True}, True, True], f"the folded state is remembered in this browser (D-068) {r['d68Remembered']}")
     expect(r["d68Open"] == [{"panel": False, "prof": False}, "כווץ סיכום"], f"both open again (D-068) {r['d68Open']}")
     expect(r["dsGpx"] == [2, 1, True, True], f"GPX: a track per day + lodging waypoints (D-065) {r['dsGpx']}")
-    expect(r["dsBuild"] == [False, True, "visible", "visible", "none", 0], f"switch back to route building restores the route exactly (D-065) {r['dsBuild']}")
+    expect(r["dsBuild"][:5] == [False, True, "visible", "visible", "visible"] and r["dsBuild"][5] >= 1, f"switch back to route building restores the route; its days stay drawn over it (D-065, D-070) {r['dsBuild']}")
+    expect(r["d70Always"] == [True, False, "visible", "visible", "visible", True], f"a split route always shows its day colours, numbers and fixed lodgings, also while editing (D-070) {r['d70Always']}")
+    expect(r["d70AfterEdit"] == [2, True], f"after an edit the day colours follow the new route (D-070) {r['d70AfterEdit']}")
     expect(r["dsAfterEdit"] == ["לינה אצל חברים", 35.39, 33.03, 2], f"after editing the route the lodging stays where it was (D-065) {r['dsAfterEdit']}")
     expect(["טרק ימים", "2 ימים"] in r["dsBadge"] and all(b is None for n, b in r["dsBadge"] if n != "טרק ימים"), f"library card: 'N days' only on a split route (D-065) {r['dsBadge']}")
     expect(r["dsNewRoute"] is None, f"a new route starts without days (D-065) {r['dsNewRoute']}")
@@ -1009,6 +1016,7 @@ def main():
     expect(r["vmEdit"] == [False, "flex", "visible", 1], f"view mode \"עריכה\": tool bars back, route line back, split kept (D-066) {r['vmEdit']}")
     expect(r["dsReopen"] == [1, False], f"opening the saved route brings its days back, unchanged (D-065) {r['dsReopen']}")
     expect(r["dsRemoved"] == [False, None, True, "visible"], f"removing the split closes the screen and marks the route changed (D-065) {r['dsRemoved']}")
+    expect(r["d70Removed"] == ["none", 0, False], f"without a split the day colours are gone (D-070) {r['d70Removed']}")
     expect(r["newRouteVisible"], "'new route' button always visible and not covered")
     expect(r["newRoute"] == [0, True] and r["newRouteUndone"], f"'new route' clears (confirmed, undoable) and starts drawing {r['newRoute']}")
     expect(r["routeColor"] == "#39ff14", f"route line in fluorescent green {r['routeColor']}")
