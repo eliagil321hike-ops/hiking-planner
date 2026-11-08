@@ -844,3 +844,13 @@ raise the right tool bar a little")
 - Owner: a notification closes after a tap anywhere on the screen (phone and computer): one capture `pointerdown`
   listener in app.js hides #status; a notification shown by that same tap stays.
 
+## D-070 A split route always shows its days on the map, 2026-11-08
+- Owner: after a route is split into days it always appears in the days' colours. Owner choices: also while editing;
+  colours + day numbers + lodgings.
+- Outside the days screen (days.js `renderAmbient`, on every new set of route figures and when the screen closes) the
+  same day layers are drawn (casing, colour, badges, links) with the lodgings as fixed markers (moved only in the days
+  screen). The route's own line, points and mid-points stay: the day lines sit over the route line and under the
+  editing points; while a point is dragged the route line moves at once and the colours follow on release (new
+  figures). No split, no route, or the days screen / view mode open → the ambient drawing goes away.
+- e2e: D-065's "back to route building" check now expects the day lines and lodgings to stay (was: hidden).
+

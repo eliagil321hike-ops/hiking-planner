@@ -198,6 +198,12 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   toolbar rows [8, 60] (was [8, 16, 60, 112]), search at 60 px, notification at 124 px under it; a tap on the map
   hides it. Owner approved the screenshot (phone-compare).
 
+## Split routes always in day colours (D-070, 2026-11-08, branch wip/days-always – owner approved, waiting for the full test)
+- site/days.js only (`renderAmbient` / `clearAmbient` / `drawDays` – the map part of `render` moved into `drawDays`
+  unchanged; lodgings fixed outside the screen); scripts/e2e_test.py (D-070 checks, D-065 build expectation).
+- Checked in the browser: after "back to building" the 3 days stay coloured with numbers and lodgings, editing points on
+  top (computer and phone screenshots approved by the owner).
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).
