@@ -20,7 +20,9 @@ export const CONNECT_M = 25;               // beyond this a dashed line joins a 
 export const MIN_DAYS = 2, MAX_DAYS = 14;
 // Day colours (the only new palette): mid-tone, distinct from each other, from the personal-point crimson and
 // from the brand turquoise; drawn over the route's dark casing so they read on topo and satellite alike.
-export const DAY_COLORS = ['#2F7FD8', '#E8892B', '#9A5BD3', '#3E9E4F', '#D9A90F', '#D2559A', '#4B5FD1', '#8C6D3F'];
+// D-068 (owner 2026-11-08): moved away from the trail, Israel Trail and stream colours the map draws (CIEDE2000 ≥ 10 from
+// each, ≥ 20 between days, lightness spread kept); was ['#2F7FD8', '#E8892B', '#9A5BD3', '#3E9E4F', '#D9A90F', '#D2559A', '#4B5FD1', '#8C6D3F']
+export const DAY_COLORS = ['#128ABA', '#FC6606', '#9A5BD3', '#3CA854', '#F0B40C', '#F63CA8', '#1854C6', '#8A6C24'];
 export const dayColor = (i) => DAY_COLORS[i % DAY_COLORS.length];
 // how much a kind of place is preferred as a lodging (0 = best)
 // (a campsite is a place to sleep; a spring or a tap only helps, so they count as a little further away)

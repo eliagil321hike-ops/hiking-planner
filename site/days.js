@@ -23,10 +23,12 @@ const TENT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 19 12 5l
 const PLACE_KEY = { camp: 'days.placeCamp', spring: 'days.placeSpring', water: 'days.placeWater', shelter: 'days.placeShelter' };
 const PHONE = matchMedia('(max-width: 600px)');
 const DIM = '#A9B4BF';   // a day that is not the selected one: a light grey-blue (lighter --frame), so the selected day stands out
-// D-068: every day line is a white casing under the day colour, both from one width table (px at zoom 7/10/12/14/16)
-// so the casing is always 3–4 px wider; a dimmed day lowers the opacity of both lines together.
-const DAY_W = [3.5, 5, 6.5, 9, 13];
-const CASE_W = [6.5, 8, 10, 13, 17];
+// D-068: every day line has its own casing under the day colour, both from one width table (px at zoom 7/10/12/14/16)
+// so the casing is always 3 px wider; a dimmed day lowers the opacity of both lines together. Owner 2026-11-08: the
+// casing is dark like the route's (not white), and the day line keeps its earlier width.
+const DAY_W = [4.3, 6, 8, 11.6, 17.6];
+const CASE_W = DAY_W.map((w) => w + 3);
+const CASE_COLOR = '#0a1f0a';   // the route casing's colour (route.js)
 const zw = (w) => ['interpolate', ['linear'], ['zoom'], 7, w[0], 10, w[1], 12, w[2], 14, w[3], 16, w[4]];
 const DIM_OP = 0.75;
 // D-068: the summary and the profile fold on a computer; a smaller screen starts with the profile folded until the
@@ -58,7 +60,7 @@ export function initDays(ctx) {
     const hidden = { visibility: 'none' };
     // D-068: the casing is added in the same step and from the same source, so a day line is never drawn without it
     map.addLayer({ id: 'days-casing', type: 'line', source: 'days-route', layout: { ...hidden, 'line-join': 'round', 'line-cap': 'round' },
-      paint: { 'line-color': '#ffffff', 'line-opacity': ['get', 'opacity'], 'line-width': zw(CASE_W) } }, under);
+      paint: { 'line-color': CASE_COLOR, 'line-opacity': ['*', 0.85, ['get', 'opacity']], 'line-width': zw(CASE_W) } }, under);
     map.addLayer({ id: 'days-line', type: 'line', source: 'days-route', layout: { ...hidden, 'line-join': 'round', 'line-cap': 'round' },
       paint: { 'line-color': ['get', 'color'], 'line-opacity': ['get', 'opacity'], 'line-width': zw(DAY_W) } }, under);
     map.addLayer({ id: 'days-link', type: 'line', source: 'days-links', layout: { ...hidden, 'line-cap': 'round' },
@@ -71,7 +73,7 @@ export function initDays(ctx) {
   }
   const LAYERS = ['days-casing', 'days-line', 'days-link', 'days-badge', 'days-badge-n'];
   // while the days screen is open the route's own line and control points step aside (the day lines replace them;
-  // D-068: the route's dark casing steps aside too — the days have their own white casing) and come back exactly as
+  // D-068: the route's dark casing steps aside too — the days have their own casing) and come back exactly as
   // they were when it closes
   const ROUTE_OWN = ['route-casing', 'route-line', 'route-points'];
   let routeVis = null;
@@ -314,7 +316,7 @@ export function initDays(ctx) {
     const keepProf = prof.parentElement === $('days-panel');
     $('days-panel').innerHTML = `${head()}
       <div class="days-mini" aria-hidden="${!fold.panel}"><b>${n}</b><span>${t('days.miniDays')}</span><b>${km(tot.distance)}</b><span>${t('unit.km')}</span>
-        ${far.length ? `<span class="days-far" role="img" aria-label="${esc(t('days.miniWarn', { n: far.length }))}" title="${esc(far.map((x) => t('days.far', { n: x.k + 1, m: n0(x.m) })).join('\n'))}">!</span>` : ''}</div>
+        ${far.length ? `<span class="dm-warn" role="img" aria-label="${esc(t('days.miniWarn', { n: far.length }))}" title="${esc(far.map((x) => t('days.far', { n: x.k + 1, m: n0(x.m) })).join('\n'))}">!</span>` : ''}</div>
       <div class="days-title"><h2>${t('days.summary')}</h2><small>${n - 1 === 1 ? t('days.sub1', { n }) : t('days.sub', { n, l: n - 1 })}</small></div>
       <div class="days-count"><span>${t('days.countLabel')}</span>
         <button type="button" class="lib-btn icon" data-act="less" aria-label="${t('days.less')}" title="${t('days.less')}" ${n <= MIN_DAYS ? 'disabled' : ''}><svg class="ic" width="16" height="16" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>

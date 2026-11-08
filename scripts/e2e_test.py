@@ -804,6 +804,8 @@ def main():
         page.wait_for_timeout(1200)
         r["dsBar"] = page.evaluate("() => [document.getElementById('r-days').disabled, document.querySelector('.rt-top').contains(document.getElementById('r-save')), document.querySelector('.rt-top').contains(document.getElementById('r-days')), !document.querySelector('.rt-top').contains(document.getElementById('plan'))]")
         r["dsNoSplitSnap"] = page.evaluate("() => 'daySplits' in window.__topo3d.ctx.routeLib.snapshot()")
+        # D-068: this 1280×800 window would start the profile folded; the D-065 checks below drag in it, so open it
+        page.evaluate("() => localStorage.setItem('topo3d.prefs', JSON.stringify({ ...JSON.parse(localStorage.getItem('topo3d.prefs') ?? '{}'), daysProfFolded: false }))")
         jsclick("#r-days"); wait_js(page, f"() => {RS}.daysOpen && {RS}.days", 60)
         D0 = dst()
         r["dsOpen"] = [D0["n"], D0["lodgings"][0]["source"], D0["lodgings"][0]["name"], D0["lodgings"][0]["offset"] > 25] + page.evaluate(f"""async () => [document.querySelectorAll('#days-bar .lib-chip').length, document.querySelectorAll('.days-table tbody tr').length,
@@ -828,6 +830,28 @@ def main():
         r["dsRename"] = dst()["lodgings"][0]["name"]
         jsclick("#days-bar .lib-chip[data-day='1']")
         r["dsSel"] = [dst()["sel"], page.evaluate("() => document.querySelector('.days-prof-head b').textContent"), page.evaluate(f"async () => (await {M}.getSource('days-route').getData()).features.map((f) => f.properties.color)")]
+        # D-068: a casing under every day line; the summary and the profile fold, remembered; "fit to day" uses the freed room
+        r["d68Layers"] = page.evaluate(f"""() => {{ const ids = {M}.getStyle().layers.map((l) => l.id), i = (x) => ids.indexOf(x);
+            return [i('days-casing') >= 0 && i('days-casing') + 1 === i('days-line'), ['topo-hillshade', 'topo-contours-index', 'topo-marked-line', 'topo-hike-line'].every((x) => i(x) < i('days-casing')),
+              i('days-line') < i('days-badge'), {M}.getLayoutProperty('days-casing', 'visibility'), {M}.getLayoutProperty('route-casing', 'visibility'),
+              JSON.stringify({M}.getPaintProperty('days-casing', 'line-opacity')).includes('opacity')]; }}""")
+        page.focus("#days-panel .days-fold"); page.keyboard.press("Enter"); page.wait_for_timeout(700)
+        r["d68FoldPanel"] = page.evaluate(f"""() => {{ const b = document.querySelector('#days-panel .days-fold'); return [{RS}.daysFold.panel, document.activeElement === b, b.getAttribute('aria-expanded'), b.getAttribute('aria-label'),
+            getComputedStyle(document.querySelector('.days-mini')).display, getComputedStyle(document.querySelector('.days-table')).display, !document.getElementById('days-bar').hidden,
+            b.offsetWidth >= 44 && b.offsetHeight >= 44, !!document.querySelector('.days-mini .dm-warn')]; }}""")
+        page.focus("#days-profile .days-prof-fold"); page.keyboard.press("Enter"); page.wait_for_timeout(700)
+        r["d68FoldProf"] = page.evaluate(f"""() => {{ const b = document.querySelector('#days-profile .days-prof-fold'); return [{RS}.daysFold.prof, document.activeElement === b, b.getAttribute('aria-expanded'), b.getAttribute('aria-label'),
+            document.getElementById('days-profile').offsetHeight < 70, getComputedStyle(document.querySelector('.days-prof-svg')).display]; }}""")
+        page.wait_for_timeout(800)
+        page.evaluate("() => window.__topo3d.ctx.days.selectDay(0)"); page.wait_for_timeout(500)
+        wait_js(page, f"() => !{M}.isMoving()", 30); page.wait_for_timeout(500)
+        r["d68FitDay"] = page.evaluate(f"""async () => {{ const p = document.getElementById('days-panel').getBoundingClientRect(), q = document.getElementById('days-profile').getBoundingClientRect(),
+            b = document.querySelector('#days-bar .days-chips').getBoundingClientRect(), f = (await {M}.getSource('days-route').getData()).features.find((x) => x.properties.day === 0);
+            const s = f.geometry.coordinates.map((c) => {M}.project(c)); return [p.width < 100, s.every((v) => v.x >= 0 && v.x <= p.left && v.y >= b.bottom - 2 && v.y <= q.top)]; }}""")
+        page.evaluate("() => { window.__topo3d.ctx.days.close(); }"); jsclick("#r-days"); wait_js(page, f"() => {RS}.daysOpen", 60); page.wait_for_timeout(600)
+        r["d68Remembered"] = page.evaluate(f"() => [{RS}.daysFold, JSON.parse(localStorage.getItem('topo3d.prefs')).daysPanelFolded, JSON.parse(localStorage.getItem('topo3d.prefs')).daysProfFolded]")
+        jsclick("#days-panel .days-fold"); jsclick("#days-profile .days-prof-fold"); page.wait_for_timeout(600)
+        r["d68Open"] = page.evaluate(f"() => [{RS}.daysFold, document.querySelector('#days-panel .days-fold').getAttribute('aria-label')]")
         jsclick("#days-bar .lib-chip[data-day='']")
         jsclick("#days-panel [data-act=gpx]"); g = page.evaluate(f"() => {RS}.daysGpx")
         r["dsGpx"] = [g.count("<trk>"), g.count("<type>lodging</type>"), "לינה אצל חברים" in g, "– יום 2" in g]
@@ -967,6 +991,12 @@ def main():
     expect(r["dsFar"] == [None, True, 1, 1, 1], f"a lodging far from the route gets a note (D-065) {r['dsFar']}")
     expect(r["dsRename"] == "לינה אצל חברים", f"lodging renamed from its marker (D-065) {r['dsRename']}")
     expect(r["dsSel"][0] == 1 and r["dsSel"][1].endswith("יום 2") and r["dsSel"][2][0] == "#A9B4BF" and r["dsSel"][2][1] != "#A9B4BF", f"a day chip focuses that day, the others greyed (D-065) {r['dsSel']}")
+    expect(r["d68Layers"] == [True, True, True, "visible", "none", True], f"every day line has its own casing, above the terrain and trail lines, under the badges (D-068) {r['d68Layers']}")
+    expect(r["d68FoldPanel"] == [True, True, "false", "הרחב סיכום", "flex", "none", True, True, True], f"the summary folds to a strip by keyboard: days, distance, the far-lodging warning, focus kept (D-068) {r['d68FoldPanel']}")
+    expect(r["d68FoldProf"] == [True, True, "false", "הרחב פרופיל גובה", True, "none"], f"the profile folds to its title line, focus kept (D-068) {r['d68FoldProf']}")
+    expect(r["d68FitDay"] == [True, True], f"with the panels folded, fit to day frames the day inside the free map area (D-068) {r['d68FitDay']}")
+    expect(r["d68Remembered"] == [{"panel": True, "prof": True}, True, True], f"the folded state is remembered in this browser (D-068) {r['d68Remembered']}")
+    expect(r["d68Open"] == [{"panel": False, "prof": False}, "כווץ סיכום"], f"both open again (D-068) {r['d68Open']}")
     expect(r["dsGpx"] == [2, 1, True, True], f"GPX: a track per day + lodging waypoints (D-065) {r['dsGpx']}")
     expect(r["dsBuild"] == [False, True, "visible", "visible", "none", 0], f"switch back to route building restores the route exactly (D-065) {r['dsBuild']}")
     expect(r["dsAfterEdit"] == ["לינה אצל חברים", 35.39, 33.03, 2], f"after editing the route the lodging stays where it was (D-065) {r['dsAfterEdit']}")
