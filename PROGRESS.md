@@ -193,6 +193,11 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   contrast-before-after.png, palette.png, casing-options.png. Owner to check on the real map after publishing.
 - Tests: unit 62/62, editor 18/18, full e2e – see the release note below when published.
 
+## Phone top row; tap closes notifications (D-069, 2026-11-08, branch wip/phone-toast – owner approved, waiting for the full test)
+- site/style.css (new D-069 rule), site/app.js (one listener after `notify`). Checked at 412×820 while editing:
+  toolbar rows [8, 60] (was [8, 16, 60, 112]), search at 60 px, notification at 124 px under it; a tap on the map
+  hides it. Owner approved the screenshot (phone-compare).
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).

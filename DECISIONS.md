@@ -836,3 +836,11 @@ raise the right tool bar a little")
 - Found, not changed: without browser storage the days screen does not work at all (the split lives in the route
   draft in localStorage, D-065). Folding itself works without storage (in memory). Left for the owner to decide.
 
+## D-069 Phone top row and closing notifications, 2026-11-08
+- Owner (phone screenshot while editing): the top row broke into two – the "עריכת מסלול" badge did not fit beside the
+  buttons – so the search moved down under the notification. On a phone (≤ 600 px) the badge is not shown; the route
+  bar's pressed pencil (#plan) shows editing. Measured at 412 px: rows 3 → 2, search top 112 → 60 px, the notification
+  below the search. CSS only (style.css D-069).
+- Owner: a notification closes after a tap anywhere on the screen (phone and computer): one capture `pointerdown`
+  listener in app.js hides #status; a notification shown by that same tap stays.
+
