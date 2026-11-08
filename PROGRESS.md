@@ -179,6 +179,20 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - site/style.css only (new D-067 rule). Checked in the browser: bar top 151 → 187 px at 920×600 (clear of the map
   buttons), Delete key still deletes the selected point, phone keeps the button.
 
+## Days view: folding panels, casing under day lines (D-068, 2026-11-08, branch wip/days-ui – waiting for owner approval to publish)
+- Existing files touched (hooks only): site/days.js (casing layer in addLayers, `route-casing` in ROUTE_OWN, fold
+  button / strip / profile button, padding from real sizes), site/days-core.js (DAY_COLORS – owner palette choice),
+  site/style.css (new D-068 section + `.dm-warn`), site/i18n.js (7 strings), scripts/e2e_test.py (D-068 checks; the
+  D-065 checks open the profile first, since a 1280×800 window now starts with it folded).
+- Checked (harness, 1366×657 = a 1366×768 window): default profile folded on a small screen; summary folds by keyboard
+  (focus kept, aria-expanded, label), strip shows days / km / "!"; profile folds to its title; fit to day inside the
+  free area; lodging dragged on the map with the profile folded; casing visible in all-days, focused, dimmed,
+  dragging, tilted 3D; remembered after reload; storage blocked → folding still works in memory.
+- Screenshots (fixtures: no real tiles here; light / contours / dark / trails simulated with the site's own paints):
+  docs/d068/before-1366.png (before + after), after-1366-folded.png, after-folded-warning.png,
+  contrast-before-after.png, palette.png, casing-options.png. Owner to check on the real map after publishing.
+- Tests: unit 62/62, editor 18/18, full e2e – see the release note below when published.
+
 ## Next task
 Owner tests route building with real snapping on the live site → Phase 4 (elevation & statistics: reference
 routes, profile ↔ map marker sync) → Phase 5 (browser storage: saved routes list) → Phase 6 (GPX).

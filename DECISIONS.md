@@ -803,3 +803,36 @@ raise the right tool bar a little")
   touch screens keep it (no key there). CSS only (style.css D-067); the button and its code stay.
 - Measured: the bar is 36 px lower; at 920×600 its top moved from 151 to 187 px (map buttons end at 177 px). Windows
   lower than about 600 px can still overlap.
+
+## D-068 Days view: folding panels and a casing under every day line, 2026-11-08
+- Owner task (two fixes to the days view), with the rules "add only" and "keep the site's design language".
+- **Folding (computer only; the phone keeps its drawer).** The summary and the profile each get the route panel's own
+  "הסתר" button (`.panel-btn.hide-btn`, chevron, turquoise bar, existing `:focus-visible` ring) – the pattern of the
+  route panel (D-049). Folded summary: a 68 px strip at its own edge (inline-start, right in Hebrew) with the button,
+  days count, total km and the far-lodging "!" (styled like the table's `.days-far`; the site has no hardest-day /
+  sunset / review warnings – D-065 decided against them, so the far-lodging note is the only warning). Folded profile:
+  its title line + "הצג". The day chips stay and slide into the freed room (`--days-w`). Tokens reused: `--c-dark`,
+  `--c-body`, `--c-gold`, `--c-white`, `--panel-shadow`, `--font`, the panel radius; transitions 0.18 s, none with
+  `prefers-reduced-motion`.
+- Buttons stay in place when folded, so keyboard focus never moves into a hidden element; 44 px targets; Hebrew
+  labels "כווץ סיכום / הרחב סיכום / כווץ פרופיל גובה / הרחב פרופיל גובה"; `aria-expanded`.
+- Folding does not move the camera; "fit to route / day" reads the panels' real width / height (freed room used).
+- Remembered per browser in the existing prefs store (prefs.js, guarded storage): `daysPanelFolded`, `daysProfFolded`;
+  not stored in the route. **Breakpoint:** with no stored choice, a window narrower than 1366 px or lower than 800 px
+  starts with the profile folded; the summary starts open. Once the owner clicks, the choice wins.
+- **Casing.** Every day line is two layers from one source, added together (`days-casing` then `days-line`), so no
+  path draws a day without its casing. Owner 2026-11-08: the casing is **dark** (#0a1f0a at 0.85, the route casing's
+  colour) instead of the white the task asked for, and the day line keeps its earlier width (casing.png options shown).
+  Widths at z7/10/12/14/16: line 4.3/6/8/11.6/17.6 px, casing +3 px. Dimmed days: grey (D-065) and opacity 0.75 on both
+  lines together. The route's own casing steps aside in the days view (restored on close).
+- **Layer order** (bottom → top): hillshade, contours, trails, marked trails, national/Israel trail, contour/peak/trail
+  labels, route layers, **days-casing, days-line**, point dots/icons, route handles, days-link, days badges; lodging
+  markers (HTML) above all. The day lines stay above the labels, like the route (D-062), so label readability is
+  unchanged. Same layers in 3D (draped).
+- **Palette (owner chose "ב").** The old day colours sat on map colours: day 1 = the stream blue, day 2 ≈ Israel Trail
+  orange (ΔE00 3.0), day 6 ≈ regional, day 8 ≈ brown trail. New: #128ABA, #FC6606, #9A5BD3 (kept), #3CA854, #F0B40C,
+  #F63CA8, #1854C6, #8A6C24 – each ≥ 10 ΔE00 from every trail / stream colour the site draws, ≥ 20 between days,
+  lightness spread kept. Trail colours unchanged.
+- Found, not changed: without browser storage the days screen does not work at all (the split lives in the route
+  draft in localStorage, D-065). Folding itself works without storage (in memory). Left for the owner to decide.
+
