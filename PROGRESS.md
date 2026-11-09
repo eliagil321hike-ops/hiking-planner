@@ -198,6 +198,11 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   toolbar rows [8, 60] (was [8, 16, 60, 112]), search at 60 px, notification at 124 px under it; a tap on the map
   hides it. Owner approved the screenshot (phone-compare).
 
+## Day boundary drag in the profile always gets the press (D-071, 2026-11-09, branch wip/days-always – owner approved, waiting for the full test)
+- site/style.css: one added rule; the hover line and readout of the days profile no longer take clicks.
+- Checked: pointer events logged in the browser – before, the press went to the hover line and the lodging stayed (153→153);
+  after, it goes to the boundary handle and the lodging moves (153→170, manual).
+
 ## Split routes always in day colours (D-070, 2026-11-08, branch wip/days-always – owner approved, waiting for the full test)
 - site/days.js only (`renderAmbient` / `clearAmbient` / `drawDays` – the map part of `render` moved into `drawDays`
   unchanged; lodgings fixed outside the screen); scripts/e2e_test.py (D-070 checks, D-065 build expectation).

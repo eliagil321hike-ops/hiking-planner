@@ -854,3 +854,10 @@ raise the right tool bar a little")
   figures). No split, no route, or the days screen / view mode open → the ambient drawing goes away.
 - e2e: D-065's "back to route building" check now expects the day lines and lodgings to stay (was: hidden).
 
+## D-071 The days profile's hover line lets clicks through, 2026-11-09
+- Found by the full e2e on wip/days-always: dragging a day boundary in the days profile did nothing. The dashed hover
+  line (`.profile-cursor`) follows the mouse and sits on top of the boundary's hit area (`.dp-hit`), so when it lands
+  exactly under the pointer it takes the press. On main this is rare; with D-068's fold button the graph is 12 px
+  shorter and in the test the line landed under the pointer every time.
+- Fix (style.css, added rule only): `.days-prof-svg .profile-cursor, .days-prof-svg .profile-readout { pointer-events: none; }`.
+  Looks the same; the route dock's profile is not touched. Owner approved including it with D-068/069/070.
