@@ -179,10 +179,10 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - site/style.css only (new D-067 rule). Checked in the browser: bar top 151 → 187 px at 920×600 (clear of the map
   buttons), Delete key still deletes the selected point, phone keeps the button.
 
-## Days view: folding panels, casing under day lines (D-068, 2026-11-08, branch wip/days-ui – waiting for owner approval to publish)
+## Days view: folding panels, casing under day lines (D-069, 2026-11-08, branch wip/days-ui – waiting for owner approval to publish)
 - Existing files touched (hooks only): site/days.js (casing layer in addLayers, `route-casing` in ROUTE_OWN, fold
   button / strip / profile button, padding from real sizes), site/days-core.js (DAY_COLORS – owner palette choice),
-  site/style.css (new D-068 section + `.dm-warn`), site/i18n.js (7 strings), scripts/e2e_test.py (D-068 checks; the
+  site/style.css (new D-069 section + `.dm-warn`), site/i18n.js (7 strings), scripts/e2e_test.py (D-069 checks; the
   D-065 checks open the profile first, since a 1280×800 window now starts with it folded).
 - Checked (harness, 1366×657 = a 1366×768 window): default profile folded on a small screen; summary folds by keyboard
   (focus kept, aria-expanded, label), strip shows days / km / "!"; profile folds to its title; fit to day inside the
@@ -193,19 +193,19 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   contrast-before-after.png, palette.png, casing-options.png. Owner to check on the real map after publishing.
 - Tests: unit 62/62, editor 18/18, full e2e – see the release note below when published.
 
-## Phone top row; tap closes notifications (D-069, 2026-11-08, branch wip/phone-toast – owner approved, waiting for the full test)
-- site/style.css (new D-069 rule), site/app.js (one listener after `notify`). Checked at 412×820 while editing:
+## Phone top row; tap closes notifications (D-070, 2026-11-08, branch wip/phone-toast – owner approved, waiting for the full test)
+- site/style.css (new D-070 rule), site/app.js (one listener after `notify`). Checked at 412×820 while editing:
   toolbar rows [8, 60] (was [8, 16, 60, 112]), search at 60 px, notification at 124 px under it; a tap on the map
   hides it. Owner approved the screenshot (phone-compare).
 
-## Day boundary drag in the profile always gets the press (D-071, 2026-11-09, branch wip/days-always – owner approved, waiting for the full test)
+## Day boundary drag in the profile always gets the press (D-072, 2026-11-09, branch wip/days-always – owner approved, waiting for the full test)
 - site/style.css: one added rule; the hover line and readout of the days profile no longer take clicks.
 - Checked: pointer events logged in the browser – before, the press went to the hover line and the lodging stayed (153→153);
   after, it goes to the boundary handle and the lodging moves (153→170, manual).
 
-## Split routes always in day colours (D-070, 2026-11-08, branch wip/days-always – owner approved, waiting for the full test)
+## Split routes always in day colours (D-071, 2026-11-08, branch wip/days-always – owner approved, waiting for the full test)
 - site/days.js only (`renderAmbient` / `clearAmbient` / `drawDays` – the map part of `render` moved into `drawDays`
-  unchanged; lodgings fixed outside the screen); scripts/e2e_test.py (D-070 checks, D-065 build expectation).
+  unchanged; lodgings fixed outside the screen); scripts/e2e_test.py (D-071 checks, D-065 build expectation).
 - Checked in the browser: after "back to building" the 3 days stay coloured with numbers and lodgings, editing points on
   top (computer and phone screenshots approved by the owner).
 

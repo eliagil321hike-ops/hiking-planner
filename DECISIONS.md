@@ -818,7 +818,7 @@ raise the right tool bar a little")
 - Checked in Chrome at 360×640: style menu, my points, my routes and the route dock open with no overlap with any
   top or map control; unit tests pass.
 
-## D-068 Days view: folding panels and a casing under every day line, 2026-11-08
+## D-069 Days view: folding panels and a casing under every day line, 2026-11-08
 - Owner task (two fixes to the days view), with the rules "add only" and "keep the site's design language".
 - **Folding (computer only; the phone keeps its drawer).** The summary and the profile each get the route panel's own
   "הסתר" button (`.panel-btn.hide-btn`, chevron, turquoise bar, existing `:focus-visible` ring) – the pattern of the
@@ -850,15 +850,15 @@ raise the right tool bar a little")
 - Found, not changed: without browser storage the days screen does not work at all (the split lives in the route
   draft in localStorage, D-065). Folding itself works without storage (in memory). Left for the owner to decide.
 
-## D-069 Phone top row and closing notifications, 2026-11-08
+## D-070 Phone top row and closing notifications, 2026-11-08
 - Owner (phone screenshot while editing): the top row broke into two – the "עריכת מסלול" badge did not fit beside the
   buttons – so the search moved down under the notification. On a phone (≤ 600 px) the badge is not shown; the route
   bar's pressed pencil (#plan) shows editing. Measured at 412 px: rows 3 → 2, search top 112 → 60 px, the notification
-  below the search. CSS only (style.css D-069).
+  below the search. CSS only (style.css D-070).
 - Owner: a notification closes after a tap anywhere on the screen (phone and computer): one capture `pointerdown`
   listener in app.js hides #status; a notification shown by that same tap stays.
 
-## D-070 A split route always shows its days on the map, 2026-11-08
+## D-071 A split route always shows its days on the map, 2026-11-08
 - Owner: after a route is split into days it always appears in the days' colours. Owner choices: also while editing;
   colours + day numbers + lodgings.
 - Outside the days screen (days.js `renderAmbient`, on every new set of route figures and when the screen closes) the
@@ -868,10 +868,15 @@ raise the right tool bar a little")
   figures). No split, no route, or the days screen / view mode open → the ambient drawing goes away.
 - e2e: D-065's "back to route building" check now expects the day lines and lodgings to stay (was: hidden).
 
-## D-071 The days profile's hover line lets clicks through, 2026-11-09
+## D-072 The days profile's hover line lets clicks through, 2026-11-09
 - Found by the full e2e on wip/days-always: dragging a day boundary in the days profile did nothing. The dashed hover
   line (`.profile-cursor`) follows the mouse and sits on top of the boundary's hit area (`.dp-hit`), so when it lands
-  exactly under the pointer it takes the press. On main this is rare; with D-068's fold button the graph is 12 px
+  exactly under the pointer it takes the press. On main this is rare; with D-069's fold button the graph is 12 px
   shorter and in the test the line landed under the pointer every time.
 - Fix (style.css, added rule only): `.days-prof-svg .profile-cursor, .days-prof-svg .profile-readout { pointer-events: none; }`.
-  Looks the same; the route dock's profile is not touched. Owner approved including it with D-068/069/070.
+  Looks the same; the route dock's profile is not touched. Owner approved including it with D-069/069/070.
+- Numbering note (2026-11-09): another session published the phone top bar as D-068 first; with the owner's approval
+  these four entries were renumbered D-069–D-072 (were D-068–D-071). Comments in the code and e2e messages still use
+  the old numbers: "D-068" there = D-069 here (except the phone top bar section of style.css), D-069 = D-070,
+  D-070 = D-071, D-071 = D-072.
+- The phone top bar (D-068) gives the "עריכת מסלול" badge its own row; owner chose to keep D-070's hiding of it on a phone.
