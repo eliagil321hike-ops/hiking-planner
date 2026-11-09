@@ -804,6 +804,20 @@ raise the right tool bar a little")
 - Measured: the bar is 36 px lower; at 920×600 its top moved from 151 to 187 px (map buttons end at 177 px). Windows
   lower than about 600 px can still overlap.
 
+## D-068 Phone top bar and map buttons from the owner's mockup, 2026-11-09
+- Owner (edited screenshot, several rounds): on a phone, one row in the top-left corner – my routes, my points and a
+  wider "new route" button with its name under the plus – and a thin search box filling the row to the right edge;
+  the map-style button under the row at the far left. Map buttons: only "my location" and 2D/3D, smaller (in
+  proportion to the search box), bottom right, a little above the bottom. Zoom and compass buttons are hidden on a
+  phone (pinch to zoom, two fingers to rotate/tilt).
+- Owner: opening any window must not hide, or be hidden by, the interface. Every window on a phone (map style, my
+  points, my routes / points list, search results, toasts, category chip, marking banner) now opens under both top
+  rows and stops above the map buttons (`--top-h`, `--ui-bottom`); the map buttons ride above the route dock, the day
+  split drawer and the view bar.
+- CSS only, phones only (≤ 600 px): style.css section D-068. The computer layout is unchanged.
+- Checked in Chrome at 360×640: style menu, my points, my routes and the route dock open with no overlap with any
+  top or map control; unit tests pass.
+
 ## D-068 Days view: folding panels and a casing under every day line, 2026-11-08
 - Owner task (two fixes to the days view), with the rules "add only" and "keep the site's design language".
 - **Folding (computer only; the phone keeps its drawer).** The summary and the profile each get the route panel's own
