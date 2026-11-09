@@ -896,3 +896,7 @@ body.view-mode .days-profile, .view-profile { bottom: calc(var(--edge) + var(--v
 @media (max-width: 600px) {
   .toolbar .plan-badge { display: none; }
 }
+
+/* D-071 (2026-11-09): the hover line and its readout follow the mouse, so they often sat exactly under it and took the press
+   meant for a day boundary's drag handle (the drag then did nothing). They only show; clicks go through them. */
+.days-prof-svg .profile-cursor, .days-prof-svg .profile-readout { pointer-events: none; }
