@@ -823,6 +823,8 @@ raise the right tool bar a little")
 - Cause: with terrain on, MapLibre drapes line layers on the ground (drawn into the terrain textures); a tilted
   camera magnifies the line near the bottom of the screen and softens its edges.
 - Fix: while 3D is on, the planned route, its casing, the provisional segments and the day colours are drawn at half
-  their 2D width (`site/width3d.js`, `FACTOR_3D`); 2D keeps the original widths. Re-applied on every terrain switch
+  their 2D width (`site/width3d.js`, `FACTOR_3D`); 2D keeps the original widths. The trail lines (national /
+  regional / marked / unmarked) are halved too, so the planned route stays the widest line in 3D as D-043 requires
+  (the first push failed the e2e D-043 check because only the route was thinner). Re-applied on every terrain switch
   and after style changes (satellite / topo). Tests: `tests/width3d.test.mjs`; checked in Chrome that the widths
   switch both ways with the 2D/3D button.
