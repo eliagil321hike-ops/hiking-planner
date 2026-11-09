@@ -817,3 +817,12 @@ raise the right tool bar a little")
 - CSS only, phones only (≤ 600 px): style.css section D-068. The computer layout is unchanged.
 - Checked in Chrome at 360×640: style menu, my points, my routes and the route dock open with no overlap with any
   top or map control; unit tests pass.
+
+## D-069 Route line thinner in 3D, 2026-11-09
+- Owner (phone screenshot, satellite 3D, view mode of a 3-day route): the route looked smeared and far too wide.
+- Cause: with terrain on, MapLibre drapes line layers on the ground (drawn into the terrain textures); a tilted
+  camera magnifies the line near the bottom of the screen and softens its edges.
+- Fix: while 3D is on, the planned route, its casing, the provisional segments and the day colours are drawn at half
+  their 2D width (`site/width3d.js`, `FACTOR_3D`); 2D keeps the original widths. Re-applied on every terrain switch
+  and after style changes (satellite / topo). Tests: `tests/width3d.test.mjs`; checked in Chrome that the widths
+  switch both ways with the 2D/3D button.
