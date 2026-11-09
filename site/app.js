@@ -18,6 +18,7 @@ import { initRoute } from './route.js';
 import { initMenus } from './menus.js';
 import { createOrsRouter } from './router.js';
 import { initView3d } from './view3d.js';
+import { installThin3d } from './width3d.js';
 import { initSearch } from './search.js';
 import { initLibrary } from './library.js';
 import { initMarkers } from './markers.js';
@@ -134,6 +135,7 @@ Object.assign(ctx, layerHelpers(ctx));
 initLayers(ctx);
 const view = initView3d(ctx);
 map.addControl(view.control, 'top-right');
+installThin3d(map);   // D-069: route and day lines thinner in 3D (draped lines look wide and soft when tilted)
 const background = initBackground(ctx);
 ctx.applyBackground = background.applyBackground;
 // Routing (snap to trails): openrouteservice with the owner's embedded key (D-027).

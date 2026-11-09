@@ -818,7 +818,16 @@ raise the right tool bar a little")
 - Checked in Chrome at 360×640: style menu, my points, my routes and the route dock open with no overlap with any
   top or map control; unit tests pass.
 
-## D-069 Days view: folding panels and a casing under every day line, 2026-11-08
+## D-069 Route line thinner in 3D, 2026-11-09
+- Owner (phone screenshot, satellite 3D, view mode of a 3-day route): the route looked smeared and far too wide.
+- Cause: with terrain on, MapLibre drapes line layers on the ground (drawn into the terrain textures); a tilted
+  camera magnifies the line near the bottom of the screen and softens its edges.
+- Fix: while 3D is on, the planned route, its casing, the provisional segments and the day colours are drawn at half
+  their 2D width (`site/width3d.js`, `FACTOR_3D`); 2D keeps the original widths. Re-applied on every terrain switch
+  and after style changes (satellite / topo). Tests: `tests/width3d.test.mjs`; checked in Chrome that the widths
+  switch both ways with the 2D/3D button.
+
+## D-070 Days view: folding panels and a casing under every day line, 2026-11-08
 - Owner task (two fixes to the days view), with the rules "add only" and "keep the site's design language".
 - **Folding (computer only; the phone keeps its drawer).** The summary and the profile each get the route panel's own
   "הסתר" button (`.panel-btn.hide-btn`, chevron, turquoise bar, existing `:focus-visible` ring) – the pattern of the
@@ -850,15 +859,15 @@ raise the right tool bar a little")
 - Found, not changed: without browser storage the days screen does not work at all (the split lives in the route
   draft in localStorage, D-065). Folding itself works without storage (in memory). Left for the owner to decide.
 
-## D-070 Phone top row and closing notifications, 2026-11-08
+## D-071 Phone top row and closing notifications, 2026-11-08
 - Owner (phone screenshot while editing): the top row broke into two – the "עריכת מסלול" badge did not fit beside the
   buttons – so the search moved down under the notification. On a phone (≤ 600 px) the badge is not shown; the route
   bar's pressed pencil (#plan) shows editing. Measured at 412 px: rows 3 → 2, search top 112 → 60 px, the notification
-  below the search. CSS only (style.css D-070).
+  below the search. CSS only (style.css D-071).
 - Owner: a notification closes after a tap anywhere on the screen (phone and computer): one capture `pointerdown`
   listener in app.js hides #status; a notification shown by that same tap stays.
 
-## D-071 A split route always shows its days on the map, 2026-11-08
+## D-072 A split route always shows its days on the map, 2026-11-08
 - Owner: after a route is split into days it always appears in the days' colours. Owner choices: also while editing;
   colours + day numbers + lodgings.
 - Outside the days screen (days.js `renderAmbient`, on every new set of route figures and when the screen closes) the
@@ -868,15 +877,16 @@ raise the right tool bar a little")
   figures). No split, no route, or the days screen / view mode open → the ambient drawing goes away.
 - e2e: D-065's "back to route building" check now expects the day lines and lodgings to stay (was: hidden).
 
-## D-072 The days profile's hover line lets clicks through, 2026-11-09
+## D-073 The days profile's hover line lets clicks through, 2026-11-09
 - Found by the full e2e on wip/days-always: dragging a day boundary in the days profile did nothing. The dashed hover
   line (`.profile-cursor`) follows the mouse and sits on top of the boundary's hit area (`.dp-hit`), so when it lands
-  exactly under the pointer it takes the press. On main this is rare; with D-069's fold button the graph is 12 px
+  exactly under the pointer it takes the press. On main this is rare; with D-070's fold button the graph is 12 px
   shorter and in the test the line landed under the pointer every time.
 - Fix (style.css, added rule only): `.days-prof-svg .profile-cursor, .days-prof-svg .profile-readout { pointer-events: none; }`.
-  Looks the same; the route dock's profile is not touched. Owner approved including it with D-069/069/070.
-- Numbering note (2026-11-09): another session published the phone top bar as D-068 first; with the owner's approval
-  these four entries were renumbered D-069–D-072 (were D-068–D-071). Comments in the code and e2e messages still use
-  the old numbers: "D-068" there = D-069 here (except the phone top bar section of style.css), D-069 = D-070,
-  D-070 = D-071, D-071 = D-072.
-- The phone top bar (D-068) gives the "עריכת מסלול" badge its own row; owner chose to keep D-070's hiding of it on a phone.
+  Looks the same; the route dock's profile is not touched. Owner approved including it with D-070/071/072.
+- Numbering note (2026-11-09): while this work waited for its test, another session published D-068 (phone top bar)
+  and D-069 (route line thinner in 3D). With the owner's approval these four entries were renumbered D-070–D-073.
+  Comments in the code and e2e messages of this work keep the working numbers: their "D-068" = D-070 here, "D-069" =
+  D-071, "D-070" = D-072, "D-071" = D-073 (the phone top bar section of style.css and width3d.js are the other
+  session's own D-068 / D-069).
+- The phone top bar (D-068) gives the "עריכת מסלול" badge its own row; owner chose to keep D-071's hiding of it on a phone.
