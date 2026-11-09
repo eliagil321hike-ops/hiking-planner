@@ -7,7 +7,8 @@
  *  lines, all by the same factor, so the planned route stays the widest line as in 2D (D-043). */
 export const THIN_IN_3D = ['route-casing', 'route-line', 'route-provisional', 'days-line',
   'topo-hike-casing', 'topo-hike-line', 'topo-marked-casing', 'topo-marked-line',
-  'topo-trails-casing', 'topo-trails-track', 'topo-trails-track-inner', 'topo-trails-path', 'topo-trails-footway'];
+  'topo-trails-casing', 'topo-trails-track', 'topo-trails-track-inner', 'topo-trails-path', 'topo-trails-footway',
+  'topo-waterway'];   // streams too, so they stay thinner than unmarked paths (D-034)
 /** Width factor in 3D. */
 export const FACTOR_3D = 0.5;
 
