@@ -7,6 +7,9 @@ test('scaleWidth: numbers and zoom curves', () => {
   assert.deepEqual(scaleWidth(['interpolate', ['linear'], ['zoom'], 7, 3.5, 16, 15.6], 0.5),
     ['interpolate', ['linear'], ['zoom'], 7, 1.75, 16, 7.8]);
   assert.deepEqual(scaleWidth(['step', ['zoom'], 2, 12, 4], 0.5), ['step', ['zoom'], 1, 12, 2]);
+  assert.deepEqual(scaleWidth(['interpolate', ['linear'], ['zoom'], 7, ['match', ['get', 'kind'], 'regional', 1.2, 2]], 0.5),
+    ['interpolate', ['linear'], ['zoom'], 7, ['match', ['get', 'kind'], 'regional', 0.6, 1]]);
+  assert.deepEqual(scaleWidth(['case', ['get', 'a'], 4, 8], 0.5), ['case', ['get', 'a'], 2, 4]);
 });
 
 test('installThin3d: thinner with terrain, original without, survives a re-added layer', () => {

@@ -276,6 +276,7 @@ def main():
             return q.width > 40 && q.height >= 44 && b.contains(document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2)); }""")
         r["routeColor"] = page.evaluate("() => window.__topo3d.map.getPaintProperty('route-line', 'line-color')")
         r["routeW14"] = page.evaluate("() => { const st = window.__topo3d.map.getPaintProperty('route-line', 'line-width').slice(3); return st[st.indexOf(14) + 1]; }")
+        r["is3d"] = page.evaluate("() => !!window.__topo3d.map.getTerrain()")
         r["routeW16"] = page.evaluate("() => { const st = window.__topo3d.map.getPaintProperty('route-line', 'line-width').slice(3); return st[st.indexOf(16) + 1]; }")
         r["routeOrder"] = page.evaluate("""() => { const ids = window.__topo3d.map.getStyle().layers.map((l) => l.id); const at = (id) => ids.indexOf(id);
             return { line: at('route-line'), casing: at('route-casing'), camp: at('poi-camp'), other: at('poi-other'), dot: at('topo-poi-dot'), points: at('route-points'), search: at('poi-search') }; }""")
@@ -1039,7 +1040,8 @@ def main():
     expect(o["marked"] == ["#1e63c4"], f"marked trail drawn in its marking colour (blue) {o['marked']}")
     expect(o["markedMinzoom"] < o["pathMinzoom"] and '[">=",["zoom"],13]' in o["streamFilter"].replace(" ", ""),
            f"marked trails (z{o['markedMinzoom']}) before unmarked (z{o['pathMinzoom']}), small streams only from z13 (D-033)")
-    expect(r["routeW14"] > o["natW14"] and r["routeW16"] > 15, f"planned route wider than national trails at z14 and z16 (D-043) {r['routeW14']} > {o['natW14']}, {r['routeW16']} > 15")
+    w16 = 15 * (0.5 if r["is3d"] else 1)   # D-069: route and trails are drawn at half width in 3D
+    expect(r["routeW14"] > o["natW14"] and r["routeW16"] > w16, f"planned route wider than national trails at z14 and z16 (D-043, D-069) {r['routeW14']} > {o['natW14']}, {r['routeW16']} > {w16}")
     ro = r["routeOrder"]
     expect(-1 < ro["casing"] < ro["line"] < ro["dot"] < ro["camp"] < ro["other"] < ro["points"],
            f"route line under the point icons, route handles above them (D-062) {ro}")
