@@ -198,7 +198,7 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   toolbar rows [8, 60] (was [8, 16, 60, 112]), search at 60 px, notification at 124 px under it; a tap on the map
   hides it. Owner approved the screenshot (phone-compare).
 
-## Day casing in 3D follows the thinner day line (D-074, 2026-11-14, branch wip/days-merge – screenshot shown, waiting for owner approval and the full test)
+## Day casing in 3D follows the thinner day line (D-074, 2026-11-14, branch wip/days-merge – owner approved, waiting for the full test)
 - site/days.js: casing width in 3D = day line × FACTOR_3D + 3 px (option C); widths checked in 2D → 3D → 2D → 3D.
 
 ## Day boundary drag in the profile always gets the press (D-073, 2026-11-09, branch wip/days-always – owner approved, waiting for the full test)
