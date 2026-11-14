@@ -893,3 +893,12 @@ raise the right tool bar a little")
   D-071, "D-070" = D-072, "D-071" = D-073 (the phone top bar section of style.css and width3d.js are the other
   session's own D-068 / D-069).
 - The phone top bar (D-068) gives the "עריכת מסלול" badge its own row; owner chose to keep D-071's hiding of it on a phone.
+
+## D-074 The day casing follows the thinner 3D day line, 2026-11-14
+- After merging D-069 (lines half as wide in 3D, width3d.js) the day colour was thin in 3D but its casing (D-070) kept
+  its 2D width – a wide dark band around a thin line. Owner chose option C (screenshots A/B/C): in 3D the casing is the
+  thinner day line + 3 px, the same 1.5 px rim on each side as in 2D.
+- days.js only: `CASE_W3` from `FACTOR_3D` (imported from width3d.js, so one factor), the casing width chosen when the
+  layer is added and set again on every 'terrain' event. width3d.js is not changed. Checked in the browser: 3D casing
+  5.15/6/7/8.8/11.8 px (z7–16) around the day line 2.15/3/4/5.8/8.8; back in 2D 7.3/9/11/14.6/20.6 around 4.3/6/8/11.6/17.6.
+

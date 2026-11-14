@@ -16,6 +16,7 @@ import { renderDaysProfile } from './days-profile.js';
 import { statIcon } from './stat-icons.js';
 import { routeToGpx, gpxFileName, downloadText } from './gpx.js';
 import { loadPrefs, savePrefs } from './prefs.js';
+import { FACTOR_3D } from './width3d.js';
 
 const FC = (features) => ({ type: 'FeatureCollection', features });
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -28,6 +29,9 @@ const DIM = '#A9B4BF';   // a day that is not the selected one: a light grey-blu
 // casing is dark like the route's (not white), and the day line keeps its earlier width.
 const DAY_W = [4.3, 6, 8, 11.6, 17.6];
 const CASE_W = DAY_W.map((w) => w + 3);
+// D-074 (owner 2026-11-14, option C): in 3D the day line is drawn thinner (D-069, width3d.js); the casing follows it
+// and keeps the same 1.5 px rim on each side as in 2D.
+const CASE_W3 = DAY_W.map((w) => Math.round((w * FACTOR_3D + 3) * 100) / 100);
 const CASE_COLOR = '#0a1f0a';   // the route casing's colour (route.js)
 const zw = (w) => ['interpolate', ['linear'], ['zoom'], 7, w[0], 10, w[1], 12, w[2], 14, w[3], 16, w[4]];
 const DIM_OP = 0.75;
@@ -54,6 +58,8 @@ export function initDays(ctx) {
   const lodgingName = (l, k) => l.name || t('days.lodging', { n: k + 1 });
 
   // ---------------------------------------------------------------- map layers (drawn only while the screen is open)
+  const casingW = () => zw(map.getTerrain?.() ? CASE_W3 : CASE_W);   // D-074: rim kept in 3D too
+  map.on('terrain', () => { if (map.getLayer('days-casing')) map.setPaintProperty('days-casing', 'line-width', casingW()); });
   function addLayers() {
     if (map.getSource('days-route')) return;
     const under = map.getLayer('topo-poi-dot') ? 'topo-poi-dot' : undefined;   // like the route: under point icons
@@ -61,7 +67,7 @@ export function initDays(ctx) {
     const hidden = { visibility: 'none' };
     // D-068: the casing is added in the same step and from the same source, so a day line is never drawn without it
     map.addLayer({ id: 'days-casing', type: 'line', source: 'days-route', layout: { ...hidden, 'line-join': 'round', 'line-cap': 'round' },
-      paint: { 'line-color': CASE_COLOR, 'line-opacity': ['*', 0.85, ['get', 'opacity']], 'line-width': zw(CASE_W) } }, under);
+      paint: { 'line-color': CASE_COLOR, 'line-opacity': ['*', 0.85, ['get', 'opacity']], 'line-width': casingW() } }, under);
     map.addLayer({ id: 'days-line', type: 'line', source: 'days-route', layout: { ...hidden, 'line-join': 'round', 'line-cap': 'round' },
       paint: { 'line-color': ['get', 'color'], 'line-opacity': ['get', 'opacity'], 'line-width': zw(DAY_W) } }, under);
     map.addLayer({ id: 'days-link', type: 'line', source: 'days-links', layout: { ...hidden, 'line-cap': 'round' },
