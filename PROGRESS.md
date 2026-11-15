@@ -179,7 +179,7 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
 - site/style.css only (new D-067 rule). Checked in the browser: bar top 151 → 187 px at 920×600 (clear of the map
   buttons), Delete key still deletes the selected point, phone keeps the button.
 
-## Days view: folding panels, casing under day lines (D-070, 2026-11-08, branch wip/days-ui – waiting for owner approval to publish)
+## Days view: folding panels, casing under day lines (D-070, 2026-11-08, branch wip/days-ui – LIVE 2026-11-15, commit 5d9bfd7, CI run 43754593446, snapshot snapshot/site-before-d070)
 - Existing files touched (hooks only): site/days.js (casing layer in addLayers, `route-casing` in ROUTE_OWN, fold
   button / strip / profile button, padding from real sizes), site/days-core.js (DAY_COLORS – owner palette choice),
   site/style.css (new D-070 section + `.dm-warn`), site/i18n.js (7 strings), scripts/e2e_test.py (D-070 checks; the
@@ -193,20 +193,20 @@ for the cache (fail on the old code). wip/perf: unit 40/40, smoke 17/17, e2e 102
   contrast-before-after.png, palette.png, casing-options.png. Owner to check on the real map after publishing.
 - Tests: unit 62/62, editor 18/18, full e2e – see the release note below when published.
 
-## Phone top row; tap closes notifications (D-071, 2026-11-08, branch wip/phone-toast – owner approved, waiting for the full test)
+## Phone top row; tap closes notifications (D-071, 2026-11-08, branch wip/phone-toast – LIVE 2026-11-15, commit 5d9bfd7, CI run 43754593446, snapshot snapshot/site-before-d070)
 - site/style.css (new D-071 rule), site/app.js (one listener after `notify`). Checked at 412×820 while editing:
   toolbar rows [8, 60] (was [8, 16, 60, 112]), search at 60 px, notification at 124 px under it; a tap on the map
   hides it. Owner approved the screenshot (phone-compare).
 
-## Day casing in 3D follows the thinner day line (D-074, 2026-11-14, branch wip/days-merge – owner approved, waiting for the full test)
+## Day casing in 3D follows the thinner day line (D-074, 2026-11-14, branch wip/days-merge – LIVE 2026-11-15, commit 5d9bfd7, CI run 43754593446, snapshot snapshot/site-before-d070)
 - site/days.js: casing width in 3D = day line × FACTOR_3D + 3 px (option C); widths checked in 2D → 3D → 2D → 3D.
 
-## Day boundary drag in the profile always gets the press (D-073, 2026-11-09, branch wip/days-always – owner approved, waiting for the full test)
+## Day boundary drag in the profile always gets the press (D-073, 2026-11-09, branch wip/days-always – LIVE 2026-11-15, commit 5d9bfd7, CI run 43754593446, snapshot snapshot/site-before-d070)
 - site/style.css: one added rule; the hover line and readout of the days profile no longer take clicks.
 - Checked: pointer events logged in the browser – before, the press went to the hover line and the lodging stayed (153→153);
   after, it goes to the boundary handle and the lodging moves (153→170, manual).
 
-## Split routes always in day colours (D-072, 2026-11-08, branch wip/days-always – owner approved, waiting for the full test)
+## Split routes always in day colours (D-072, 2026-11-08, branch wip/days-always – LIVE 2026-11-15, commit 5d9bfd7, CI run 43754593446, snapshot snapshot/site-before-d070)
 - site/days.js only (`renderAmbient` / `clearAmbient` / `drawDays` – the map part of `render` moved into `drawDays`
   unchanged; lodgings fixed outside the screen); scripts/e2e_test.py (D-072 checks, D-065 build expectation).
 - Checked in the browser: after "back to building" the 3 days stay coloured with numbers and lodgings, editing points on
