@@ -20,7 +20,7 @@ service cloud.firestore {
     function maxUsers() { return 10; }
 
     function signedIn() { return request.auth != null; }
-    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function isOwner(uid) { return signedIn(); }   // MUTATION (deliberately wrong)
     function counterPath() { return /databases/$(database)/documents/meta/userCount; }
     function profilePath(uid) { return /databases/$(database)/documents/users/$(uid); }
     function hasProfile(uid) { return exists(profilePath(uid)); }
@@ -90,7 +90,7 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid) && hasProfile(uid) && validRoute() && createdNow() && newData().rev == 1;
         allow update: if isOwner(uid) && hasProfile(uid) && validRoute() && createdKept()
-          && newData().rev == oldData().rev + 1;
+          && newData().rev is int;   // MUTATION
         allow delete: if isOwner(uid);
 
         match /chunks/{i} {
