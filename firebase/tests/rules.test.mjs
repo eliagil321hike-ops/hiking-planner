@@ -26,7 +26,13 @@ beforeEach(async () => {
 });
 
 const db = (uid) => (uid ? env.authenticatedContext(uid).firestore() : env.unauthenticatedContext().firestore());
-const count = async () => env.withSecurityRulesDisabled(async (c) => (await getDoc(doc(c.firestore(), 'meta/userCount'))).data().count);
+// withSecurityRulesDisabled does not return the callback's value: read into a variable
+async function adminRead(path) {
+  let out;
+  await env.withSecurityRulesDisabled(async (c) => { out = (await getDoc(doc(c.firestore(), path))).data(); });
+  return out;
+}
+const count = async () => (await adminRead('meta/userCount')).count;
 const setCount = (n) => env.withSecurityRulesDisabled(async (c) => setDoc(doc(c.firestore(), 'meta/userCount'), { count: n }));
 
 /** What the site does on first sign-in: profile + counter + 1 in one batch. */
@@ -58,7 +64,7 @@ async function updateRoute(f, uid, id, rev, over = {}) {
 }
 /** createdAt must stay as stored on update: read it first (the site keeps it from the loaded copy). */
 async function storedCreatedAt(uid, id) {
-  return env.withSecurityRulesDisabled(async (c) => (await getDoc(doc(c.firestore(), 'users', uid, 'routes', id))).data().createdAt);
+  return (await adminRead(`users/${uid}/routes/${id}`)).createdAt;
 }
 
 // ---------------------------------------------------------------- sign-up and the cap
