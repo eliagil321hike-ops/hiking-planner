@@ -10,3 +10,5 @@ data/
 .DS_Store
 __pycache__/
 .cache
+firebase/node_modules/
+firebase/*.log

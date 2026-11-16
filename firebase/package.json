@@ -1,0 +1,9 @@
+{
+  "name": "topo3d-firebase",
+  "private": true,
+  "type": "module",
+  "description": "Firestore security rules and their tests (Firebase emulator). Not part of the site.",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project demo-topo3d \"node --test tests/*.test.mjs\""
+  }
+}

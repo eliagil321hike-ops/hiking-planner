@@ -1,0 +1,137 @@
+rules_version = '2';
+
+// Topo3D accounts (SPEC-WEB W9, docs/accounts-plan.md). These rules are the real protection: the web config in
+// the site is public by design. Everything not allowed below is denied.
+//
+//   meta/userCount                         { count }                 – accounts in use, at most MAX_USERS
+//   users/{uid}                            profile                   – created together with count + 1
+//   users/{uid}/routes/{routeId}           route header (list data)  – full route in chunks/{i}, gzip JSON
+//   users/{uid}/routes/{routeId}/chunks/{i}
+//   users/{uid}/folders/{folderId}
+//   users/{uid}/points/{pointId}
+//
+// Saving a newer copy over an older one is refused here (compare-and-set): every update must carry
+// rev == stored rev + 1, so a device that loaded an older rev (or queued a save offline) is rejected.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // The cap on accounts. Keep equal to MAX_USERS in site/cloud-config.js.
+    function maxUsers() { return 10; }
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function counterPath() { return /databases/$(database)/documents/meta/userCount; }
+    function profilePath(uid) { return /databases/$(database)/documents/users/$(uid); }
+    function hasProfile(uid) { return exists(profilePath(uid)); }
+
+    function newData() { return request.resource.data; }
+    function oldData() { return resource.data; }
+    function onlyKeys(keys) { return newData().keys().hasOnly(keys) && newData().keys().hasAll(keys); }
+    function str(v, max) { return v is string && v.size() <= max; }
+    function strOrNull(v, max) { return v == null || str(v, max); }
+    function name(v) { return v is string && v.size() >= 1 && v.size() <= 80; }
+    function nowStamped() { return newData().updatedAt == request.time; }
+    function createdNow() { return newData().createdAt == request.time && nowStamped(); }
+    function createdKept() { return newData().createdAt == oldData().createdAt && nowStamped(); }
+    function lon(v) { return v is number && v >= -180 && v <= 180; }
+    function lat(v) { return v is number && v >= -90 && v <= 90; }
+
+    // ------------------------------------------------------------------ counter
+    match /meta/userCount {
+      allow read: if signedIn();
+      // +1 only in the same write that creates the caller's profile; −1 only in the write that deletes it.
+      allow update: if signedIn()
+        && newData().keys().hasOnly(['count']) && newData().count is int
+        && (
+          (newData().count == oldData().count + 1 && newData().count <= maxUsers()
+            && !hasProfile(request.auth.uid) && existsAfter(profilePath(request.auth.uid)))
+          ||
+          (newData().count == oldData().count - 1 && newData().count >= 0
+            && hasProfile(request.auth.uid) && !existsAfter(profilePath(request.auth.uid)))
+        );
+      // Created once by the owner in the console ({ count: 0 }); never by the site.
+      allow create, delete: if false;
+    }
+
+    // ------------------------------------------------------------------ profile
+    function validProfile() {
+      return onlyKeys(['displayName', 'avatarUrl', 'createdAt'])
+        && str(newData().displayName, 200) && strOrNull(newData().avatarUrl, 2048);
+    }
+    function counterAfter() { return getAfter(counterPath()).data.count; }
+    function counterBefore() { return get(counterPath()).data.count; }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && validProfile() && newData().createdAt == request.time
+        && counterAfter() == counterBefore() + 1 && counterAfter() <= maxUsers();
+      allow update: if isOwner(uid) && validProfile() && newData().createdAt == oldData().createdAt;
+      allow delete: if isOwner(uid) && counterAfter() == counterBefore() - 1;
+
+      // ---------------------------------------------------------------- routes
+      function validRoute() {
+        let d = newData();
+        return onlyKeys(['name', 'description', 'folderId', 'color', 'stats', 'bbox', 'thumb', 'days',
+                         'schemaVersion', 'createdAt', 'updatedAt', 'deletedAt', 'rev', 'chunks', 'bytes', 'sha256'])
+          && name(d.name) && str(d.description, 2000) && strOrNull(d.folderId, 64) && str(d.color, 16)
+          && d.stats is map && d.stats.size() <= 10
+          && (d.bbox == null || (d.bbox is list && d.bbox.size() == 4))
+          && strOrNull(d.thumb, 300000)
+          && d.days is int && d.days >= 0 && d.days <= 366
+          && d.schemaVersion == 1
+          && (d.deletedAt == null || d.deletedAt is timestamp)
+          && d.rev is int
+          && d.chunks is int && d.chunks >= 1 && d.chunks <= 12
+          && d.bytes is int && d.bytes >= 1 && d.bytes <= 12 * 700000
+          && d.sha256 is string && d.sha256.matches('^[0-9a-f]{64}$');
+      }
+      match /routes/{routeId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && hasProfile(uid) && validRoute() && createdNow() && newData().rev == 1;
+        allow update: if isOwner(uid) && hasProfile(uid) && validRoute() && createdKept()
+          && newData().rev == oldData().rev + 1;
+        allow delete: if isOwner(uid);
+
+        match /chunks/{i} {
+          function routeAfter() {
+            return getAfter(/databases/$(database)/documents/users/$(uid)/routes/$(routeId)).data;
+          }
+          allow read: if isOwner(uid);
+          // a chunk is written only in the same batch as its route header, with the same rev
+          allow create, update: if isOwner(uid) && hasProfile(uid)
+            && i.matches('^([0-9]|1[01])$') && int(i) < routeAfter().chunks
+            && onlyKeys(['data', 'rev']) && newData().data is bytes && newData().data.size() <= 700000
+            && newData().rev == routeAfter().rev;
+          allow delete: if isOwner(uid);
+        }
+      }
+
+      // ---------------------------------------------------------------- folders
+      match /folders/{folderId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && hasProfile(uid) && onlyKeys(['name', 'createdAt', 'updatedAt'])
+          && name(newData().name) && createdNow();
+        allow update: if isOwner(uid) && hasProfile(uid) && onlyKeys(['name', 'createdAt', 'updatedAt'])
+          && name(newData().name) && createdKept();
+        allow delete: if isOwner(uid);
+      }
+
+      // ---------------------------------------------------------------- personal points
+      function validPoint() {
+        let d = newData();
+        return onlyKeys(['name', 'icon', 'lon', 'lat', 'ele', 'source', 'createdAt', 'updatedAt'])
+          && name(d.name) && str(d.icon, 40) && d.icon.size() >= 1 && lon(d.lon) && lat(d.lat)
+          && (d.ele == null || d.ele is number)
+          && (d.source == null || (d.source is map && d.source.keys().hasOnly(['key', 'name'])
+                                   && str(d.source.key, 200) && strOrNull(d.source.name, 200)));
+      }
+      match /points/{pointId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && hasProfile(uid) && validPoint() && createdNow();
+        allow update: if isOwner(uid) && hasProfile(uid) && validPoint() && createdKept();
+        allow delete: if isOwner(uid);
+      }
+    }
+  }
+}
