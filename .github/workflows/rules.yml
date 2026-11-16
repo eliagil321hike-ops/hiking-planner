@@ -20,16 +20,7 @@ jobs:
       - name: Install the emulator and test library
         run: |
           cd firebase
-          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund
-          else npm install --no-audit --no-fund --save-dev firebase-tools@15.34.1 @firebase/rules-unit-testing firebase; fi
+          npm install --no-audit --no-fund      # exact versions pinned in firebase/package.json
           npm ls --depth=0
       - name: Rules tests (emulator)
         run: cd firebase && npx firebase --version && npm test
-      - name: Keep the resolved versions (to pin them in the repo)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: firebase-lock
-          path: |
-            firebase/package.json
-            firebase/package-lock.json

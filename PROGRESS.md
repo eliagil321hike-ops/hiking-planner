@@ -1,5 +1,14 @@
 # PROGRESS
 
+## Accounts (W9) – stage B: rules, tests, setup steps (D-075, 2026-11-16, branch wip/accounts – nothing on the site)
+- New: `firebase/firestore.rules`, `firebase/tests/rules.test.mjs` (21 tests), `firebase/firebase.json`,
+  `firebase/firestore.indexes.json`, `firebase/package.json`, `.github/workflows/rules.yml`,
+  `docs/accounts-plan.md` (stage A plan + owner decisions), README "Accounts setup" (6 steps for the owner).
+- Changed: `.gitignore` (firebase/node_modules), `SPEC-WEB.md` (W9 copied from the project's copy), README layout.
+- Rules tests on the emulator in CI: 21/21 pass (run 43895995127); mutation check catches isolation and conflict.
+- Not touched: anything in `site/`.
+- Waiting for: the owner to do README steps 1–5 and send the web config; then stage C (sign-in).
+
 ## Current phase
 **Phase 3 (web) — route builder.** Phase 2 approved by the owner ("2 אושר", D-025).
 

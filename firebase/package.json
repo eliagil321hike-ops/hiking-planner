@@ -5,5 +5,10 @@
   "description": "Firestore security rules and their tests (Firebase emulator). Not part of the site.",
   "scripts": {
     "test": "firebase emulators:exec --only firestore --project demo-topo3d \"node --test tests/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.2",
+    "firebase": "12.19.0",
+    "firebase-tools": "15.34.1"
   }
 }

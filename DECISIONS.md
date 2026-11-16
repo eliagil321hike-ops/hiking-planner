@@ -902,3 +902,41 @@ raise the right tool bar a little")
   layer is added and set again on every 'terrain' event. width3d.js is not changed. Checked in the browser: 3D casing
   5.15/6/7/8.8/11.8 px (z7–16) around the day line 2.15/3/4/5.8/8.8; back in 2D 7.3/9/11/14.6/20.6 around 4.3/6/8/11.6/17.6.
 
+## D-075 Accounts (W9) stage B: Firestore data model, security rules and their tests, 2026-11-16
+Plan: docs/accounts-plan.md (owner approved stage A and decisions 1–4 on 2026-11-16).
+- **Provider**: Firebase Spark (Authentication with Google + Cloud Firestore), per SPEC-WEB W9 (Supabase and
+  Appwrite pause free projects after a week of inactivity). No billing, no Cloud Functions.
+- **Facts checked 2026-11-16** (firebase.google.com/docs/firestore/quotas, …/data-types): document limit
+  1 MiB; Spark free quota 1 GiB stored, 50,000 reads / 20,000 writes / 20,000 deletes per day, 10 GiB/month
+  egress, refused (not billed) past the quota; arrays cannot contain arrays (Standard edition).
+- **Size**: a synthetic 1,000 km route in today's format is 3.64 MiB JSON, 1.04 MiB gzip (geometry 0.91,
+  profile 1.73, editor cache 0.94 MiB JSON) → over the limit even compressed. **Design: the full route
+  (the planner's record unchanged) is JSON → gzip → ≤ 700 KB Bytes chunks** in `routes/{id}/chunks/{i}`
+  (at most 12), written with the route header in one batched write; the header holds only list data plus
+  `chunks`, `bytes`, `sha256` so a read is verified and never truncated. A real long route is measured in
+  stage D.
+- **Data model**: `meta/userCount {count}`, `users/{uid} {displayName, avatarUrl, createdAt}`,
+  `users/{uid}/routes/{id}` header `{name, description, folderId, color, stats, bbox, thumb, days,
+  schemaVersion:1, createdAt, updatedAt, deletedAt, rev, chunks, bytes, sha256}`, `…/chunks/{i} {data, rev}`,
+  `users/{uid}/folders/{id}`, `users/{uid}/points/{id}` (owner decision: folders and points move too).
+  Ownership is the path (`users/{uid}`); there is no owner field to change.
+- **Conflicts**: instead of comparing `updatedAt` timestamps (W9 wording) the rules require **`rev == stored
+  rev + 1`** on every update (compare-and-set). Same rule, stricter: an older copy, even a save queued
+  offline, is refused by the server; `updatedAt` must equal the server time and `createdAt` cannot change.
+- **Cap N = 10** (`maxUsers()` in the rules; also `MAX_USERS` in site config in stage C). A profile is created
+  only in the same batch that raises `meta/userCount.count` by exactly 1 (`getAfter`), up to N; the site uses
+  `increment(1)` so two sign-ups at once cannot both read the same count. −1 only with the caller's own
+  profile deletion. The counter document is created once by the owner in the console.
+- **Validation**: known fields only (`hasOnly` + `hasAll`), types and sizes (names 1–80 like today's
+  `cleanName`, description ≤ 2000, thumb ≤ 300,000 chars, chunk ≤ 700,000 bytes). Everything else denied.
+- **Tests**: `firebase/tests/rules.test.mjs`, 21 tests on the Firestore emulator (two users, isolation, writing
+  into another user's path, signed out, cap at N and N+1, counter abuse, conflict, field checks, chunks,
+  folders, points, account deletion). They run in `.github/workflows/rules.yml` (this session cannot reach
+  npm). Pinned: firebase-tools 15.34.1, @firebase/rules-unit-testing 5.0.2, firebase 12.19.0. Run 43895995127:
+  21/21 pass. Mutation check (run 43896202308, branch tmp/rules-mutation): with "any signed-in user is the
+  owner" and the rev check removed, tests 9, 10 and 15 fail as they should.
+- **Sign-in method**: `signInWithPopup` (redirect needs the auth helper on the site's own domain, which
+  GitHub Pages under /hiking-planner/ cannot provide; Firebase "redirect best practices"). Checked on the
+  owner's phone in stage C.
+- **Location**: me-west1 (Tel Aviv), proposed; the owner chooses it when creating the database (README step 4).
+
