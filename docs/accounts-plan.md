@@ -150,17 +150,15 @@ Touched existing (hooks only, listed again in PROGRESS when done):
 
 Not touched: map, layers, routing, editor package, days, profile, GPX, phone layout.
 
-## 6. Open decisions for the owner (before stage B)
+## 6. Owner decisions (2026-11-16)
 
-1. **Folders and personal points.** They live in the same browser database as routes. If only routes move to
-   the account, signing in hides folders and points. Proposal: move them too (same rules, same migration).
-2. **The existing "המסלולים שלי" panel** already has list, search, folders, sort, open / view / edit, duplicate,
-   move, GPX and delete. Proposal: stage E = this panel on the account data (plus description, undo after
-   delete, "not synced" mark, loading/empty/error states), not a second panel.
-3. **Signed out.** W9: saving needs an account. What about routes already saved in this browser while signed
-   out? Proposal: they stay visible read-only (open, view, GPX) with a "sign in to upload" note; no new saves.
-4. **Delete.** Today: confirm dialog, then gone. Task: soft delete with 10 s undo. Proposal: keep the confirm
-   dialog and add the undo toast; the document is removed for good after the 10 s (or at the next start, if the
-   page was closed), so deleted routes do not use the free quota.
-5. **Firestore location:** me-west1 (Tel Aviv) proposed (closest; cannot be changed later).
-6. **N = 10** accounts – confirm.
+1. **Folders and personal points move to the account too** (same rules, same migration with read-back check).
+2. **Stage E uses the existing "המסלולים שלי" panel** on the account data (plus description, undo after delete,
+   "not synced" mark, loading/empty/error states). No second panel.
+3. **Signed out: routes saved in this browser are hidden** until sign-in (the panel says to sign in). They are
+   not deleted; on first sign-in the site offers to upload them (migration).
+4. **Delete: the confirm dialog stays, then a 10-second undo.** After 10 s (or at the next start, if the page was
+   closed) the route is removed for good, so it does not use the free quota.
+5. Still open (proposed defaults, to confirm in stage B): Firestore location **me-west1 (Tel Aviv)**, cap **N = 10**.
+
+Status: waiting for the owner's approval to start stage B.
