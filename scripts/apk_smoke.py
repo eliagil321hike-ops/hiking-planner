@@ -120,8 +120,17 @@ def main(apk, out):
         resumed = [l for l in top().splitlines() if "mResumedActivity" in l or "topResumedActivity" in l]
         res["location"]["dialogAfterPress"] = any("permissioncontroller" in l.lower() for l in resumed)
         screenshot(out / "emulator-location.png")
-        adb("shell", "input", "keyevent", "4")   # dismiss (deny) the system dialog
-        time.sleep(2)
+        # answer the system dialog with "Don't allow" (a back press could reach the app and close it)
+        adb("shell", "uiautomator", "dump", "/sdcard/ui.xml", check=False)
+        ui = adb("shell", "cat", "/sdcard/ui.xml", check=False)
+        m = re.search(r'resource-id="com\.android\.permissioncontroller:id/permission_deny_button"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', ui) \
+            or re.search(r'text="Don.t allow"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', ui)
+        if m:
+            x1, y1, x2, y2 = map(int, m.groups())
+            adb("shell", "input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
+        res["location"]["denied"] = bool(m)
+        time.sleep(3)
+        res["location"]["appStillRunning"] = bool(adb("shell", "pidof", PKG, check=False).strip())
         # GPX: the personal-points export goes to Android's share sheet
         p.js("import('./gpx.js').then((m) => m.downloadText('<gpx/>', 'topo3d-check.gpx'))")
         time.sleep(4)
@@ -130,7 +139,6 @@ def main(apk, out):
                            "chooserShown": any(("chooser" in l.lower() or "resolver" in l.lower() or "intentresolver" in l.lower()) for l in resumed),
                            "resumed": resumed[:2]}
         screenshot(out / "emulator-share.png")
-        adb("shell", "input", "keyevent", "4")
     except Exception as e:  # keep what we have
         res["error"] = str(e)
         screenshot(out / "emulator.png")
