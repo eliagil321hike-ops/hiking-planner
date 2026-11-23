@@ -29,19 +29,25 @@ export function initBackground(ctx) {
     syncKeyRow();
     const sat = baseMode !== 'topo';
     let shown = false;
+    let fallback = null;
     if (sat) {
       const p = providerById(providerId);
-      // A key typed by this user wins; otherwise the owner's embedded public key (D-021).
-      shown = setSatellite(map, p, store.get(keyName(p.id)) || p.embeddedKey, SAT.beforeLayer);
-      if (!shown) { notify(t('bg.needKey', { provider: p.label })); $('status').dataset.source = 'bg'; }
+      // A key typed on this device wins; otherwise the owner's embedded public key (D-021).
+      const key = store.get(keyName(p.id)) || p.embeddedKey;
+      // D-076: no key on this device yet → show the free imagery (EOX) instead of nothing, and say so.
+      const free = p.needsKey && !key ? SAT.providers.find((x) => !x.needsKey) : null;
+      shown = setSatellite(map, free ?? p, key, SAT.beforeLayer);
+      if (shown && free) { notify(t('bg.keyFallback', { provider: p.label, free: free.label })); $('status').dataset.source = 'bg'; }
+      else if (!shown) { notify(t('bg.needKey', { provider: p.label })); $('status').dataset.source = 'bg'; }
       else if ($('status').dataset.source === 'bg') notify(null);
+      fallback = free?.id ?? null;
     } else {
       if ($('status').dataset.source === 'bg') notify(null);
       removeSatellite(map);
     }
     imagery = sat && shown;
     ctx.applyGroupsFromUI?.();
-    results.background = { mode: baseMode, provider: sat ? providerId : null, shown };
+    results.background = { mode: baseMode, provider: sat ? providerId : null, shown, fallback };
   }
 
   // Called once the style (and the Topo3D layers the satellite layer is inserted under) exist.

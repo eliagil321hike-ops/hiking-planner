@@ -2864,7 +2864,7 @@
     "fog-ground-blend": 0.35
   },
   "satellite": {
-    "$comment": "D-017. Default provider works without an account. Keys are never stored in this repo.",
+    "$comment": "D-017, D-076. Default provider works without an account. Keys are never stored in this repo: each device enters its own (kept in that browser/app only); until then the first provider without a key (EOX) is shown.",
     "default": "esri-world-imagery",
     "beforeLayer": "topo-landcover",
     "providers": [
@@ -2887,9 +2887,7 @@
         "tileSize": 256,
         "maxzoom": 18,
         "attribution": "Powered by Esri · Esri, Maxar, Earthstar Geographics, and the GIS User Community",
-        "note": "URL + attribution from developers.arcgis.com MapLibre tutorial (2026-11-01). tileSize and maxzoom not stated there: 256/18 chosen conservatively; verify on the owner's run.",
-        "embeddedKey": "AAPTaU4o9HgNkwaicLTja-2fbYQ..Eg20mfBsXcI8mRt0-HdoyEESFwa6fsvlI2DZGT3hhEmfK5zdzehCINK_RN8eAdgJqWUZheZG3Hs2Ikc4589dQvd2C-TOnEly6-Mltd85dkpHxfDs6gss1YA0EoAKikaNoOm86cmHdA2Khya6emdB_SFUEPSPBfb5GMQY2pKmX9F2Wh1LDbtDcfSxq_CAjNJO-JmwBR54E_J3Z2olLlpRFHATgcN-N2SzKCVLg7_tIdsVnC5B9LqCpRw5yET0ahq1wIUHydRHUrtZAT1_pmqSTuWK",
-        "embeddedKeyNote": "D-021: owner-approved public-application key, referrer-restricted to https://eliagil321hike-ops.github.io, Basemaps privilege only, no item access, no payment method (no charges possible), expires 2027-01-30. A key typed in the site overrides it."
+        "note": "URL + attribution from developers.arcgis.com MapLibre tutorial (2026-11-01). tileSize and maxzoom not stated there: 256/18 chosen conservatively; verify on the owner's run."
       },
       {
         "id": "maptiler-satellite",

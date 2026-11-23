@@ -15,6 +15,7 @@ const STRINGS = {
     'bg.keySave': 'שמור מפתח והצג',
     'bg.embeddedKey': 'מפתח מובנה פעיל — אין צורך להזין. אפשר להזין מפתח אישי שיחליף אותו.',
     'bg.needKey': '{provider}: צריך להזין מפתח כדי להציג את התמונה',
+    'bg.keyFallback': '{provider}: אין מפתח במכשיר הזה, לכן מוצגת {free}. אפשר להזין מפתח בהגדרות הרקע (נשמר רק במכשיר הזה).',
     'layers.heading': 'שכבות',
     'layers.terrainHeading': 'שטח',
     'layers.featuresHeading': 'פרטים במפה',

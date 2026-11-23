@@ -7,7 +7,7 @@ SwiftShader). External services are replaced by fixtures so the test runs offlin
   - Mapterhorn DEM: synthetic Terrarium WebP tiles (same surface as browser_smoke_test.py)
   - Satellite (Esri, EOX): solid-colour tiles
 Checks: boot without errors, Topo3D overlay applied (hide/rename/font), terrain on, background switch
-adds/removes the satellite layer with the embedded key, drawing a line produces stats and a profile.
+adds/removes the satellite layer (EOX until a key is typed, then Esri), drawing a line produces stats and a profile.
 
 Run from the repo root:  python3 scripts/e2e_test.py      (needs Python Playwright + Chromium, Pillow)
 """
@@ -379,8 +379,14 @@ def main():
         r["geoLabel"] = page.evaluate("() => document.querySelector('.maplibregl-ctrl-geolocate')?.getAttribute('title') ?? ''")
         r["i18n"] = page.evaluate("() => [document.querySelector('[data-i18n=\\'layers.contours\\']').textContent, document.documentElement.lang, document.documentElement.dir]")
 
-        # Background switch → satellite (Esri default, embedded key)
+        # Background switch → satellite. D-076: no key in the code; with no key on this device the free EOX
+        # imagery is shown with a notice, then a key typed in the key box switches to Esri.
         page.evaluate("() => document.querySelector('input[name=base][value=satellite]').click()")
+        wait_js(page, "() => !!window.__topo3d.map.getLayer('satellite')", 60)
+        r["d76NoKey"] = page.evaluate("""() => ({ tiles: window.__topo3d.map.getStyle().sources.satellite?.tiles?.[0] ?? null,
+            fallback: window.__topo3d.results.background?.fallback, status: document.getElementById('status').hidden ? '' : document.getElementById('status').textContent,
+            keyRow: !document.getElementById('sat-key-row').hidden })""")
+        page.evaluate("() => { document.getElementById('sat-key').value = 'e2e-test-key'; document.getElementById('sat-key-save').click(); }")
         # wait for the layer, its attribution and the first tile request (fixed 1.5 s was too short in CI)
         wait_js(page, "() => !!window.__topo3d.map.getLayer('satellite') && (document.querySelector('.maplibregl-ctrl-attrib-inner')?.textContent ?? '').includes('Esri')", 60)
         import time as _t
@@ -1069,7 +1075,9 @@ def main():
     expect(r["waterToggle"] == ["none", "visible"], f"streams switch hides/shows the layer {r['waterToggle']}")
     expect(r["terrain"], "3D terrain on")
     expect(seen["dem"] > 0, "DEM tiles requested")
-    expect(r["satLayer"] and "ibasemaps-api.arcgis.com" in (r["satTiles"] or "") and "token=" in r["satTiles"], "satellite: Esri layer with embedded key")
+    d = r["d76NoKey"]
+    expect("tiles.maps.eox.at" in (d["tiles"] or "") and d["fallback"] == "eox-s2-2024" and "אין מפתח" in d["status"] and d["keyRow"], f"D-076: no Esri key on the device → EOX shown, notice, key box visible {d}")
+    expect(r["satLayer"] and "ibasemaps-api.arcgis.com" in (r["satTiles"] or "") and "token=e2e-test-key" in r["satTiles"], "satellite: Esri layer with the key typed on this device")
     expect(len(seen["satellite"]) > 0, "satellite tiles requested")
     expect(r["landcoverInSat"] == "none" and r["landcoverInTopo"] == "visible", "topo tint hidden on imagery, restored on topo")
     S = r["styles"]
