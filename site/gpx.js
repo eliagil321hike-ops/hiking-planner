@@ -60,6 +60,8 @@ export function pointsToGpx(points, title = 'Topo3D – הנקודות שלי') 
 export const gpxFileName = (name) => `${String(name || 'topo3d').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60) || 'topo3d'}.gpx`;
 
 export function downloadText(text, fileName, type = 'application/gpx+xml') {
+  // D-078: inside the Android app the file goes to the share sheet (native.js); the website downloads as before
+  if (globalThis.__topo3dSaveFile) return globalThis.__topo3dSaveFile(text, fileName, type);
   const url = URL.createObjectURL(new Blob([text], { type }));
   const a = Object.assign(document.createElement('a'), { href: url, download: fileName });
   document.body.append(a); a.click(); a.remove();

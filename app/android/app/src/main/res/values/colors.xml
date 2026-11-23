@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- D-078: the site's tokens (style.css :root) -->
+    <color name="topo_page">#F3F6F8</color>
+    <color name="colorPrimary">#258F91</color>
+    <color name="colorPrimaryDark">#24476B</color>
+    <color name="colorAccent">#258F91</color>
+</resources>

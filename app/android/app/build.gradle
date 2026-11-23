@@ -7,8 +7,9 @@ android {
         applicationId "io.github.eliagil321hikeops.topo3d"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // D-078: CI sets the run number; each APK is newer than the last so Android installs it as an update
+        versionCode (System.getenv("APP_VERSION_CODE") ?: "1").toInteger()
+        versionName "1.0." + (System.getenv("APP_VERSION_CODE") ?: "0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +17,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // D-078: the release key comes only from GitHub Secrets (decoded to a temporary file in CI); never in the repo
+    signingConfigs {
+        release {
+            def ks = System.getenv("TOPO3D_KEYSTORE")
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv("TOPO3D_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("TOPO3D_KEY_ALIAS")
+                keyPassword System.getenv("TOPO3D_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
+            if (System.getenv("TOPO3D_KEYSTORE")) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

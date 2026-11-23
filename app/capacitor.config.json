@@ -10,5 +10,13 @@
   "server": {
     "androidScheme": "https",
     "hostname": "localhost"
-  }
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native",
+      "style": "LIGHT",
+      "hidden": false
+    }
+  },
+  "backgroundColor": "#F3F6F8"
 }

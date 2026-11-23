@@ -9,4 +9,9 @@ rm -rf "$HERE/app/www"
 cp -r "$HERE/site" "$HERE/app/www"
 rm -rf "$HERE/app/www/data"
 bash "$HERE/scripts/stamp_build.sh" "$HERE/app/www" "$BUILD"
+# Inside the app the page stays inside the safe area (status bar, camera cut-out, gesture bar): the SystemBars
+# plugin pads the WebView ("native" insets) and the page asks for "contain" instead of the website's "cover",
+# so no control sits under a system bar. The website's own file is unchanged (D-078).
+sed -i 's/viewport-fit=cover/viewport-fit=contain/' "$HERE/app/www/index.html"
+grep -q 'viewport-fit=contain' "$HERE/app/www/index.html" || { echo "viewport not adapted" >&2; exit 1; }
 echo "app/www ready (build $BUILD)"

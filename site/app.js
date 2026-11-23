@@ -184,6 +184,8 @@ map.on('load', () => {
 
 // D-077 (A1): installable desktop app – shell service worker, update notice (not inside the Android app)
 import('./pwa.js').then((m) => m.initPwa(ctx)).catch((e) => log(`pwa: ${e.message}`));
+// D-078 (A1): inside the Android app only – back button, GPX to the share sheet
+if (globalThis.Capacitor?.isNativePlatform?.()) import('./native.js').then((m) => m.initNative(ctx)).catch((e) => log(`native: ${e.message}`));
 
 if (DEV) {
   const { initDevtools } = await import('./devtools.js');
