@@ -137,13 +137,17 @@ def main(apk, out):
                                  if "topo3d" in l and "Slow operation" not in l][-15:]
         screenshot(out / "emulator-after-deny.png")
         # GPX: the personal-points export goes to Android's share sheet
-        p.js("import('./gpx.js').then((m) => m.downloadText('<gpx/>', 'topo3d-check.gpx'))")
-        time.sleep(4)
+        # the share sheet stays open until someone closes it, so the call is not awaited
+        p.js("void import('./gpx.js').then((m) => m.downloadText('<gpx/>', 'topo3d-check.gpx')); true")
+        time.sleep(5)
         resumed = [l for l in top().splitlines() if "mResumedActivity" in l or "topResumedActivity" in l]
-        res["gpxShare"] = {"shared": p.js("window.__topo3d.results.native?.shared ?? null"),
-                           "chooserShown": any(("chooser" in l.lower() or "resolver" in l.lower() or "intentresolver" in l.lower()) for l in resumed),
-                           "resumed": resumed[:2]}
+        res["gpxShare"] = {"chooserShown": any(("chooser" in l.lower() or "resolver" in l.lower()) for l in resumed),
+                           "resumed": [l.strip()[:160] for l in resumed[:2]],
+                           "fileInAppCache": "topo3d-check.gpx" in adb("shell", "run-as", PKG, "ls", "cache", check=False)}
         screenshot(out / "emulator-share.png")
+        adb("shell", "input", "keyevent", "4")   # closes the share sheet
+        time.sleep(2)
+        res["gpxShare"]["appStillRunning"] = bool(adb("shell", "pidof", PKG, check=False).strip())
     except Exception as e:  # keep what we have
         res["error"] = str(e)
         screenshot(out / "emulator.png")
