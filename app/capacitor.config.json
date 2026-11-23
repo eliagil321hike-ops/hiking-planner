@@ -1,0 +1,14 @@
+{
+  "appId": "io.github.eliagil321hikeops.topo3d",
+  "appName": "Topo3D",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "server": {
+    "androidScheme": "https",
+    "hostname": "localhost"
+  }
+}

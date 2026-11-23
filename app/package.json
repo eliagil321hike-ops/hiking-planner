@@ -1,0 +1,19 @@
+{
+  "name": "topo3d-app",
+  "private": true,
+  "description": "Topo3D as an Android app (Capacitor). The web code is the site/ folder, copied and stamped into www/ by scripts/app_web.sh. A1, SPEC-WEB W10.",
+  "scripts": {
+    "web": "bash ../scripts/app_web.sh",
+    "sync": "npm run web && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/share": "8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0"
+  }
+}

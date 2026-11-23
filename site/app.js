@@ -56,6 +56,13 @@ document.addEventListener('pointerdown', () => { if (!$('status').hidden) notify
 
 // ---------------------------------------------------------------- configuration and libraries
 const overlay = await (await fetch('./styles/topo3d.json', { cache: 'no-cache' })).json();
+// D-078 (A1): inside the Android app the OSM extract (built by the Pages deploy, not in the repository) is read
+// from the live site; the website itself keeps its relative paths.
+if (globalThis.Capacitor?.isNativePlatform?.() && overlay.osmExtract?.loader) {
+  const live = 'https://eliagil321hike-ops.github.io/hiking-planner/';
+  overlay.osmExtract.loader.index = live + overlay.osmExtract.loader.index;
+  overlay.osmExtract.loader.base = live + overlay.osmExtract.loader.base;
+}
 const demMaxzoom = Number(params.get('demz')) || overlay.dem.maxzoomDefault;
 const samplingZoom = Math.max(demMaxzoom, overlay.dem.samplingZoom ?? demMaxzoom);
 const DEM = { urlTemplate: overlay.dem.tiles, encoding: overlay.dem.encoding, tileSize: overlay.dem.tileSize };
