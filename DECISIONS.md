@@ -902,3 +902,78 @@ raise the right tool bar a little")
   layer is added and set again on every 'terrain' event. width3d.js is not changed. Checked in the browser: 3D casing
   5.15/6/7/8.8/11.8 px (z7–16) around the day line 2.15/3/4/5.8/8.8; back in 2D 7.3/9/11/14.6/20.6 around 4.3/6/8/11.6/17.6.
 
+## D-076 Satellite key per device; the embedded Esri key leaves the public code (W10, 2026-11-23)
+- Owner (A1 task, W8 change): the embedded Esri key (D-021) is removed from `site/styles/topo3d.json`. Each device
+  (website, desktop app, APK) types its own key in the existing key box; it stays in that browser/app only.
+- Until a key is entered the free EOX Sentinel-2 imagery is shown (before: nothing, with a notice), with the
+  notice "אין מפתח במכשיר הזה, לכן מוצגת …". Applies to every provider that needs a key (Esri, MapTiler).
+- **The old key is still in the public git history (commit c2e1f69) and must be rotated**: README "Satellite key"
+  has the steps (new key or secondary key, then *Invalidate API key* on the old one). Facts checked 2026-11-23 on
+  developers.arcgis.com (API key credentials: up to two keys, regenerate/invalidate, referrers per key).
+- The Android app's pages come from `https://localhost`: a key restricted to the github.io referrer will not work
+  there; the README says to add `https://localhost` or use a separate phone key.
+- Not changed: the openrouteservice key (D-027) is still embedded; W10 did not ask. Open question for the owner.
+- Tests: smoke test now checks that no `embeddedKey` remains; e2e checks EOX + notice without a key, then Esri with
+  a key typed in the box.
+
+## D-077 Installable desktop app (PWA): manifest, shell-only service worker, update notice (W10, 2026-11-23)
+- `site/manifest.webmanifest`: name Topo3D, lang he, dir rtl, display standalone, `start_url`/`scope`/`id` = `./`
+  (resolves to /hiking-planner/), colours `--c-page` #F3F6F8. Icons 180/192/512 + maskable 512 drawn from the
+  site's brand mark (the turquoise mountain of `.brand`, #258F91) by `scripts/make_icons.py`; the site had no
+  icon before (also used as the tab icon now).
+- `site/sw.js`, scope /hiking-planner/. **Network first, shell only**: requests for the site's own
+  HTML/JS/CSS/JSON config/fonts/icons and the pinned MapLibre files from unpkg go to the network as before and a
+  copy is kept; without network the copy is served. Map tiles, DEM, OSM data (`data/`), routing, imagery never
+  reach `respondWith` (the worker does not touch them; A3). Install walks the shell from the start page
+  (index.html → module imports → styles/fonts), so the first visit already makes it work offline. After a newer
+  start page is fetched, copies stamped with another build are deleted. **An old version is never served while
+  online**; a new deploy is used at the next start.
+- `site/pwa.js` (loaded by app.js): registers the worker (not inside the Android app); compares the running build
+  with the live start page at start and whenever the app becomes visible → **"גרסה חדשה זמינה – רענן"**, built
+  from the site's notice classes `.status.ok.toast` (one tap reloads); in the installed app asks
+  `navigator.storage.persist()` and records the answer in `results.pwa.persist` (to be read on the owner's computer).
+- The website in a browser tab is the same page and gets the same worker; online it behaves as before (every
+  request still goes to the network). Offline it now opens the last copy instead of the browser's error page.
+- Tests: `scripts/pwa_test.py` (in CI after the e2e): installability (Chromium: no errors), manifest, worker scope,
+  map content not through the worker (150 requests, 0 via worker), 60 shell files cached and no data/, opens offline
+  (toolbar, MapLibre, RTL), new deploy → notice → tap → new build, old copies dropped – 11/11 pass. The existing
+  e2e now runs with service workers blocked (their requests would bypass its fixture routing); it tests the
+  website's behaviour as before.
+
+## D-078 Android app (Capacitor 8), built and signed in CI (W10, 2026-11-23)
+- **Capacitor 8.6.0** (@capacitor/core, cli, android; released 2026-10-28, ≥ 2 weeks before use), plugins
+  **@capacitor/app 8.1.2** (back button, exit), **@capacitor/filesystem 8.1.5** (GPX file into the app's cache),
+  **@capacitor/share 8.0.3** (Android share sheet) – all MIT. Versions and dates read from npm in CI (this session
+  cannot reach npm). Android target/compile SDK 36, min SDK 24 (Capacitor template). App id
+  `io.github.eliagil321hikeops.topo3d`, name Topo3D, launcher icon + splash from the brand mark
+  (`scripts/make_android_icons.py`).
+- **Same code as the website**: `scripts/app_web.sh` copies `site/` into `app/www`, stamps it like the deploy and
+  sets `viewport-fit=contain` in the copy only. The app has its own copy of the code (updates with a new APK);
+  `site/data` (OSM extract, built by the deploy) is not copied: inside the app `app.js` points the loader at the live
+  site (GitHub Pages sends CORS headers; checked on the emulator: status 200).
+- Platform-specific code only behind `Capacitor.isNativePlatform()`: `site/native.js` (back button, GPX share) and two
+  lines in `app.js`, one hook in `gpx.js` (`downloadText` asks `__topo3dSaveFile` first). The service worker is not
+  registered in the app (it ships its own files; nothing to cache).
+- **Back button**: open dialog → closes (cancel, like Escape) · days screen → closes · otherwise the site's own Escape
+  (menus, view mode, marking points, search); only if nothing changed: unsaved route edits → the site's own "unsaved
+  route" dialog → exit. **Location**: `ACCESS_FINE/COARSE_LOCATION` declared; Android asks when "center on me" is
+  first pressed (the WebView's geolocation prompt); no background location. **GPX export** → file in the app's
+  cache → share sheet. **GPX import does not exist on the website** (export only), so there is nothing to bring to
+  the app; not added (new feature, owner to decide).
+- **System bars / cut-outs / gesture bar**: Capacitor 8 SystemBars with `insetsHandling: native` and the page at
+  `viewport-fit=contain`, so the WebView stays inside the safe area (Android WebView < 140 reports wrong
+  `env(safe-area-inset-*)`, capacitorjs.com/docs/apis/system-bars, checked 2026-11-23); light theme with the site's
+  page colour behind the bars. Large system font: the WebView keeps its default text zoom (not changed); to be
+  checked on the owner's phone.
+- **Build** (`.github/workflows/android.yml`): after the Pages workflow (tests, then deploy) succeeds on `main`, the
+  same commit is built; with the four GitHub Secrets it is a **signed release APK** (key decoded to a temporary file,
+  deleted after the build), otherwise a debug-signed test APK with a warning. `versionCode` = the run number. The APK
+  is a workflow artifact (30 days). The Pages deploy is unchanged.
+- **Emulator check** on the work branch (`scripts/apk_smoke.py`, Android 14, WebView 113, x86_64): map loaded with
+  3D terrain; localStorage and IndexedDB work; origin `https://localhost`; OSM index from the live site 200; back
+  button closes an open menu (handled by the site's Escape) and the app keeps running; location: nothing asked
+  before the press, Android's dialog after it ("While using the app" / "Only this time" / "Don't allow"), app keeps
+  running after "Don't allow"; GPX → Android's share sheet with the file; one app process for the whole check.
+  Screenshots in `docs/a1/`. Not yet tested: the owner's phone (model/Android version, FPS, memory, real GPS, large
+  font), a release-signed build.
+

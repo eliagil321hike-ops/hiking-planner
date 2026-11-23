@@ -1,5 +1,37 @@
 # PROGRESS
 
+## A1 – one app on the computer and the phone, install only (D-076, D-077, D-078, 2026-11-23, branch wip/a1 – not on the site yet)
+Part 1 – plan: `docs/accounts-plan.md` rewritten for one owner (W10), everything marked A2; Google WebView block
+(2021-09-30) and the Capacitor Firebase Authentication plugin (8.6.0, Apache-2.0, 2026-10-31) recorded with dates.
+Part 4 – Esri key: removed from `site/styles/topo3d.json`; EOX until a key is typed on the device. Rotation: README.
+Part 3 – desktop app: manifest, icons, `sw.js`, `pwa.js`; `scripts/pwa_test.py` 11/11.
+Part 2 – Android app: `app/` (Capacitor 8.6.0), `site/native.js`, CI build + emulator check (all checks pass,
+`docs/a1/emulator.json`).
+
+Touched existing files (all hooks, listed with the reason):
+- `site/styles/topo3d.json` – Esri `embeddedKey`/`embeddedKeyNote` removed, comment (D-076).
+- `site/background.js` – no key on the device → EOX + notice (D-076).
+- `site/i18n.js` – two strings: `bg.keyFallback`, `app.update`.
+- `site/index.html` – head only: manifest, icon, apple-touch-icon, theme-color (D-077).
+- `site/app.js` – three hooks: start `pwa.js`; inside the app start `native.js`; inside the app read the OSM extract
+  from the live site (D-077, D-078).
+- `site/gpx.js` – `downloadText` asks the app's save hook first (D-078); the website downloads as before.
+- `site/style.css` – one new section at the end (`.app-update`).
+- `scripts/e2e_test.py` – service workers blocked in its browser (their requests bypass the fixtures); satellite
+  check now: EOX without a key, Esri with a typed key (D-076).
+- `scripts/browser_smoke_test.py` – "embedded key present" became "no embedded key" (D-076).
+- `.github/workflows/pages.yml` – one test line: `scripts/pwa_test.py` (the deploy job is unchanged).
+- `README.md` – A1 sections (desktop app, Android app, key/secrets/download/install, satellite key + rotation).
+New: `site/sw.js`, `site/pwa.js`, `site/native.js`, `site/manifest.webmanifest`, `site/icons/*`, `app/**`,
+`scripts/{app_web.sh,make_icons.py,make_android_icons.py,pwa_test.py,apk_smoke.py}`,
+`.github/workflows/android.yml`, `docs/accounts-plan.md`, `docs/a1/*`.
+
+Tested: unit 64/64; smoke test pass; desktop app test 11/11 (local); Android emulator check pass (CI run on
+wip/a1); full e2e: see below. Not tested yet (needs the owner): the owner's phone (model, Android version, FPS while
+rotating/tilting, memory, GPS, large font), Chrome/Edge "Install" on the owner's computer, a release-signed APK
+(needs the key in GitHub Secrets).
+Next step after A1: A2 (cloud storage, `docs/accounts-plan.md`).
+
 ## Current phase
 **Phase 3 (web) — route builder.** Phase 2 approved by the owner ("2 אושר", D-025).
 
