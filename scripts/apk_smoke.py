@@ -37,8 +37,14 @@ class Page:
     """Minimal DevTools client: Runtime.evaluate on the app's WebView."""
 
     def __init__(self):
+        self.pids = []
+        self.connect()
+        self.n = 0
+
+    def connect(self):
         import websocket
         pid = adb("shell", "pidof", PKG).strip()
+        self.pids.append(pid)
         adb("forward", "tcp:9222", f"localabstract:webview_devtools_remote_{pid}")
         for _ in range(30):
             try:
@@ -50,9 +56,16 @@ class Page:
         else:
             raise RuntimeError("no WebView page to debug")
         self.ws = websocket.create_connection(page["webSocketDebuggerUrl"], timeout=60, suppress_origin=True)
-        self.n = 0
 
     def js(self, expr):
+        try:
+            return self._js(expr)
+        except Exception:   # the DevTools link to the emulator's WebView sometimes drops: reconnect once
+            time.sleep(3)
+            self.connect()
+            return self._js(expr)
+
+    def _js(self, expr):
         self.n += 1
         self.ws.send(json.dumps({"id": self.n, "method": "Runtime.evaluate",
                                  "params": {"expression": expr, "awaitPromise": True, "returnByValue": True}}))
@@ -153,6 +166,10 @@ def main(apk, out):
         screenshot(out / "emulator.png")
     crash = adb("logcat", "-d", "-b", "crash", check=False) + adb("logcat", "-d", "-s", "AndroidRuntime:E", "ActivityManager:I", check=False)
     res["crash"] = [l[-400:] for l in crash.splitlines() if re.search(r"FATAL|Exception|at |Caused by|Process .*topo3d.*(died|crash)|Force", l)][:60]
+    try:
+        res["appProcesses"] = p.pids   # more than one different pid = the app restarted during the check
+    except NameError:
+        pass
     log = adb("logcat", "-d", "-s", "Capacitor/Console:*", "chromium:*", "Capacitor:*", check=False)
     res["consoleErrors"] = [l[-300:] for l in log.splitlines() if re.search(r"\b(E|ERROR)\b|Uncaught|error", l)][:40]
     (out / "emulator.json").write_text(json.dumps(res, ensure_ascii=False, indent=2))
