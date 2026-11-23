@@ -1,0 +1,19 @@
+# Android app (Capacitor) – A1, SPEC-WEB W10. Does not touch the Pages deploy.
+name: Android app
+on:
+  workflow_dispatch:
+  push:
+    branches: ["wip/a1"]
+    paths: ["app/**", ".github/workflows/android.yml"]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Versions and release dates on npm (to pin versions ≥ 2 weeks old)
+        run: |
+          for p in @capacitor/core @capacitor/cli @capacitor/android @capacitor/app @capacitor/filesystem @capacitor/share @capacitor-firebase/authentication; do
+            echo "== $p  license: $(npm view $p license)  latest: $(npm view $p version)"
+            npm view $p time --json | python3 -c "import json,sys; t=json.load(sys.stdin); v=[k for k in t if k[0].isdigit() and '-' not in k]; v.sort(key=lambda s:[int(x) for x in s.split('.')]); [print('  ',k,t[k][:10]) for k in v[-6:]]"
+            npm view $p peerDependencies --json 2>/dev/null | tr -d '\n' ; echo
+          done
+          java -version 2>&1 | head -1; echo "ANDROID_HOME=$ANDROID_HOME"; ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools" 2>/dev/null | tail -5
