@@ -930,6 +930,7 @@ def main():
     if r.get("orsUrl"):
         r["orsUrl"] = re.sub(r"api_key=[^&]+", "api_key=<redacted>", r["orsUrl"])
     if r.get("satTiles"):
+        r["satTypedKey"] = "token=e2e-test-key" in (r["satTiles"] or "")   # D-076: read before the redaction
         r["satTiles"] = re.sub(r"token=[^&]+", "token=<redacted>", r["satTiles"])  # CI logs are public
     print(json.dumps({k: v for k, v in r.items() if k != "topo"} | {"hidden": r["topo"]["hidden"], "renamed": r["topo"]["renamed"], "labelFont": r["topo"]["labelFont"], "demRequests": seen["dem"], "satelliteRequests": len(seen["satellite"])}, ensure_ascii=False, indent=2))
     ok = True
@@ -1079,7 +1080,7 @@ def main():
     expect(seen["dem"] > 0, "DEM tiles requested")
     d = r["d76NoKey"]
     expect("tiles.maps.eox.at" in (d["tiles"] or "") and d["fallback"] == "eox-s2-2024" and "אין מפתח" in d["status"] and d["keyRow"], f"D-076: no Esri key on the device → EOX shown, notice, key box visible {d}")
-    expect(r["satLayer"] and "ibasemaps-api.arcgis.com" in (r["satTiles"] or "") and "token=e2e-test-key" in r["satTiles"], "satellite: Esri layer with the key typed on this device")
+    expect(r["satLayer"] and "ibasemaps-api.arcgis.com" in (r["satTiles"] or "") and r["satTypedKey"], "satellite: Esri layer with the key typed on this device")
     expect(len(seen["satellite"]) > 0, "satellite tiles requested")
     expect(r["landcoverInSat"] == "none" and r["landcoverInTopo"] == "visible", "topo tint hidden on imagery, restored on topo")
     S = r["styles"]
