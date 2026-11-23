@@ -142,6 +142,8 @@ def main(apk, out):
     except Exception as e:  # keep what we have
         res["error"] = str(e)
         screenshot(out / "emulator.png")
+    crash = adb("logcat", "-d", "-b", "crash", check=False) + adb("logcat", "-d", "-s", "AndroidRuntime:E", "ActivityManager:I", check=False)
+    res["crash"] = [l[-400:] for l in crash.splitlines() if re.search(r"FATAL|Exception|at |Caused by|Process .*topo3d.*(died|crash)|Force", l)][:60]
     log = adb("logcat", "-d", "-s", "Capacitor/Console:*", "chromium:*", "Capacitor:*", check=False)
     res["consoleErrors"] = [l[-300:] for l in log.splitlines() if re.search(r"\b(E|ERROR)\b|Uncaught|error", l)][:40]
     (out / "emulator.json").write_text(json.dumps(res, ensure_ascii=False, indent=2))
