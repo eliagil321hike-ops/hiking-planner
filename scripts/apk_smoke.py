@@ -131,6 +131,11 @@ def main(apk, out):
         res["location"]["denied"] = bool(m)
         time.sleep(3)
         res["location"]["appStillRunning"] = bool(adb("shell", "pidof", PKG, check=False).strip())
+        res["location"]["tapped"] = m.groups() if m else None
+        res["location"]["activities"] = [l.strip()[:200] for l in top().splitlines() if "topo3d" in l][:8]
+        res["location"]["am"] = [l[-250:] for l in adb("logcat", "-d", "-s", "ActivityManager:*", "ActivityTaskManager:*", check=False).splitlines()
+                                 if "topo3d" in l and "Slow operation" not in l][-15:]
+        screenshot(out / "emulator-after-deny.png")
         # GPX: the personal-points export goes to Android's share sheet
         p.js("import('./gpx.js').then((m) => m.downloadText('<gpx/>', 'topo3d-check.gpx'))")
         time.sleep(4)
