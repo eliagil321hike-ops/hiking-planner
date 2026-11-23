@@ -1,6 +1,6 @@
 # PROGRESS
 
-## A1 – one app on the computer and the phone, install only (D-076, D-077, D-078, 2026-11-23, branch wip/a1 – not on the site yet)
+## A1 – one app on the computer and the phone, install only (D-076, D-077, D-078, 2026-11-23 – LIVE 2026-11-24, commit 37b65df, Pages CI 45274928231 incl. pwa_test 11/11, APK run 45281126715 (debug: release key not yet in Secrets), snapshot snapshot/site-before-a1)
 Part 1 – plan: `docs/accounts-plan.md` rewritten for one owner (W10), everything marked A2; Google WebView block
 (2021-09-30) and the Capacitor Firebase Authentication plugin (8.6.0, Apache-2.0, 2026-10-31) recorded with dates.
 Part 4 – Esri key: removed from `site/styles/topo3d.json`; EOX until a key is typed on the device. Rotation: README.
@@ -27,7 +27,7 @@ New: `site/sw.js`, `site/pwa.js`, `site/native.js`, `site/manifest.webmanifest`,
 `.github/workflows/android.yml`, `docs/accounts-plan.md`, `docs/a1/*`.
 
 Tested: unit 64/64; smoke test pass; desktop app test 11/11 (local); Android emulator check pass (CI run on
-wip/a1); full e2e: see below. Not tested yet (needs the owner): the owner's phone (model, Android version, FPS while
+wip/a1); full e2e 156/156 (local, 2026-11-23; the first run's one failure was the test reading a redacted URL). Not tested yet (needs the owner): the owner's phone (model, Android version, FPS while
 rotating/tilting, memory, GPS, large font), Chrome/Edge "Install" on the owner's computer, a release-signed APK
 (needs the key in GitHub Secrets).
 Next step after A1: A2 (cloud storage, `docs/accounts-plan.md`).
