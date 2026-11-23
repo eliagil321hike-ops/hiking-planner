@@ -1,0 +1,64 @@
+{
+  "apk": "topo3d-debug-e756366-v6.apk",
+  "android": "14",
+  "webview": "113.0.5672.136",
+  "running": true,
+  "mapLoaded": true,
+  "inside": {
+    "native": {
+      "platform": "android",
+      "plugins": [
+        "App",
+        "SystemBars",
+        "CapacitorCookies",
+        "WebView",
+        "Filesystem",
+        "Share",
+        "CapacitorHttp"
+      ],
+      "back": [],
+      "shared": []
+    },
+    "pwa": {
+      "native": true,
+      "standalone": false,
+      "sw": null,
+      "persist": null,
+      "update": false
+    },
+    "origin": "https://localhost",
+    "viewport": "width=device-width, initial-scale=1, viewport-fit=contain",
+    "terrain": true,
+    "layers": 157,
+    "background": {
+      "mode": "topo",
+      "provider": null,
+      "shown": false,
+      "fallback": null
+    },
+    "localStorage": "ok",
+    "indexedDB": "ok",
+    "osmIndexFromLiveSite": 200,
+    "osmIndexPath": "https://eliagil321hike-ops.github.io/hiking-planner/data/osm/index.json",
+    "inner": [
+      320,
+      616
+    ],
+    "dpr": 1,
+    "fatal": null
+  },
+  "back": {
+    "menuOpened": "true",
+    "afterBack": "false",
+    "handled": [
+      "escape"
+    ],
+    "stillRunning": true
+  },
+  "consoleErrors": [
+    "11-23 17:24:14.923  2899  3222 E chromium: [ERROR:simple_file_enumerator.cc(21)] opendir /data/user/0/io.github.eliagil321hikeops.topo3d/cache/WebView/Default/HTTP Cache/Code Cache/js: No such file or directory (2)",
+    "11-23 17:24:14.925  2899  3200 E chromium: [ERROR:simple_file_enumerator.cc(21)] opendir /data/user/0/io.github.eliagil321hikeops.topo3d/cache/WebView/Default/HTTP Cache/Code Cache/wasm: No such file or directory (2)",
+    "11-23 17:24:14.927  2899  3200 E chromium: [ERROR:simple_index_file.cc(614)] Could not reconstruct index from disk",
+    "11-23 17:24:14.927  2899  3222 E chromium: [ERROR:simple_index_file.cc(614)] Could not reconstruct index from disk"
+  ]
+}
