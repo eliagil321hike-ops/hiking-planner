@@ -110,6 +110,27 @@ def main(apk, out):
                        "handled": p.js("window.__topo3d.results.native?.back ?? null"),
                        "stillRunning": bool(adb("shell", "pidof", PKG, check=False).strip())}
         screenshot(out / "emulator-back.png")
+        # Location: nothing asked before the button; pressing "center on me" asks Android's permission once
+        perms = lambda: adb("shell", "dumpsys", "package", PKG, check=False)
+        granted = lambda: "ACCESS_FINE_LOCATION: granted=true" in perms() or "ACCESS_COARSE_LOCATION: granted=true" in perms()
+        top = lambda: adb("shell", "dumpsys", "activity", "activities", check=False)
+        res["location"] = {"askedBeforePress": "permissioncontroller" in top().split("mResumedActivity")[-1][:400].lower(), "grantedBefore": granted()}
+        p.js("document.querySelector('.maplibregl-ctrl-geolocate').click()")
+        time.sleep(4)
+        resumed = [l for l in top().splitlines() if "mResumedActivity" in l or "topResumedActivity" in l]
+        res["location"]["dialogAfterPress"] = any("permissioncontroller" in l.lower() for l in resumed)
+        screenshot(out / "emulator-location.png")
+        adb("shell", "input", "keyevent", "4")   # dismiss (deny) the system dialog
+        time.sleep(2)
+        # GPX: the personal-points export goes to Android's share sheet
+        p.js("import('./gpx.js').then((m) => m.downloadText('<gpx/>', 'topo3d-check.gpx'))")
+        time.sleep(4)
+        resumed = [l for l in top().splitlines() if "mResumedActivity" in l or "topResumedActivity" in l]
+        res["gpxShare"] = {"shared": p.js("window.__topo3d.results.native?.shared ?? null"),
+                           "chooserShown": any(("chooser" in l.lower() or "resolver" in l.lower() or "intentresolver" in l.lower()) for l in resumed),
+                           "resumed": resumed[:2]}
+        screenshot(out / "emulator-share.png")
+        adb("shell", "input", "keyevent", "4")
     except Exception as e:  # keep what we have
         res["error"] = str(e)
         screenshot(out / "emulator.png")
