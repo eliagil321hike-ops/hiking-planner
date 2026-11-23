@@ -175,6 +175,9 @@ map.on('load', () => {
   map.once('idle', () => perf.mark('first-idle'));
 });
 
+// D-077 (A1): installable desktop app – shell service worker, update notice (not inside the Android app)
+import('./pwa.js').then((m) => m.initPwa(ctx)).catch((e) => log(`pwa: ${e.message}`));
+
 if (DEV) {
   const { initDevtools } = await import('./devtools.js');
   initDevtools(ctx);

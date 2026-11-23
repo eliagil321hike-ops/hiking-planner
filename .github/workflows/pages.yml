@@ -32,6 +32,7 @@ jobs:
           .venv/bin/python -m playwright install --with-deps chromium
           .venv/bin/python scripts/browser_smoke_test.py
           .venv/bin/python scripts/e2e_test.py
+          .venv/bin/python scripts/pwa_test.py   # D-077: installable desktop app (manifest, shell worker, update notice)
   deploy:
     needs: test
     permissions:

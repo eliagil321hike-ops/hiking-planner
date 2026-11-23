@@ -164,8 +164,10 @@ def main():
         browser = p.chromium.launch(args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"])
         # Location permission granted, fixed position; count geolocation calls to prove nothing asks
         # for location before the user presses the button, and that there is no continuous tracking.
+        # D-077: the shell service worker is blocked here – its requests would bypass page.route (the fixtures);
+        # it has its own test (scripts/pwa_test.py). This test covers the website's behaviour as before.
         context = browser.new_context(viewport={"width": 1280, "height": 800}, permissions=["geolocation"],
-                                      geolocation={"latitude": 32.9705, "longitude": 35.5020})
+                                      geolocation={"latitude": 32.9705, "longitude": 35.5020}, service_workers="block")
         context.add_init_script("""
           window.__geoCalls = { get: 0, watch: 0 };
           const g = navigator.geolocation;
