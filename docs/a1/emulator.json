@@ -1,5 +1,5 @@
 {
-  "apk": "topo3d-debug-e756366-v6.apk",
+  "apk": "topo3d-debug-aa47c38-v7.apk",
   "android": "14",
   "webview": "113.0.5672.136",
   "running": true,
@@ -55,10 +55,11 @@
     ],
     "stillRunning": true
   },
-  "consoleErrors": [
-    "11-23 17:24:14.923  2899  3222 E chromium: [ERROR:simple_file_enumerator.cc(21)] opendir /data/user/0/io.github.eliagil321hikeops.topo3d/cache/WebView/Default/HTTP Cache/Code Cache/js: No such file or directory (2)",
-    "11-23 17:24:14.925  2899  3200 E chromium: [ERROR:simple_file_enumerator.cc(21)] opendir /data/user/0/io.github.eliagil321hikeops.topo3d/cache/WebView/Default/HTTP Cache/Code Cache/wasm: No such file or directory (2)",
-    "11-23 17:24:14.927  2899  3200 E chromium: [ERROR:simple_index_file.cc(614)] Could not reconstruct index from disk",
-    "11-23 17:24:14.927  2899  3222 E chromium: [ERROR:simple_index_file.cc(614)] Could not reconstruct index from disk"
-  ]
+  "location": {
+    "askedBeforePress": false,
+    "grantedBefore": false,
+    "dialogAfterPress": true
+  },
+  "error": "Connection to remote host was lost.",
+  "consoleErrors": []
 }
