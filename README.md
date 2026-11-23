@@ -72,14 +72,17 @@ It is kept 30 days as a download on the run's page. Until the release key exists
 Android installs it as an update. **If the key is lost, the next APK cannot update the app: it must be
 uninstalled (losing the routes kept in the app) and installed again.** Keep two copies (e.g. a USB stick and
 your password manager / a private cloud folder), never in the repository.
-How it is created is still to be decided with Claude (it cannot be done for you without the file passing
-through the chat); the file is `topo3d-release.jks`, alias `topo3d`, valid 30 years, RSA 4096.
+Created 2026-11-23 by Claude at the owner's choice and sent in the chat: `topo3d-release.jks` (PKCS12, RSA 4096,
+valid 30 years, alias `topo3d`), `topo3d-release-INFO.txt` (password, secret names), `topo3d-release.jks.base64.txt`
+(the text for the first secret). Certificate fingerprints (public, needed for Firebase in A2):
+SHA-1 `6C:FE:74:42:F8:2A:E3:F1:AA:4E:D8:F7:EB:A7:E4:40:CE:30:7F:F9`,
+SHA-256 `BA:C8:3E:E4:EB:87:5E:94:49:3D:5E:D7:AE:AC:8F:BC:37:14:2A:95:12:28:4E:5E:26:C6:EB:37:83:50:AA:A5`.
 
 **2. Put the key into GitHub Secrets** (github.com → the repository → *Settings* → *Secrets and variables* →
 *Actions* → *New repository secret*), four secrets:
 | Name | Value |
 | --- | --- |
-| `TOPO3D_KEYSTORE_BASE64` | the key file as base64 text (Windows PowerShell: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("topo3d-release.jks")) \| Set-Clipboard`, then paste) |
+| `TOPO3D_KEYSTORE_BASE64` | the whole content of `topo3d-release.jks.base64.txt` |
 | `TOPO3D_KEYSTORE_PASSWORD` | the key store password |
 | `TOPO3D_KEY_ALIAS` | `topo3d` |
 | `TOPO3D_KEY_PASSWORD` | the key password (same as the store password if you used one) |

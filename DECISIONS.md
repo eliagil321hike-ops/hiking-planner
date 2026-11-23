@@ -976,4 +976,9 @@ raise the right tool bar a little")
   running after "Don't allow"; GPX → Android's share sheet with the file; one app process for the whole check.
   Screenshots in `docs/a1/`. Not yet tested: the owner's phone (model/Android version, FPS, memory, real GPS, large
   font), a release-signed build.
+- **Release key** (owner's choice 2026-11-23: "תיצור אותו ותשלח לי"): created by Claude in the session with keytool
+  (PKCS12, RSA 4096, 30 years, alias `topo3d`, random 28-character password), sent to the owner in the chat, never
+  in the repository; the session's copy is deleted once the owner confirms two backups. Fingerprints:
+  SHA-1 6C:FE:74:42:F8:2A:E3:F1:AA:4E:D8:F7:EB:A7:E4:40:CE:30:7F:F9,
+  SHA-256 BA:C8:3E:E4:EB:87:5E:94:49:3D:5E:D7:AE:AC:8F:BC:37:14:2A:95:12:28:4E:5E:26:C6:EB:37:83:50:AA:A5.
 
