@@ -1,5 +1,5 @@
 {
-  "apk": "topo3d-debug-aa47c38-v7.apk",
+  "apk": "topo3d-debug-12ee860-v8.apk",
   "android": "14",
   "webview": "113.0.5672.136",
   "running": true,
@@ -58,7 +58,9 @@
   "location": {
     "askedBeforePress": false,
     "grantedBefore": false,
-    "dialogAfterPress": true
+    "dialogAfterPress": true,
+    "denied": true,
+    "appStillRunning": false
   },
   "error": "Connection to remote host was lost.",
   "consoleErrors": []
